@@ -1,0 +1,18 @@
+# Dependencies & Build Output
+node_modules/
+dist/
+build/
+coverage/
+
+# Environment files & Local Secrets
+.env
+*.env
+.env.local
+
+# Git & IDEs
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+*.log
