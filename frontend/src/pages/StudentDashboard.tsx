@@ -1,57 +1,118 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { authApi } from '../api/auth';
+import { activitiesApi, type Activity } from '../api/activities';
+import { DynamicActivityPlayer } from '../components/DynamicActivityPlayer';
 
 export const StudentDashboard: React.FC = () => {
   const { user, token } = useAuth();
-  const [apiData, setApiData] = useState<any>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activeExercise, setActiveExercise] = useState<Activity | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (token) {
-      authApi
-        .getProtectedRoleData('student', token)
-        .then((data) => setApiData(data))
-        .catch((err) => setApiError(err.message));
+  const fetchActivities = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await activitiesApi.getActivities(token);
+      setActivities(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load assigned exercises');
+    } finally {
+      setIsLoading(false);
     }
   }, [token]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  if (activeExercise) {
+    return (
+      <DynamicActivityPlayer
+        activity={activeExercise}
+        onBack={() => setActiveExercise(null)}
+        onCompleted={() => fetchActivities()}
+      />
+    );
+  }
+
 
   return (
     <div style={styles.container}>
       <header style={styles.header}>
         <div style={styles.badge}>🎓 STUDENT LEARNING PORTAL</div>
-        <h1 style={styles.title}>Student Dashboard & Courses</h1>
+        <h1 style={styles.title}>Assigned Activities & Exercises</h1>
         <p style={styles.subtitle}>
           Logged in as: {user?.firstName} {user?.lastName} ({user?.email})
         </p>
       </header>
 
-      <div style={styles.statsGrid}>
-        <div style={styles.card}>
-          <h3>📖 Enrolled Courses</h3>
-          <p style={styles.metric}>3 Active</p>
-          <span style={styles.subtext}>Intro to CS, World History, Algebra</span>
-        </div>
-        <div style={styles.card}>
-          <h3>🎯 Overall Progress</h3>
-          <p style={styles.metric}>88.5%</p>
-          <span style={styles.subtext}>12 Lessons completed this week</span>
-        </div>
-      </div>
+      {error && <div style={styles.errorBox}>{error}</div>}
 
-      <div style={styles.apiTestCard}>
-        <h3>📡 Backend Role Verification API Response</h3>
-        <p style={styles.apiEndpoint}>
-          Tested Endpoint: <code>GET /users/student</code> (Requires <code>STUDENT</code>, <code>TEACHER</code>, or <code>ADMIN</code> role)
-        </p>
+      {isLoading ? (
+        <p>Loading your assigned exercises...</p>
+      ) : activities.length === 0 ? (
+        <div style={styles.emptyCard}>
+          <h3>No Exercises Assigned Yet</h3>
+          <p>Check back later once your teacher publishes a Fill-in-the-Blanks activity!</p>
+        </div>
+      ) : (
+        <div>
+          <h2 style={styles.sectionTitle}>Available Fill-in-the-Blanks Exercises</h2>
+          <div style={styles.grid}>
+            {activities.map((act) => {
+              const submission = act.mySubmission;
+              return (
+                <div key={act.id} style={styles.card}>
+                  <div style={styles.cardHeader}>
+                    <span style={styles.typeTag}>{(act.type || 'EXERCISE').replace(/_/g, ' ')}</span>
+                    {submission ? (
+                      <span
+                        style={{
+                          ...styles.statusBadge,
+                          backgroundColor:
+                            submission.score >= 80 ? '#10b981' : '#f59e0b',
+                        }}
+                      >
+                        ✓ Completed ({submission.score}%)
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          ...styles.statusBadge,
+                          backgroundColor: '#3b82f6',
+                        }}
+                      >
+                        ● Ready to Start
+                      </span>
+                    )}
+                  </div>
 
-        {apiError && <div style={styles.errorBox}>API Error: {apiError}</div>}
-        {apiData ? (
-          <pre style={styles.codeBlock}>{JSON.stringify(apiData, null, 2)}</pre>
-        ) : (
-          !apiError && <p>Fetching protected endpoint...</p>
-        )}
-      </div>
+                  <h3 style={styles.cardTitle}>{act.title}</h3>
+                  <p style={styles.cardDesc}>
+                    {act.description || 'Complete the text by filling in all blank fields.'}
+                  </p>
+
+                  <div style={styles.cardFooter}>
+                    <span style={styles.teacherName}>
+                      By {act.teacher?.firstName} {act.teacher?.lastName}
+                    </span>
+                    <button
+                      style={{
+                        ...styles.startBtn,
+                        backgroundColor: submission ? '#4b5563' : '#10b981',
+                      }}
+                      onClick={() => setActiveExercise(act)}
+                    >
+                      {submission ? 'Retake Exercise' : 'Start Exercise →'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -85,54 +146,91 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#6b7280',
     margin: 0,
   },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '1.25rem',
-    marginBottom: '2rem',
-  },
-  card: {
-    padding: '1.5rem',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-    border: '1px solid #e5e7eb',
-  },
-  metric: {
-    fontSize: '1.5rem',
+  sectionTitle: {
+    fontSize: '1.2rem',
     fontWeight: '700',
-    color: '#1f2937',
-    margin: '0.5rem 0',
-  },
-  subtext: {
-    fontSize: '0.82rem',
-    color: '#6b7280',
-  },
-  apiTestCard: {
-    padding: '1.5rem',
-    backgroundColor: '#1f2937',
-    color: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
-  },
-  apiEndpoint: {
-    color: '#9ca3af',
-    fontSize: '0.9rem',
     marginBottom: '1rem',
-  },
-  codeBlock: {
-    backgroundColor: '#111827',
-    padding: '1rem',
-    borderRadius: '8px',
-    color: '#34d399',
-    fontFamily: 'monospace',
-    overflowX: 'auto',
-    fontSize: '0.88rem',
+    color: '#1f2937',
   },
   errorBox: {
-    backgroundColor: '#991b1b',
-    color: '#ffffff',
+    backgroundColor: '#fef2f2',
+    color: '#dc2626',
     padding: '0.75rem',
     borderRadius: '6px',
+    marginBottom: '1rem',
+  },
+  emptyCard: {
+    padding: '3rem',
+    textAlign: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    border: '1px dashed #d1d5db',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '1.25rem',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '1.5rem',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.85rem',
+  },
+  typeTag: {
+    fontSize: '0.7rem',
+    fontWeight: '700',
+    color: '#6b7280',
+    letterSpacing: '0.04em',
+  },
+  statusBadge: {
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    padding: '0.25rem 0.6rem',
+    borderRadius: '12px',
+  },
+  cardTitle: {
+    fontSize: '1.15rem',
+    fontWeight: '700',
+    margin: '0 0 0.5rem 0',
+    color: '#111827',
+  },
+  cardDesc: {
+    fontSize: '0.88rem',
+    color: '#6b7280',
+    margin: '0 0 1.25rem 0',
+    lineHeight: '1.4',
+  },
+  cardFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTop: '1px solid #f3f4f6',
+    paddingTop: '0.85rem',
+  },
+  teacherName: {
+    fontSize: '0.8rem',
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  startBtn: {
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.45rem 0.95rem',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    cursor: 'pointer',
   },
 };

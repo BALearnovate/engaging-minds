@@ -23,5 +23,41 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  teacherActivities  Activity[]   @relation("TeacherActivities")
+  studentSubmissions Submission[] @relation("StudentSubmissions")
+
   @@map("users")
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  type        String   @default("FILL_IN_THE_BLANK")
+  content     Json
+  teacherId   String
+  teacher     User     @relation("TeacherActivities", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  submissions Submission[]
+
+  @@map("activities")
+}
+
+model Submission {
+  id           String   @id @default(uuid())
+  activityId   String
+  activity     Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      User     @relation("StudentSubmissions", fields: [studentId], references: [id], onDelete: Cascade)
+  answers      Json
+  score        Float
+  totalBlanks  Int
+  correctCount Int
+  status       String   @default("COMPLETED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("submissions")
 }
