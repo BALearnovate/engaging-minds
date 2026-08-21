@@ -10,7 +10,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 const MainApp: React.FC = () => {
   const { user } = useAuth();
-  const [currentTab, setCurrentTab] = useState<string>('home');
+  const [currentTab, setCurrentTab] = useState<string>('register');
 
   const handleLoginSuccess = (role: string) => {
     switch (role) {
@@ -28,20 +28,20 @@ const MainApp: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (!user && (currentTab === 'home' || currentTab === 'login')) {
-      return (
-        <Login
-          onSuccess={handleLoginSuccess}
-          onNavigateToRegister={() => setCurrentTab('register')}
-        />
-      );
-    }
-
-    if (!user && currentTab === 'register') {
+    if (!user && (currentTab === 'register' || currentTab === 'home')) {
       return (
         <Register
           onSuccess={handleLoginSuccess}
           onNavigateToLogin={() => setCurrentTab('login')}
+        />
+      );
+    }
+
+    if (!user && currentTab === 'login') {
+      return (
+        <Login
+          onSuccess={handleLoginSuccess}
+          onNavigateToRegister={() => setCurrentTab('register')}
         />
       );
     }
@@ -89,8 +89,10 @@ const MainApp: React.FC = () => {
 
   return (
     <div style={styles.appWrapper}>
-      <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />
-      <main style={styles.mainContent}>{renderContent()}</main>
+      {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+      <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
+        {renderContent()}
+      </main>
     </div>
   );
 };
@@ -108,10 +110,11 @@ export default App;
 const styles: Record<string, React.CSSProperties> = {
   appWrapper: {
     minHeight: '100vh',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#059669',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
   mainContent: {
-    paddingBottom: '3rem',
+    width: '100%',
+    minHeight: '100vh',
   },
 };
