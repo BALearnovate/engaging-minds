@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { Allow, IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class BlankKeyDto {
@@ -61,4 +61,12 @@ export class CreateActivityDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions?: QuestionDto[];
+
+  @IsOptional()
+  @IsString()
+  h5pType?: string;
+
+  @IsOptional()
+  @Allow()
+  h5pContent?: any;
 }

@@ -20,6 +20,12 @@ export class ActivitiesService {
       const parsed = this.autoDetectAndParseContent(dto.rawContent || dto.template || '');
       finalType = parsed.type;
       finalContent = parsed.content;
+    } else if (dto.type === 'H5P' || dto.h5pType) {
+      finalType = 'H5P';
+      finalContent = {
+        h5pType: dto.h5pType || 'h5p_flashcards',
+        ...(dto.h5pContent || {}),
+      };
     }
 
     return this.prisma.activity.create({
@@ -165,6 +171,63 @@ export class ActivitiesService {
           isCorrect,
         };
       });
+    } else if (activity.type === 'H5P') {
+      const h5pType = content.h5pType || '';
+      if (h5pType === 'h5p_flashcards') {
+        const cards = content.cards || [];
+        totalItems = cards.length || 1;
+        cards.forEach((card: any, idx: number) => {
+          const key = `card_${idx}`;
+          const studentAns = (dto.answers[key] || '').trim();
+          const expectedAns = (card.answer || '').trim();
+          const isCorrect =
+            studentAns.toLowerCase() === expectedAns.toLowerCase() ||
+            studentAns.toLowerCase() === 'correct' ||
+            studentAns.toLowerCase() === 'mastered';
+          if (isCorrect) correctCount += 1;
+          evaluationDetails[key] = {
+            studentAnswer: studentAns,
+            correctAnswer: expectedAns,
+            isCorrect,
+          };
+        });
+      } else if (h5pType === 'h5p_drag_words') {
+        const tokens = content.tokens || [];
+        totalItems = tokens.length || 1;
+        tokens.forEach((t: any) => {
+          const studentAns = (dto.answers[t.id] || '').trim();
+          const expectedAns = (t.answer || '').trim();
+          const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
+          if (isCorrect) correctCount += 1;
+          evaluationDetails[t.id] = {
+            studentAnswer: studentAns,
+            correctAnswer: expectedAns,
+            isCorrect,
+          };
+        });
+      } else if (h5pType === 'h5p_question_set') {
+        const questions = content.questions || [];
+        totalItems = questions.length || 1;
+        questions.forEach((q: any) => {
+          const studentAns = (dto.answers[q.id] || '').trim();
+          const expectedAns = (q.correctAnswer || '').trim();
+          const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
+          if (isCorrect) correctCount += 1;
+          evaluationDetails[q.id] = {
+            studentAnswer: studentAns,
+            correctAnswer: expectedAns,
+            isCorrect,
+          };
+        });
+      } else {
+        // Generic H5P completion evaluation (e.g. interactive video, hotspots, memory game, accordion)
+        const entries = Object.entries(dto.answers);
+        totalItems = Math.max(entries.length, 1);
+        correctCount = entries.filter(
+          ([_, val]) => val && val !== 'false' && val !== '0' && val !== 'incomplete',
+        ).length;
+        evaluationDetails = dto.answers;
+      }
     } else {
       // SHORT_ANSWER or DYNAMIC_DOCUMENT
       const answersList = Object.values(dto.answers);

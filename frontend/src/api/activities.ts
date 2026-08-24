@@ -70,6 +70,8 @@ export interface CreateActivityPayload {
   rawContent?: string;
   blanks?: BlankKey[];
   questions?: QuestionOption[];
+  h5pType?: string;
+  h5pContent?: any;
 }
 
 export const activitiesApi = {
