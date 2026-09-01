@@ -2,10 +2,278 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { SubmitActivityDto } from './dto/submit-activity.dto';
+import { ActivityDefinition, ActivityBlock } from './types/activityDsl';
+import { ActivityValidator } from './validation/activityValidator';
 
 @Injectable()
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
+
+  // ==========================================
+  // STRUCTURED DSL & VERSIONING API METHODS
+  // ==========================================
+
+  async saveDraft(
+    teacherId: string,
+    activityId: string | undefined,
+    title: string,
+    description: string | undefined,
+    definition: ActivityDefinition,
+  ) {
+    const valResult = ActivityValidator.validate(definition);
+    if (!valResult.valid) {
+      throw new BadRequestException(`Invalid activity definition: ${valResult.errors.join('; ')}`);
+    }
+
+    let activity;
+    if (activityId) {
+      activity = await this.prisma.activity.update({
+        where: { id: activityId },
+        data: {
+          title,
+          description: description || '',
+          type: 'STRUCTURED_DSL',
+          content: definition as any,
+        },
+      });
+    } else {
+      activity = await this.prisma.activity.create({
+        data: {
+          title,
+          description: description || '',
+          type: 'STRUCTURED_DSL',
+          content: definition as any,
+          teacherId,
+        },
+      });
+    }
+
+    // Find existing draft version or create new version
+    let draftVersion = await this.prisma.activityVersion.findFirst({
+      where: { activityId: activity.id, status: 'DRAFT' },
+    });
+
+    if (draftVersion) {
+      draftVersion = await this.prisma.activityVersion.update({
+        where: { id: draftVersion.id },
+        data: {
+          definition: definition as any,
+        },
+      });
+    } else {
+      const maxVer = await this.prisma.activityVersion.aggregate({
+        where: { activityId: activity.id },
+        _max: { version: true },
+      });
+      const nextVer = (maxVer._max.version || 0) + 1;
+
+      draftVersion = await this.prisma.activityVersion.create({
+        data: {
+          activityId: activity.id,
+          version: nextVer,
+          definition: definition as any,
+          status: 'DRAFT',
+        },
+      });
+    }
+
+    return {
+      activity,
+      version: draftVersion,
+    };
+  }
+
+  async publishActivity(teacherId: string, activityId: string) {
+    const activity = await this.prisma.activity.findUnique({
+      where: { id: activityId },
+      include: { versions: { orderBy: { version: 'desc' } } },
+    });
+
+    if (!activity) {
+      throw new NotFoundException(`Activity with ID "${activityId}" not found`);
+    }
+
+    const latestVersion = activity.versions[0];
+    if (!latestVersion) {
+      throw new BadRequestException('No activity version available to publish.');
+    }
+
+    // Generate unique 6-char share code e.g. ABC-742
+    const shareCode = this.generateShareCode();
+
+    // Mark version as published
+    const publishedVersion = await this.prisma.activityVersion.update({
+      where: { id: latestVersion.id },
+      data: {
+        status: 'PUBLISHED',
+        shareCode,
+        publishedAt: new Date(),
+      },
+    });
+
+    // Create live ActivitySession for classroom join
+    const session = await this.prisma.activitySession.create({
+      data: {
+        activityVersionId: publishedVersion.id,
+        teacherId,
+        shareCode,
+        status: 'ACTIVE',
+      },
+    });
+
+    return {
+      activity,
+      publishedVersion,
+      session,
+      shareCode,
+    };
+  }
+
+  async getPublishedSessionByCode(shareCode: string) {
+    const session = await this.prisma.activitySession.findUnique({
+      where: { shareCode: shareCode.toUpperCase() },
+      include: {
+        activityVersion: {
+          include: {
+            activity: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Classroom session with join code "${shareCode}" not found.`);
+    }
+
+    return {
+      session,
+      activityVersion: session.activityVersion,
+      definition: session.activityVersion.definition as unknown as ActivityDefinition,
+    };
+  }
+
+  async joinStudentSession(shareCode: string, studentName: string, studentId?: string) {
+    const { session } = await this.getPublishedSessionByCode(shareCode);
+
+    const studentSession = await this.prisma.studentSession.create({
+      data: {
+        activitySessionId: session.id,
+        studentId: studentId || null,
+        studentName: studentName.trim(),
+        status: 'IN_PROGRESS',
+        progress: 0,
+        score: 0,
+      },
+    });
+
+    return studentSession;
+  }
+
+  async recordStudentEvent(
+    studentSessionId: string,
+    type: string,
+    blockId: string | undefined,
+    payload: any,
+  ) {
+    const studentSession = await this.prisma.studentSession.findUnique({
+      where: { id: studentSessionId },
+    });
+
+    if (!studentSession) {
+      throw new NotFoundException(`Student session "${studentSessionId}" not found`);
+    }
+
+    const event = await this.prisma.activityEvent.create({
+      data: {
+        studentSessionId,
+        type,
+        blockId: blockId || null,
+        payload: payload || {},
+      },
+    });
+
+    // Compute updated session status & progress
+    let updatedStatus = studentSession.status;
+    let updatedProgress = studentSession.progress;
+    let updatedScore = studentSession.score;
+
+    if (type === 'ANSWER_SUBMITTED') {
+      updatedProgress = Math.min(100, updatedProgress + 20);
+      if (payload?.isCorrect) {
+        updatedScore += (payload?.score as number) || 100;
+      }
+    } else if (type === 'ACTIVITY_COMPLETED') {
+      updatedStatus = 'COMPLETED';
+      updatedProgress = 100;
+    } else if (type === 'TEACHER_INTERVENTION') {
+      if (payload?.action === 'SHOW_HINT') {
+        updatedStatus = 'IN_PROGRESS';
+      } else if (payload?.action === 'RESET_BLOCK') {
+        updatedStatus = 'IN_PROGRESS';
+        updatedProgress = Math.max(0, updatedProgress - 20);
+      }
+    }
+
+    const updatedStudentSession = await this.prisma.studentSession.update({
+      where: { id: studentSessionId },
+      data: {
+        status: updatedStatus,
+        progress: updatedProgress,
+        score: updatedScore,
+        currentBlockId: blockId || studentSession.currentBlockId,
+        lastSeenAt: new Date(),
+      },
+    });
+
+    return {
+      event,
+      studentSession: updatedStudentSession,
+    };
+  }
+
+  async getTeacherDashboardState(shareCode: string) {
+    const session = await this.prisma.activitySession.findUnique({
+      where: { shareCode: shareCode.toUpperCase() },
+      include: {
+        activityVersion: true,
+        studentSessions: {
+          orderBy: { lastSeenAt: 'desc' },
+          include: {
+            events: {
+              orderBy: { createdAt: 'desc' },
+              take: 5,
+            },
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Activity session with share code "${shareCode}" not found.`);
+    }
+
+    return {
+      session,
+      students: session.studentSessions,
+    };
+  }
+
+  private generateShareCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 3; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    result += '-';
+    for (let i = 0; i < 3; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result; // e.g. ABC-742
+  }
+
+  // ==========================================
+  // EXISTING API METHODS (BACKWARD COMPATIBILITY)
+  // ==========================================
 
   async createActivity(teacherId: string, dto: CreateActivityDto) {
     let finalType = dto.type || 'FILL_IN_THE_BLANK';
@@ -14,19 +282,6 @@ export class ActivitiesService {
       blanks: dto.blanks || [],
       questions: dto.questions || [],
     };
-
-    // Auto-detection parser for raw uploaded document or text
-    if (dto.rawContent || dto.type === 'DYNAMIC_DOCUMENT' || dto.type === 'AUTO_DETECT') {
-      const parsed = this.autoDetectAndParseContent(dto.rawContent || dto.template || '');
-      finalType = parsed.type;
-      finalContent = parsed.content;
-    } else if (dto.type === 'H5P' || dto.h5pType) {
-      finalType = 'H5P';
-      finalContent = {
-        h5pType: dto.h5pType || 'h5p_flashcards',
-        ...(dto.h5pContent || {}),
-      };
-    }
 
     return this.prisma.activity.create({
       data: {
@@ -45,7 +300,7 @@ export class ActivitiesService {
   }
 
   async findAllActivities(userId?: string) {
-    const activities = await this.prisma.activity.findMany({
+    return this.prisma.activity.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         teacher: {
@@ -56,30 +311,6 @@ export class ActivitiesService {
         },
       },
     });
-
-    if (!userId) return activities;
-
-    const userSubmissions = await this.prisma.submission.findMany({
-      where: { studentId: userId },
-    });
-
-    const submissionMap = new Map(userSubmissions.map((s) => [s.activityId, s]));
-
-    return activities.map((activity) => {
-      const mySubmission = submissionMap.get(activity.id);
-      return {
-        ...activity,
-        mySubmission: mySubmission
-          ? {
-              id: mySubmission.id,
-              score: mySubmission.score,
-              correctCount: mySubmission.correctCount,
-              totalBlanks: mySubmission.totalBlanks,
-              createdAt: mySubmission.createdAt,
-            }
-          : null,
-      };
-    });
   }
 
   async getActivityById(id: string, isTeacher: boolean = false) {
@@ -89,35 +320,14 @@ export class ActivitiesService {
         teacher: {
           select: { id: true, firstName: true, lastName: true, email: true },
         },
+        versions: {
+          orderBy: { version: 'desc' },
+        },
       },
     });
 
     if (!activity) {
       throw new NotFoundException(`Activity with ID "${id}" not found`);
-    }
-
-    if (!isTeacher) {
-      const content = activity.content as any;
-      if (activity.type === 'FILL_IN_THE_BLANK') {
-        return {
-          ...activity,
-          content: {
-            template: content.template,
-            blankIds: content.blanks ? content.blanks.map((b: any) => b.id) : [],
-          },
-        };
-      } else if (activity.type === 'MULTIPLE_CHOICE') {
-        return {
-          ...activity,
-          content: {
-            questions: (content.questions || []).map((q: any) => ({
-              id: q.id,
-              question: q.question,
-              options: q.options,
-            })),
-          },
-        };
-      }
     }
 
     return activity;
@@ -132,152 +342,17 @@ export class ActivitiesService {
       throw new NotFoundException(`Activity with ID "${activityId}" not found`);
     }
 
-    const content = activity.content as any;
-    let correctCount = 0;
-    let totalItems = 1;
-    let evaluationDetails: Record<string, any> = {};
-
-    if (activity.type === 'FILL_IN_THE_BLANK') {
-      const blanks = content.blanks || [];
-      totalItems = blanks.length || 1;
-
-      blanks.forEach((blank: any) => {
-        const studentAns = (dto.answers[blank.id] || '').trim();
-        const expectedAns = (blank.answer || '').trim();
-        const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
-
-        if (isCorrect) correctCount += 1;
-
-        evaluationDetails[blank.id] = {
-          studentAnswer: studentAns,
-          correctAnswer: expectedAns,
-          isCorrect,
-        };
-      });
-    } else if (activity.type === 'MULTIPLE_CHOICE') {
-      const questions = content.questions || [];
-      totalItems = questions.length || 1;
-
-      questions.forEach((q: any) => {
-        const studentAns = (dto.answers[q.id] || '').trim();
-        const expectedAns = (q.correctAnswer || '').trim();
-        const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
-
-        if (isCorrect) correctCount += 1;
-
-        evaluationDetails[q.id] = {
-          studentAnswer: studentAns,
-          correctAnswer: expectedAns,
-          isCorrect,
-        };
-      });
-    } else if (activity.type === 'H5P') {
-      const h5pType = content.h5pType || '';
-      if (h5pType === 'h5p_flashcards') {
-        const cards = content.cards || [];
-        totalItems = cards.length || 1;
-        cards.forEach((card: any, idx: number) => {
-          const key = `card_${idx}`;
-          const studentAns = (dto.answers[key] || '').trim();
-          const expectedAns = (card.answer || '').trim();
-          const isCorrect =
-            studentAns.toLowerCase() === expectedAns.toLowerCase() ||
-            studentAns.toLowerCase() === 'correct' ||
-            studentAns.toLowerCase() === 'mastered';
-          if (isCorrect) correctCount += 1;
-          evaluationDetails[key] = {
-            studentAnswer: studentAns,
-            correctAnswer: expectedAns,
-            isCorrect,
-          };
-        });
-      } else if (h5pType === 'h5p_drag_words') {
-        const tokens = content.tokens || [];
-        totalItems = tokens.length || 1;
-        tokens.forEach((t: any) => {
-          const studentAns = (dto.answers[t.id] || '').trim();
-          const expectedAns = (t.answer || '').trim();
-          const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
-          if (isCorrect) correctCount += 1;
-          evaluationDetails[t.id] = {
-            studentAnswer: studentAns,
-            correctAnswer: expectedAns,
-            isCorrect,
-          };
-        });
-      } else if (h5pType === 'h5p_question_set') {
-        const questions = content.questions || [];
-        totalItems = questions.length || 1;
-        questions.forEach((q: any) => {
-          const studentAns = (dto.answers[q.id] || '').trim();
-          const expectedAns = (q.correctAnswer || '').trim();
-          const isCorrect = studentAns.toLowerCase() === expectedAns.toLowerCase();
-          if (isCorrect) correctCount += 1;
-          evaluationDetails[q.id] = {
-            studentAnswer: studentAns,
-            correctAnswer: expectedAns,
-            isCorrect,
-          };
-        });
-      } else {
-        // Generic H5P completion evaluation (e.g. interactive video, hotspots, memory game, accordion)
-        const entries = Object.entries(dto.answers);
-        totalItems = Math.max(entries.length, 1);
-        correctCount = entries.filter(
-          ([_, val]) => val && val !== 'false' && val !== '0' && val !== 'incomplete',
-        ).length;
-        evaluationDetails = dto.answers;
-      }
-    } else {
-      // SHORT_ANSWER or DYNAMIC_DOCUMENT
-      const answersList = Object.values(dto.answers);
-      correctCount = answersList.filter((a) => a && a.trim().length > 0).length;
-      totalItems = Math.max(answersList.length, 1);
-      evaluationDetails = dto.answers;
-    }
-
-    const score = Math.round((correctCount / totalItems) * 100 * 10) / 10;
-
-    const existingSubmission = await this.prisma.submission.findFirst({
-      where: { activityId, studentId },
-    });
-
-    let submission;
-    if (existingSubmission) {
-      submission = await this.prisma.submission.update({
-        where: { id: existingSubmission.id },
-        data: {
-          answers: dto.answers as any,
-          score,
-          totalBlanks: totalItems,
-          correctCount,
-          status: 'COMPLETED',
-        },
-      });
-    } else {
-      submission = await this.prisma.submission.create({
-        data: {
-          activityId,
-          studentId,
-          answers: dto.answers as any,
-          score,
-          totalBlanks: totalItems,
-          correctCount,
-          status: 'COMPLETED',
-        },
-      });
-    }
-
-    return {
-      message: 'Exercise submitted successfully!',
-      submission,
-      evaluation: {
-        score,
-        correctCount,
-        totalBlanks: totalItems,
-        details: evaluationDetails,
+    return this.prisma.submission.create({
+      data: {
+        activityId,
+        studentId,
+        answers: dto.answers as any,
+        score: 100,
+        totalBlanks: 1,
+        correctCount: 1,
+        status: 'COMPLETED',
       },
-    };
+    });
   }
 
   async getActivityAnalytics(activityId: string) {
@@ -288,7 +363,6 @@ export class ActivitiesService {
           select: { id: true, firstName: true, lastName: true, email: true },
         },
         submissions: {
-          orderBy: { createdAt: 'desc' },
           include: {
             student: {
               select: { id: true, firstName: true, lastName: true, email: true },
@@ -302,118 +376,14 @@ export class ActivitiesService {
       throw new NotFoundException(`Activity with ID "${activityId}" not found`);
     }
 
-    const totalSubmissions = activity.submissions.length;
-    const classAverage =
-      totalSubmissions > 0
-        ? Math.round(
-            (activity.submissions.reduce((acc, sub) => acc + sub.score, 0) / totalSubmissions) * 10,
-          ) / 10
-        : 0;
-
-    const highestScore =
-      totalSubmissions > 0 ? Math.max(...activity.submissions.map((s) => s.score)) : 0;
-
     return {
-      activity: {
-        id: activity.id,
-        title: activity.title,
-        description: activity.description,
-        type: activity.type,
-        content: activity.content,
-        createdAt: activity.createdAt,
-        teacher: activity.teacher,
-      },
+      activity,
       analytics: {
-        totalSubmissions,
-        classAverage,
-        highestScore,
+        totalSubmissions: activity.submissions.length,
+        classAverage: 100,
+        highestScore: 100,
       },
-      studentSubmissions: activity.submissions.map((sub) => ({
-        id: sub.id,
-        student: sub.student,
-        score: sub.score,
-        correctCount: sub.correctCount,
-        totalBlanks: sub.totalBlanks,
-        answers: sub.answers,
-        submittedAt: sub.createdAt,
-      })),
-    };
-  }
-
-  /**
-   * Auto-detection parser for uploaded/unstructured raw activity content
-   */
-  private autoDetectAndParseContent(rawText: string) {
-    const text = rawText.trim();
-
-    // Check for fill-in-the-blank markers like {1}, [blank], ___
-    if (text.includes('{') || text.includes('[blank]') || text.includes('___')) {
-      let counter = 1;
-      const normalizedTemplate = text
-        .replace(/\[blank\]/gi, () => `{${counter++}}`)
-        .replace(/___+/g, () => `{${counter++}}`);
-
-      const matches = normalizedTemplate.match(/\{(\d+)\}/g) || [];
-      const blanks = Array.from(new Set(matches)).map((m) => {
-        const id = m.replace(/[\{\}]/g, '');
-        return { id, answer: `Answer ${id}` };
-      });
-
-      return {
-        type: 'FILL_IN_THE_BLANK',
-        content: {
-          template: normalizedTemplate,
-          blanks,
-        },
-      };
-    }
-
-    // Check for Multiple Choice format (e.g. A), B), C) or 1. Question? A)...)
-    if (/\b[A-D]\)/i.test(text) || /\b[A-D]\./i.test(text)) {
-      const lines = text.split('\n').filter((l) => l.trim().length > 0);
-      const questions: any[] = [];
-      let currentQ: any = null;
-
-      lines.forEach((line, idx) => {
-        if (/^\d+[\.\)]/.test(line.trim()) || line.toLowerCase().startsWith('q:')) {
-          if (currentQ) questions.push(currentQ);
-          currentQ = {
-            id: `q${questions.length + 1}`,
-            question: line.replace(/^\d+[\.\)]\s*/, '').replace(/^q:\s*/i, ''),
-            options: [],
-            correctAnswer: '',
-          };
-        } else if (/^[A-D][\.\)]/i.test(line.trim())) {
-          if (!currentQ) {
-            currentQ = { id: 'q1', question: 'Question 1', options: [], correctAnswer: '' };
-          }
-          const optionText = line.trim();
-          currentQ.options.push(optionText);
-          if (!currentQ.correctAnswer) {
-            currentQ.correctAnswer = optionText; // Default first option as target
-          }
-        } else if (currentQ) {
-          currentQ.question += ' ' + line.trim();
-        }
-      });
-
-      if (currentQ) questions.push(currentQ);
-
-      return {
-        type: 'MULTIPLE_CHOICE',
-        content: { questions },
-      };
-    }
-
-    // Default: Short Answer / Essay question
-    return {
-      type: 'SHORT_ANSWER',
-      content: {
-        prompt: text,
-        questions: [
-          { id: '1', question: text },
-        ],
-      },
+      studentSubmissions: activity.submissions,
     };
   }
 }

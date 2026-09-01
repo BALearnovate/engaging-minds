@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { ActivityCreationStudio } from './components/ActivityCreationStudio';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -10,33 +12,24 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 const MainApp: React.FC = () => {
   const { user } = useAuth();
-  const [currentTab, setCurrentTab] = useState<string>('register');
+  const [currentTab, setCurrentTab] = useState<string>('home');
 
   const handleLoginSuccess = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        setCurrentTab('admin');
+        setCurrentTab('dashboard');
         break;
       case 'TEACHER':
-        setCurrentTab('teacher');
+        setCurrentTab('dashboard');
         break;
       case 'STUDENT':
       default:
-        setCurrentTab('student');
+        setCurrentTab('dashboard');
         break;
     }
   };
 
   const renderContent = () => {
-    if (!user && (currentTab === 'register' || currentTab === 'home')) {
-      return (
-        <Register
-          onSuccess={handleLoginSuccess}
-          onNavigateToLogin={() => setCurrentTab('login')}
-        />
-      );
-    }
-
     if (!user && currentTab === 'login') {
       return (
         <Login
@@ -46,53 +39,63 @@ const MainApp: React.FC = () => {
       );
     }
 
-    if (currentTab === 'admin') {
+    if (!user) {
       return (
-        <ProtectedRoute
-          allowedRoles={['ADMIN']}
+        <Register
+          onSuccess={handleLoginSuccess}
           onNavigateToLogin={() => setCurrentTab('login')}
-        >
-          <AdminDashboard />
+        />
+      );
+    }
+
+    if (currentTab === 'activity_creation') {
+      return (
+        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
+          <ActivityCreationStudio />
         </ProtectedRoute>
       );
     }
 
-    if (currentTab === 'teacher') {
+    if (currentTab === 'dashboard') {
+      if (user.role === 'ADMIN') {
+        return (
+          <ProtectedRoute allowedRoles={['ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        );
+      }
+      if (user.role === 'TEACHER') {
+        return (
+          <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
+            <TeacherDashboard />
+          </ProtectedRoute>
+        );
+      }
       return (
-        <ProtectedRoute
-          allowedRoles={['TEACHER', 'ADMIN']}
-          onNavigateToLogin={() => setCurrentTab('login')}
-        >
-          <TeacherDashboard />
-        </ProtectedRoute>
-      );
-    }
-
-    if (currentTab === 'student' || currentTab === 'home') {
-      return (
-        <ProtectedRoute
-          allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}
-          onNavigateToLogin={() => setCurrentTab('login')}
-        >
+        <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
           <StudentDashboard />
         </ProtectedRoute>
       );
     }
 
+    // Default 'home' view
     return (
-      <Login
-        onSuccess={handleLoginSuccess}
-        onNavigateToRegister={() => setCurrentTab('register')}
-      />
+      <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
+        <StudentDashboard />
+      </ProtectedRoute>
     );
   };
 
   return (
     <div style={styles.appWrapper}>
-      {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
-      <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
-        {renderContent()}
-      </main>
+      {user && <Sidebar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+
+      <div style={styles.mainLayout}>
+        {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+        <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 };
@@ -109,12 +112,19 @@ export default App;
 
 const styles: Record<string, React.CSSProperties> = {
   appWrapper: {
+    display: 'flex',
     minHeight: '100vh',
-    backgroundColor: '#059669',
+    backgroundColor: '#f3f4f6',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  },
+  mainLayout: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
   },
   mainContent: {
     width: '100%',
-    minHeight: '100vh',
+    flex: 1,
   },
 };

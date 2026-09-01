@@ -23,7 +23,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  teacherActivities  Activity[]   @relation("TeacherActivities")
+  teacherActivities Activity[]   @relation("TeacherActivities")
   studentSubmissions Submission[] @relation("StudentSubmissions")
 
   @@map("users")
@@ -33,7 +33,7 @@ model Activity {
   id          String   @id @default(uuid())
   title       String
   description String?
-  type        String   @default("FILL_IN_THE_BLANK")
+  type        String   @default("STRUCTURED_DSL")
   content     Json
   teacherId   String
   teacher     User     @relation("TeacherActivities", fields: [teacherId], references: [id], onDelete: Cascade)
@@ -41,8 +41,68 @@ model Activity {
   updatedAt   DateTime @updatedAt
 
   submissions Submission[]
+  versions    ActivityVersion[]
 
   @@map("activities")
+}
+
+model ActivityVersion {
+  id          String   @id @default(uuid())
+  activityId  String
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  version     Int      @default(1)
+  definition  Json
+  status      String   @default("DRAFT") // 'DRAFT' | 'PUBLISHED'
+  shareCode   String?  @unique
+  createdAt   DateTime @default(now())
+  publishedAt DateTime?
+
+  sessions    ActivitySession[]
+
+  @@map("activity_versions")
+}
+
+model ActivitySession {
+  id                String          @id @default(uuid())
+  activityVersionId String
+  activityVersion   ActivityVersion @relation(fields: [activityVersionId], references: [id], onDelete: Cascade)
+  teacherId         String
+  shareCode         String          @unique
+  status            String          @default("ACTIVE") // 'ACTIVE' | 'COMPLETED'
+  createdAt         DateTime        @default(now())
+
+  studentSessions   StudentSession[]
+
+  @@map("activity_sessions")
+}
+
+model StudentSession {
+  id                String          @id @default(uuid())
+  activitySessionId String
+  activitySession   ActivitySession @relation(fields: [activitySessionId], references: [id], onDelete: Cascade)
+  studentId         String?
+  studentName       String
+  status            String          @default("NOT_STARTED") // 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED'
+  progress          Float           @default(0)
+  score             Float           @default(0)
+  currentBlockId    String?
+  lastSeenAt        DateTime        @default(now())
+
+  events            ActivityEvent[]
+
+  @@map("student_sessions")
+}
+
+model ActivityEvent {
+  id               String         @id @default(uuid())
+  studentSessionId String
+  studentSession   StudentSession @relation(fields: [studentSessionId], references: [id], onDelete: Cascade)
+  type             String
+  blockId          String?
+  payload          Json
+  createdAt        DateTime       @default(now())
+
+  @@map("activity_events")
 }
 
 model Submission {
