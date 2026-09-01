@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import type { ActivityDefinition, ActivityBlock } from '../types/activityDsl';
+import type { ActivityDefinition } from '../types/activityDsl';
 import { ActivityRuntime } from './ActivityRuntime';
-import { ComponentRegistry } from '../registry';
 import { useAuth } from '../context/AuthContext';
 
 export const ActivityCreationStudio: React.FC = () => {
@@ -65,6 +64,22 @@ export const ActivityCreationStudio: React.FC = () => {
 
   return (
     <div style={styles.pageContainer}>
+      {/* Dynamic Keyframe Animation Styles */}
+      <style>{`
+        @keyframes spinRing {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.6; transform: scale(0.98); }
+          50% { opacity: 1; transform: scale(1.04); }
+        }
+        @keyframes shimmerMove {
+          0% { background-position: -200px 0; }
+          100% { background-position: 200px 0; }
+        }
+      `}</style>
+
       <div style={styles.gridWrapper}>
         {/* LEFT COLUMN: ACTIVITY GENERATION STUDIO MAIN PANEL */}
         <div style={styles.mainStudioCard}>
@@ -124,16 +139,33 @@ export const ActivityCreationStudio: React.FC = () => {
               <button
                 disabled={isGenerating || !prompt.trim()}
                 onClick={handleGenerate}
-                style={styles.runDraftBtn}
+                style={{
+                  ...styles.runDraftBtn,
+                  ...(isGenerating ? styles.runDraftBtnDisabled : {}),
+                }}
               >
-                {isGenerating ? '⚡ Generating Draft...' : 'Run AI Generator Draft'}
+                {isGenerating ? '⚡ Generating AI Activity Draft...' : 'Run AI Generator Draft'}
               </button>
             </div>
           </div>
 
           {/* AI Draft Blueprint Preview Box */}
           <div style={styles.blueprintBox}>
-            {activity ? (
+            {isGenerating ? (
+              <div style={styles.loaderContainer}>
+                <div style={styles.spinnerWrapper}>
+                  <div style={styles.spinnerRing} />
+                  <span style={styles.robotLoaderIcon}>🤖</span>
+                </div>
+                <h3 style={styles.loaderTitle}>Generating AI Activity Blueprint...</h3>
+                <p style={styles.loaderText}>
+                  Analyzing prompt instructions, composing interactive exercise blocks (MCQs, Flashcards, Fill-in-blanks, Drag & Drop), and validating DSL schema...
+                </p>
+                <div style={styles.shimmerTrack}>
+                  <div style={styles.shimmerBar} />
+                </div>
+              </div>
+            ) : activity ? (
               <div style={styles.blueprintContent}>
                 <div style={styles.activityMetaHeader}>
                   <div>
@@ -300,7 +332,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionRow: {
     display: 'flex',
-    justifyContent: 'flex-end',
+    justify: 'flex-end',
     marginTop: '0.4rem',
   },
   runDraftBtn: {
@@ -313,6 +345,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.95rem',
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(0, 102, 178, 0.2)',
+    transition: 'all 0.2s ease',
+  },
+  runDraftBtnDisabled: {
+    backgroundColor: '#94a3b8',
+    cursor: 'not-allowed',
+    boxShadow: 'none',
   },
   blueprintBox: {
     border: '2px dashed #a0c4d8',
@@ -322,6 +360,65 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: '260px',
     display: 'flex',
     flexDirection: 'column',
+  },
+  loaderContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '3rem 1.5rem',
+    textAlign: 'center',
+    gap: '0.85rem',
+    margin: 'auto',
+  },
+  spinnerWrapper: {
+    position: 'relative',
+    width: '64px',
+    height: '64px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  spinnerRing: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    border: '4px solid #e0f2fe',
+    borderTopColor: '#0066b2',
+    animation: 'spinRing 1s linear infinite',
+  },
+  robotLoaderIcon: {
+    fontSize: '1.75rem',
+    animation: 'pulseGlow 1.5s ease-in-out infinite',
+  },
+  loaderTitle: {
+    fontSize: '1.1rem',
+    fontWeight: '800',
+    color: '#0f3b60',
+    margin: 0,
+  },
+  loaderText: {
+    fontSize: '0.88rem',
+    color: '#64748b',
+    maxWidth: '460px',
+    lineHeight: '1.45',
+    margin: 0,
+  },
+  shimmerTrack: {
+    width: '240px',
+    height: '6px',
+    backgroundColor: '#e2e8f0',
+    borderRadius: '3px',
+    overflow: 'hidden',
+    marginTop: '0.5rem',
+  },
+  shimmerBar: {
+    width: '100%',
+    height: '100%',
+    background: 'linear-gradient(90deg, #0066b2 0%, #38bdf8 50%, #0066b2 100%)',
+    backgroundSize: '200px 100%',
+    animation: 'shimmerMove 1.5s infinite linear',
   },
   emptyBlueprint: {
     display: 'flex',
