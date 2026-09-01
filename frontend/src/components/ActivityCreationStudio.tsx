@@ -6,13 +6,18 @@ import { useAuth } from '../context/AuthContext';
 
 export const ActivityCreationStudio: React.FC = () => {
   const { token: authContextToken } = useAuth() || {};
-  const [prompt, setPrompt] = useState('Create an activity for 6 class on photosynthesis');
-  const [subject, setSubject] = useState('Science');
+  const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
+  const [prompt, setPrompt] = useState('Create a 15-minute activity for 12-year-old students to practice fractions. Start with flashcards, then give them some questions, and finish with a drag-and-drop exercise.');
+  const [subject, setSubject] = useState('General');
   const [gradeLevel, setGradeLevel] = useState('Grade 6');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityDefinition | null>(null);
-  const [previewMode, setPreviewMode] = useState<'interactive' | 'all_blocks'>('interactive');
+
+  // Deployment Parameters
+  const [timerMode, setTimerMode] = useState('Untimed Practice Session');
+  const [rewardMode, setRewardMode] = useState('Engagement Points + Stickers');
+  const [targetScope, setTargetScope] = useState('Full Classroom Scope');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -58,423 +63,373 @@ export const ActivityCreationStudio: React.FC = () => {
     }
   };
 
-  const samplePrompts = [
-    'Create an activity for 6 class on photosynthesis',
-    'Generate a Grade 7 Math exercise on fractions and decimals with flashcards and ordering',
-    'Create a Year 8 Chemistry activity on acids, bases, and pH scale',
-  ];
-
   return (
-    <div style={styles.studioContainer}>
-      <h1 style={styles.pageHeading}>Activity Creation Studio</h1>
+    <div style={styles.pageContainer}>
+      <div style={styles.gridWrapper}>
+        {/* LEFT COLUMN: ACTIVITY GENERATION STUDIO MAIN PANEL */}
+        <div style={styles.mainStudioCard}>
+          {/* Header */}
+          <div style={styles.headerBox}>
+            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO</h1>
+            <p style={styles.studioSubtitle}>
+              Pick a baseline setup pathway to draft interactive student activities.
+            </p>
+          </div>
 
-      {/* Teacher Prompt Input Section */}
-      <div style={styles.controlsCard}>
-        <div style={styles.badge}>✨ AI ACTIVITY GENERATOR</div>
-        <p style={styles.instructionText}>
-          Enter a prompt below to generate an interactive secondary school activity with MCQs, flashcards, fill-in-the-blanks, ordering, and drag & drop exercises.
-        </p>
+          {/* Pathway Action Buttons */}
+          <div style={styles.pathwayRow}>
+            <button
+              onClick={() => setActivePathway('ai')}
+              style={{
+                ...styles.pathwayBtn,
+                ...(activePathway === 'ai' ? styles.pathwayBtnActive : {}),
+              }}
+            >
+              🤖 AI Assisted
+            </button>
+            <button
+              onClick={() => setActivePathway('templates')}
+              style={{
+                ...styles.pathwayBtn,
+                ...(activePathway === 'templates' ? styles.pathwayBtnActive : {}),
+              }}
+            >
+              📁 Select Existing Templates
+            </button>
+            <button
+              onClick={() => setActivePathway('scratch')}
+              style={{
+                ...styles.pathwayBtn,
+                ...(activePathway === 'scratch' ? styles.pathwayBtnActive : {}),
+              }}
+            >
+              ✏️ Start From Scratch
+            </button>
+          </div>
 
-        {error && <div style={styles.errorBox}>⚠️ {error}</div>}
+          {/* Prompt Input Section */}
+          <div style={styles.promptSection}>
+            <label style={styles.promptLabel}>PROMPT INSTRUCTIONS FOR AI GENERATOR</label>
+            {error && <div style={styles.errorBox}>⚠️ {error}</div>}
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Teacher Prompt</label>
-          <textarea
-            rows={3}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. Create an activity for 6 class on photosynthesis"
-            style={styles.textarea}
-          />
-        </div>
-
-        <div style={styles.rowGroup}>
-          <div style={styles.colGroup}>
-            <label style={styles.label}>Subject</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              style={styles.input}
+            <textarea
+              rows={4}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter instructional details here..."
+              style={styles.promptTextarea}
             />
-          </div>
-          <div style={styles.colGroup}>
-            <label style={styles.label}>Grade Level</label>
-            <input
-              type="text"
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-              style={styles.input}
-            />
-          </div>
-        </div>
 
-        <div style={styles.samplesBox}>
-          <span style={styles.sampleTitle}>💡 Sample Teacher Prompts:</span>
-          <div style={styles.samplesList}>
-            {samplePrompts.map((s, idx) => (
-              <button key={idx} onClick={() => setPrompt(s)} style={styles.sampleChip}>
-                "{s}"
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          disabled={isGenerating || !prompt.trim()}
-          onClick={handleGenerate}
-          style={styles.generateBtn}
-        >
-          {isGenerating ? '⚡ Generating Validated Activity DSL...' : '🚀 Generate Activity'}
-        </button>
-      </div>
-
-      {/* Preview Activity Section */}
-      <section style={styles.previewSection}>
-        <div style={styles.previewHeaderRow}>
-          <h2 style={styles.previewTitle}>Preview activity</h2>
-
-          {activity && (
-            <div style={styles.modeToggleGroup}>
+            <div style={styles.actionRow}>
               <button
-                onClick={() => setPreviewMode('interactive')}
-                style={{
-                  ...styles.toggleBtn,
-                  ...(previewMode === 'interactive' ? styles.activeToggleBtn : {}),
-                }}
+                disabled={isGenerating || !prompt.trim()}
+                onClick={handleGenerate}
+                style={styles.runDraftBtn}
               >
-                🎮 Student Interactive Mode
-              </button>
-              <button
-                onClick={() => setPreviewMode('all_blocks')}
-                style={{
-                  ...styles.toggleBtn,
-                  ...(previewMode === 'all_blocks' ? styles.activeToggleBtn : {}),
-                }}
-              >
-                📋 All Blocks List ({activity.blocks.length})
+                {isGenerating ? '⚡ Generating Draft...' : 'Run AI Generator Draft'}
               </button>
             </div>
-          )}
-        </div>
+          </div>
 
-        {activity ? (
-          <div style={styles.previewContent}>
-            <div style={styles.activityBanner}>
-              <h3 style={styles.activityTitle}>{activity.title}</h3>
-              <p style={styles.activityDesc}>{activity.description}</p>
-              <div style={styles.metaBadge}>
-                ⏱️ Estimated Duration: {activity.estimatedDurationMinutes || 15} mins | 🧩 {activity.blocks.length} Interactive Blocks
+          {/* AI Draft Blueprint Preview Box */}
+          <div style={styles.blueprintBox}>
+            {activity ? (
+              <div style={styles.blueprintContent}>
+                <div style={styles.activityMetaHeader}>
+                  <div>
+                    <h3 style={styles.activityMetaTitle}>{activity.title}</h3>
+                    <p style={styles.activityMetaDesc}>{activity.description}</p>
+                  </div>
+                  <span style={styles.blocksBadge}>
+                    🧩 {activity.blocks.length} Interactive Exercises
+                  </span>
+                </div>
+
+                <ActivityRuntime definition={activity} />
               </div>
-            </div>
-
-            {previewMode === 'interactive' ? (
-              <ActivityRuntime definition={activity} />
             ) : (
-              <div style={styles.allBlocksList}>
-                {activity.blocks.map((block: ActivityBlock, idx: number) => {
-                  const compDef = ComponentRegistry.get(block.type);
-                  return (
-                    <div key={block.id || idx} style={styles.blockCard}>
-                      <div style={styles.blockHeader}>
-                        <span style={styles.blockBadge}>Block #{idx + 1}: {block.type.toUpperCase().replace('_', ' ')}</span>
-                        <h4 style={styles.blockTitle}>{block.title || `Exercise ${idx + 1}`}</h4>
-                      </div>
-                      {block.instructions && <p style={styles.blockInstructions}>{block.instructions}</p>}
-                      <div style={styles.blockRenderArea}>
-                        {compDef ? (
-                          compDef.renderStudent({
-                            block,
-                            config: block.config,
-                            studentState: { blockId: block.id, status: 'not_started', attempts: 0, score: 0 },
-                            onAnswerSubmit: () => {},
-                          })
-                        ) : (
-                          <div style={styles.errorText}>Unregistered block type ({block.type})</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={styles.emptyBlueprint}>
+                <div style={styles.robotIcon}>🤖</div>
+                <h3 style={styles.emptyBlueprintTitle}>AI Draft Blueprint Empty</h3>
+                <p style={styles.emptyBlueprintText}>
+                  Enter parameters inside the prompt field above and execute to review real-time graphic block previews.
+                </p>
               </div>
             )}
           </div>
-        ) : (
-          <div style={styles.emptyPreviewBox}>
-            <span style={styles.emptyIcon}>📝</span>
-            <p style={styles.emptyText}>
-              No activity generated yet. Enter a prompt above and click <strong>Generate Activity</strong> to preview the interactive exercises.
-            </p>
+        </div>
+
+        {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
+        <div style={styles.sidebarCard}>
+          <h2 style={styles.sidebarTitle}>DEPLOYMENT PARAMETERS</h2>
+
+          <div style={styles.sidebarSection}>
+            <label style={styles.paramLabel}>SET TIMER</label>
+            <select
+              value={timerMode}
+              onChange={(e) => setTimerMode(e.target.value)}
+              style={styles.paramSelect}
+            >
+              <option value="Untimed Practice Session">Untimed Practice Session</option>
+              <option value="Timed 15 Minutes">Timed (15 Minutes)</option>
+              <option value="Timed 30 Minutes">Timed (30 Minutes)</option>
+              <option value="Timed 45 Minutes">Timed (45 Minutes)</option>
+            </select>
           </div>
-        )}
-      </section>
+
+          <div style={styles.sidebarSection}>
+            <label style={styles.paramLabel}>INCENTIVE REWARD MODE</label>
+            <select
+              value={rewardMode}
+              onChange={(e) => setRewardMode(e.target.value)}
+              style={styles.paramSelect}
+            >
+              <option value="Engagement Points + Stickers">Engagement Points + Stickers</option>
+              <option value="Points Only">Points Only</option>
+              <option value="Pass / Fail Grade">Pass / Fail Grade</option>
+              <option value="No Gamification">No Gamification</option>
+            </select>
+          </div>
+
+          <div style={styles.sidebarSection}>
+            <label style={styles.paramLabel}>ASSIGN TARGET SCOPE</label>
+            <select
+              value={targetScope}
+              onChange={(e) => setTargetScope(e.target.value)}
+              style={styles.paramSelect}
+            >
+              <option value="Full Classroom Scope">Full Classroom Scope</option>
+              <option value="Individual Students">Individual Students</option>
+              <option value="Small Focus Groups">Small Focus Groups</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  studioContainer: {
-    padding: '2rem 2.5rem',
-    backgroundColor: '#ffffff',
+  pageContainer: {
+    padding: '1.5rem 2rem',
+    backgroundColor: '#f8fafc',
     minHeight: 'calc(100vh - 70px)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2rem',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
-  pageHeading: {
-    fontSize: '2rem',
-    fontWeight: '800',
-    color: '#111827',
-    margin: 0,
-    borderBottom: '2px solid #e5e7eb',
-    paddingBottom: '1rem',
+  gridWrapper: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 310px',
+    gap: '1.5rem',
+    alignItems: 'start',
   },
-  controlsCard: {
-    backgroundColor: '#f9fafb',
-    borderRadius: '12px',
+  mainStudioCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    border: '1.5px solid #a2d2e2',
     padding: '1.75rem',
-    border: '1px solid #e5e7eb',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.2rem',
-    maxWidth: '900px',
+    gap: '1.5rem',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
   },
-  badge: {
-    display: 'inline-block',
-    backgroundColor: '#f3e8ff',
-    color: '#7e22ce',
-    padding: '0.3rem 0.75rem',
-    borderRadius: '12px',
-    fontSize: '0.8rem',
+  headerBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.3rem',
+  },
+  studioTitle: {
+    fontSize: '1.25rem',
     fontWeight: '800',
-    width: 'fit-content',
-  },
-  instructionText: {
-    fontSize: '0.92rem',
-    color: '#4b5563',
+    color: '#0f3b60',
+    letterSpacing: '0.02em',
     margin: 0,
   },
-  formGroup: {
+  studioSubtitle: {
+    fontSize: '0.88rem',
+    color: '#64748b',
+    margin: 0,
+  },
+  pathwayRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.85rem',
+  },
+  pathwayBtn: {
+    padding: '0.85rem 1rem',
+    borderRadius: '12px',
+    border: '1.5px solid #0066b2',
+    backgroundColor: '#ffffff',
+    color: '#0066b2',
+    fontWeight: '700',
+    fontSize: '0.92rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.15s ease',
+  },
+  pathwayBtnActive: {
+    backgroundColor: '#eff8e8',
+    borderColor: '#80c550',
+    color: '#1e3a8a',
+    boxShadow: 'inset 0 0 0 1px #80c550',
+  },
+  promptSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.4rem',
+    gap: '0.6rem',
   },
-  label: {
-    fontSize: '0.88rem',
-    fontWeight: '700',
-    color: '#374151',
+  promptLabel: {
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    color: '#0055a5',
+    letterSpacing: '0.04em',
   },
-  textarea: {
-    padding: '0.85rem',
-    borderRadius: '8px',
-    border: '1px solid #d1d5db',
-    fontSize: '1rem',
+  promptTextarea: {
+    width: '100%',
+    padding: '1rem',
+    borderRadius: '10px',
+    border: '1px solid #cbd5e1',
+    backgroundColor: '#f8fafc',
+    fontSize: '0.95rem',
+    color: '#1e293b',
     fontFamily: 'inherit',
     resize: 'vertical',
+    boxSizing: 'border-box',
   },
-  rowGroup: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem',
-  },
-  colGroup: {
+  actionRow: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
+    justifyContent: 'flex-end',
+    marginTop: '0.4rem',
   },
-  input: {
-    padding: '0.65rem',
-    borderRadius: '8px',
-    border: '1px solid #d1d5db',
-    fontSize: '0.92rem',
-  },
-  samplesBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-    backgroundColor: '#ffffff',
-    padding: '1rem',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-  },
-  sampleTitle: {
-    fontSize: '0.82rem',
-    fontWeight: '700',
-    color: '#4b5563',
-  },
-  samplesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-  },
-  sampleChip: {
-    textAlign: 'left',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    padding: '0.45rem 0.75rem',
-    fontSize: '0.85rem',
-    color: '#2563eb',
-    cursor: 'pointer',
-    fontWeight: '500',
-  },
-  generateBtn: {
-    backgroundColor: '#7e22ce',
+  runDraftBtn: {
+    backgroundColor: '#0066b2',
     color: '#ffffff',
     border: 'none',
-    padding: '0.9rem',
+    padding: '0.75rem 1.5rem',
     borderRadius: '10px',
     fontWeight: '800',
-    fontSize: '1.05rem',
+    fontSize: '0.95rem',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(126, 34, 206, 0.25)',
+    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.2)',
+  },
+  blueprintBox: {
+    border: '2px dashed #a0c4d8',
+    borderRadius: '14px',
+    backgroundColor: '#ffffff',
+    padding: '1.5rem',
+    minHeight: '260px',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  emptyBlueprint: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '3rem 1.5rem',
+    textAlign: 'center',
+    gap: '0.5rem',
+    margin: 'auto',
+  },
+  robotIcon: {
+    fontSize: '2rem',
+    marginBottom: '0.2rem',
+  },
+  emptyBlueprintTitle: {
+    fontSize: '1.05rem',
+    fontWeight: '800',
+    color: '#1e3a8a',
+    margin: 0,
+  },
+  emptyBlueprintText: {
+    fontSize: '0.88rem',
+    color: '#64748b',
+    maxWidth: '420px',
+    margin: 0,
+  },
+  blueprintContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  activityMetaHeader: {
+    display: 'flex',
+    justify: 'space-between',
+    alignItems: 'flex-start',
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    borderRadius: '10px',
+    padding: '1rem 1.25rem',
+  },
+  activityMetaTitle: {
+    fontSize: '1.15rem',
+    fontWeight: '800',
+    color: '#166534',
+    margin: 0,
+  },
+  activityMetaDesc: {
+    fontSize: '0.88rem',
+    color: '#15803d',
+    margin: '0.2rem 0 0 0',
+  },
+  blocksBadge: {
+    backgroundColor: '#dcfce7',
+    color: '#15803d',
+    padding: '0.3rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.8rem',
+    fontWeight: '800',
+    whiteSpace: 'nowrap',
+  },
+  sidebarCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    border: '1.5px solid #a2d2e2',
+    padding: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+    boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+  },
+  sidebarTitle: {
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    color: '#0055a5',
+    letterSpacing: '0.04em',
+    margin: 0,
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '0.75rem',
+  },
+  sidebarSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+  },
+  paramLabel: {
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    color: '#0055a5',
+    letterSpacing: '0.04em',
+  },
+  paramSelect: {
+    padding: '0.75rem 0.85rem',
+    borderRadius: '10px',
+    border: '1px solid #cbd5e1',
+    backgroundColor: '#ffffff',
+    color: '#1e293b',
+    fontSize: '0.88rem',
+    fontWeight: '500',
+    outline: 'none',
   },
   errorBox: {
     backgroundColor: '#fef2f2',
     color: '#dc2626',
-    padding: '0.85rem',
+    padding: '0.75rem 1rem',
     borderRadius: '8px',
     border: '1px solid #fecaca',
-    fontSize: '0.9rem',
+    fontSize: '0.88rem',
     fontWeight: '600',
-  },
-  previewSection: {
-    borderTop: '2px solid #e5e7eb',
-    paddingTop: '1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
-  previewHeaderRow: {
-    display: 'flex',
-    justify: 'space-between',
-    alignItems: 'center',
-  },
-  previewTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '800',
-    color: '#1f2937',
-    margin: 0,
-  },
-  modeToggleGroup: {
-    display: 'flex',
-    gap: '0.5rem',
-    backgroundColor: '#f3f4f6',
-    padding: '0.3rem',
-    borderRadius: '8px',
-  },
-  toggleBtn: {
-    padding: '0.45rem 0.85rem',
-    borderRadius: '6px',
-    border: 'none',
-    backgroundColor: 'transparent',
-    color: '#4b5563',
-    fontWeight: '700',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-  },
-  activeToggleBtn: {
-    backgroundColor: '#ffffff',
-    color: '#7e22ce',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-  },
-  previewContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-  },
-  activityBanner: {
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    borderRadius: '12px',
-    padding: '1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-  },
-  activityTitle: {
-    fontSize: '1.35rem',
-    fontWeight: '800',
-    color: '#166534',
-    margin: 0,
-  },
-  activityDesc: {
-    fontSize: '0.92rem',
-    color: '#15803d',
-    margin: 0,
-  },
-  metaBadge: {
-    fontSize: '0.82rem',
-    fontWeight: '700',
-    color: '#166534',
-    marginTop: '0.4rem',
-  },
-  allBlocksList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.5rem',
-  },
-  blockCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    padding: '1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-  },
-  blockHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  blockBadge: {
-    backgroundColor: '#dbeafe',
-    color: '#1e40af',
-    padding: '0.2rem 0.6rem',
-    borderRadius: '6px',
-    fontSize: '0.75rem',
-    fontWeight: '800',
-  },
-  blockTitle: {
-    fontSize: '1.1rem',
-    fontWeight: '800',
-    color: '#111827',
-    margin: 0,
-  },
-  blockInstructions: {
-    fontSize: '0.9rem',
-    color: '#4b5563',
-    margin: 0,
-    fontStyle: 'italic',
-  },
-  blockRenderArea: {
-    borderTop: '1px solid #f3f4f6',
-    paddingTop: '1rem',
-  },
-  errorText: {
-    color: '#dc2626',
-    fontWeight: '700',
-  },
-  emptyPreviewBox: {
-    padding: '3rem',
-    textAlign: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: '12px',
-    border: '2px dashed #d1d5db',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  emptyIcon: {
-    fontSize: '2.5rem',
-  },
-  emptyText: {
-    color: '#6b7280',
-    fontSize: '0.98rem',
-    margin: 0,
-    maxWidth: '500px',
   },
 };
