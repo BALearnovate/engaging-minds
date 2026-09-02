@@ -1,40 +1,51 @@
 import React, { useState } from 'react';
-import type { ActivityDefinition } from '../types/activityDsl';
-import { ActivityRuntime } from './ActivityRuntime';
 import { useAuth } from '../context/AuthContext';
+import { ActivityRuntime } from './ActivityRuntime';
+import type { ActivityDefinition } from '../types/activityDsl';
 
 export const ActivityCreationStudio: React.FC = () => {
-  const { token: authContextToken } = useAuth() || {};
+  const { token: authContextToken, user } = useAuth();
+
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
-  const [prompt, setPrompt] = useState('Create a 15-minute activity for 12-year-old students to practice fractions. Start with flashcards, then give them some questions, and finish with a drag-and-drop exercise.');
-  const [subject, setSubject] = useState('General');
-  const [gradeLevel, setGradeLevel] = useState('Grade 6');
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [prompt, setPrompt] = useState<string>(
+    'Create a Grade 6 Science activity on Photosynthesis with core concept flashcards, a 24-hour radial clock schedule, hotspot diagram, and multiple choice quiz.',
+  );
+  const [subject, setSubject] = useState<string>('Science');
+  const [gradeLevel, setGradeLevel] = useState<string>('Grade 6');
+  const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
+  const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stickers');
+  const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
+
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityDefinition | null>(null);
 
-  // Deployment Parameters
-  const [timerMode, setTimerMode] = useState('Untimed Practice Session');
-  const [rewardMode, setRewardMode] = useState('Engagement Points + Stickers');
-  const [targetScope, setTargetScope] = useState('Full Classroom Scope');
-
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+
     setIsGenerating(true);
     setError(null);
+    setActivity(null);
 
-    const token =
+    const activeToken =
       authContextToken ||
       localStorage.getItem('access_token') ||
       localStorage.getItem('token') ||
+      localStorage.getItem('accessToken') ||
       '';
+
+    if (!activeToken) {
+      setError('401 Unauthorized: Please log in as a Teacher or Admin to generate activities.');
+      setIsGenerating(false);
+      return;
+    }
 
     try {
       const response = await fetch('http://localhost:3000/activities/generate-dsl', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${activeToken}`,
         },
         body: JSON.stringify({
           prompt,
@@ -43,12 +54,20 @@ export const ActivityCreationStudio: React.FC = () => {
         }),
       });
 
-      if (response.status === 401) {
-        throw new Error('401 Unauthorized: Please log in as a teacher or admin to generate activities.');
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('401 Unauthorized: Please log in as a Teacher or Admin to generate activities.');
       }
 
       if (!response.ok) {
-        throw new Error(`Failed to generate activity (${response.status} ${response.statusText}). Check server logs.`);
+        const resText = await response.text();
+        let jsonMsg: any;
+        try {
+          jsonMsg = JSON.parse(resText);
+        } catch {}
+        const serverMsg = Array.isArray(jsonMsg?.message)
+          ? jsonMsg.message.join(', ')
+          : jsonMsg?.message;
+        throw new Error(serverMsg || 'Could not create activity, try again later.');
       }
 
       const definition: ActivityDefinition = await response.json();
@@ -56,7 +75,7 @@ export const ActivityCreationStudio: React.FC = () => {
       setActivity(definition);
     } catch (err: any) {
       console.error('AI Activity Generation Error:', err);
-      setError(err.message || 'An error occurred while generating the activity.');
+      setError(err.message || 'Could not create activity, try again later.');
     } finally {
       setIsGenerating(false);
     }
@@ -85,6 +104,9 @@ export const ActivityCreationStudio: React.FC = () => {
         <div style={styles.mainStudioCard}>
           {/* Header */}
           <div style={styles.headerBox}>
+            <div style={styles.userRoleBadge}>
+              {user ? `👤 Logged in as: ${user.firstName} (${user.role})` : '⚠️ Unauthenticated Teacher Session'}
+            </div>
             <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO</h1>
             <p style={styles.studioSubtitle}>
               Pick a baseline setup pathway to draft interactive student activities.
@@ -182,9 +204,13 @@ export const ActivityCreationStudio: React.FC = () => {
             ) : (
               <div style={styles.emptyBlueprint}>
                 <div style={styles.robotIcon}>🤖</div>
-                <h3 style={styles.emptyBlueprintTitle}>AI Draft Blueprint Empty</h3>
+                <h3 style={styles.emptyBlueprintTitle}>
+                  {error ? 'Authentication Required' : 'AI Draft Blueprint Empty'}
+                </h3>
                 <p style={styles.emptyBlueprintText}>
-                  Enter parameters inside the prompt field above and execute to review real-time graphic block previews.
+                  {error
+                    ? error
+                    : 'Enter parameters inside the prompt field above and execute to review real-time graphic block previews.'}
                 </p>
               </div>
             )}
@@ -269,6 +295,16 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '0.3rem',
   },
+  userRoleBadge: {
+    fontSize: '0.78rem',
+    fontWeight: '700',
+    color: '#0369a1',
+    backgroundColor: '#e0f2fe',
+    padding: '0.2rem 0.6rem',
+    borderRadius: '12px',
+    width: 'fit-content',
+    marginBottom: '0.25rem',
+  },
   studioTitle: {
     fontSize: '1.25rem',
     fontWeight: '800',
@@ -282,30 +318,28 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   pathwayRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '0.85rem',
+    display: 'flex',
+    gap: '0.75rem',
+    backgroundColor: '#f1f5f9',
+    padding: '0.35rem',
+    borderRadius: '12px',
   },
   pathwayBtn: {
-    padding: '0.85rem 1rem',
-    borderRadius: '12px',
-    border: '1.5px solid #0066b2',
-    backgroundColor: '#ffffff',
-    color: '#0066b2',
+    flex: 1,
+    padding: '0.65rem 1rem',
+    borderRadius: '9px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    color: '#475569',
+    fontSize: '0.85rem',
     fontWeight: '700',
-    fontSize: '0.92rem',
     cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.15s ease',
+    transition: 'all 0.2s ease',
   },
   pathwayBtnActive: {
-    backgroundColor: '#eff8e8',
-    borderColor: '#80c550',
-    color: '#1e3a8a',
-    boxShadow: 'inset 0 0 0 1px #80c550',
+    backgroundColor: '#0066b2',
+    color: '#ffffff',
+    boxShadow: '0 2px 8px rgba(0, 102, 178, 0.25)',
   },
   promptSection: {
     display: 'flex',
@@ -316,24 +350,33 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.75rem',
     fontWeight: '800',
     color: '#0055a5',
-    letterSpacing: '0.04em',
+    letterSpacing: '0.05em',
+  },
+  errorBox: {
+    backgroundColor: '#fef2f2',
+    color: '#991b1b',
+    border: '1px solid #fca5a5',
+    padding: '0.65rem 0.85rem',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    fontWeight: '700',
   },
   promptTextarea: {
     width: '100%',
-    padding: '1rem',
+    padding: '0.85rem',
     borderRadius: '10px',
-    border: '1px solid #cbd5e1',
-    backgroundColor: '#f8fafc',
-    fontSize: '0.95rem',
+    border: '1.5px solid #cbd5e1',
+    fontSize: '0.9rem',
     color: '#1e293b',
-    fontFamily: 'inherit',
-    resize: 'vertical',
     boxSizing: 'border-box',
+    outline: 'none',
+    resize: 'vertical',
+    fontFamily: 'inherit',
+    lineHeight: '1.5',
   },
   actionRow: {
     display: 'flex',
-    justify: 'flex-end',
-    marginTop: '0.4rem',
+    justify: 'flex-start',
   },
   runDraftBtn: {
     backgroundColor: '#0066b2',
@@ -341,10 +384,10 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     padding: '0.75rem 1.5rem',
     borderRadius: '10px',
+    fontSize: '0.9rem',
     fontWeight: '800',
-    fontSize: '0.95rem',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.2)',
+    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.25)',
     transition: 'all 0.2s ease',
   },
   runDraftBtnDisabled: {
@@ -353,100 +396,99 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: 'none',
   },
   blueprintBox: {
-    border: '2px dashed #a0c4d8',
     borderRadius: '14px',
-    backgroundColor: '#ffffff',
-    padding: '1.5rem',
+    border: '2px dashed #94a3b8',
+    backgroundColor: '#faf8f5',
     minHeight: '260px',
+    padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column',
+    justify: 'center',
+    alignItems: 'center',
   },
   loaderContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '3rem 1.5rem',
-    textAlign: 'center',
     gap: '0.85rem',
-    margin: 'auto',
+    textAlign: 'center',
+    padding: '1rem',
   },
   spinnerWrapper: {
     position: 'relative',
     width: '64px',
     height: '64px',
     display: 'flex',
+    justify: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   spinnerRing: {
     position: 'absolute',
     width: '100%',
     height: '100%',
     borderRadius: '50%',
-    border: '4px solid #e0f2fe',
+    border: '4px solid transparent',
     borderTopColor: '#0066b2',
+    borderRightColor: '#38bdf8',
     animation: 'spinRing 1s linear infinite',
   },
   robotLoaderIcon: {
-    fontSize: '1.75rem',
+    fontSize: '1.8rem',
     animation: 'pulseGlow 1.5s ease-in-out infinite',
   },
   loaderTitle: {
-    fontSize: '1.1rem',
+    fontSize: '1.05rem',
     fontWeight: '800',
     color: '#0f3b60',
     margin: 0,
   },
   loaderText: {
-    fontSize: '0.88rem',
+    fontSize: '0.85rem',
     color: '#64748b',
-    maxWidth: '460px',
-    lineHeight: '1.45',
+    maxWidth: '420px',
+    lineHeight: '1.4',
     margin: 0,
   },
   shimmerTrack: {
-    width: '240px',
+    width: '200px',
     height: '6px',
     backgroundColor: '#e2e8f0',
     borderRadius: '3px',
     overflow: 'hidden',
-    marginTop: '0.5rem',
+    position: 'relative',
   },
   shimmerBar: {
-    width: '100%',
+    width: '100px',
     height: '100%',
-    background: 'linear-gradient(90deg, #0066b2 0%, #38bdf8 50%, #0066b2 100%)',
-    backgroundSize: '200px 100%',
-    animation: 'shimmerMove 1.5s infinite linear',
+    background: 'linear-gradient(90deg, transparent, #0066b2, transparent)',
+    position: 'absolute',
+    animation: 'shimmerMove 1.5s linear infinite',
   },
   emptyBlueprint: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '3rem 1.5rem',
     textAlign: 'center',
     gap: '0.5rem',
-    margin: 'auto',
+    color: '#94a3b8',
   },
   robotIcon: {
-    fontSize: '2rem',
-    marginBottom: '0.2rem',
+    fontSize: '2.5rem',
   },
   emptyBlueprintTitle: {
     fontSize: '1.05rem',
     fontWeight: '800',
-    color: '#1e3a8a',
+    color: '#64748b',
     margin: 0,
   },
   emptyBlueprintText: {
-    fontSize: '0.88rem',
-    color: '#64748b',
-    maxWidth: '420px',
+    fontSize: '0.85rem',
+    color: '#94a3b8',
+    maxWidth: '360px',
     margin: 0,
   },
   blueprintContent: {
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
@@ -454,31 +496,28 @@ const styles: Record<string, React.CSSProperties> = {
   activityMetaHeader: {
     display: 'flex',
     justify: 'space-between',
-    alignItems: 'flex-start',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    borderRadius: '10px',
-    padding: '1rem 1.25rem',
+    alignItems: 'center',
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '0.85rem',
   },
   activityMetaTitle: {
     fontSize: '1.15rem',
     fontWeight: '800',
-    color: '#166534',
+    color: '#0f172a',
     margin: 0,
   },
   activityMetaDesc: {
-    fontSize: '0.88rem',
-    color: '#15803d',
-    margin: '0.2rem 0 0 0',
+    fontSize: '0.85rem',
+    color: '#64748b',
+    margin: 0,
   },
   blocksBadge: {
-    backgroundColor: '#dcfce7',
-    color: '#15803d',
-    padding: '0.3rem 0.75rem',
-    borderRadius: '20px',
+    backgroundColor: '#e0f2fe',
+    color: '#0369a1',
+    padding: '0.35rem 0.75rem',
+    borderRadius: '12px',
     fontSize: '0.8rem',
     fontWeight: '800',
-    whiteSpace: 'nowrap',
   },
   sidebarCard: {
     backgroundColor: '#ffffff',
@@ -493,10 +532,10 @@ const styles: Record<string, React.CSSProperties> = {
   sidebarTitle: {
     fontSize: '0.95rem',
     fontWeight: '800',
-    color: '#0055a5',
+    color: '#0f3b60',
     letterSpacing: '0.04em',
     margin: 0,
-    borderBottom: '1px solid #e2e8f0',
+    borderBottom: '1px solid #f1f5f9',
     paddingBottom: '0.75rem',
   },
   sidebarSection: {
@@ -511,22 +550,13 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.04em',
   },
   paramSelect: {
-    padding: '0.75rem 0.85rem',
-    borderRadius: '10px',
-    border: '1px solid #cbd5e1',
-    backgroundColor: '#ffffff',
-    color: '#1e293b',
-    fontSize: '0.88rem',
-    fontWeight: '500',
-    outline: 'none',
-  },
-  errorBox: {
-    backgroundColor: '#fef2f2',
-    color: '#dc2626',
-    padding: '0.75rem 1rem',
+    width: '100%',
+    padding: '0.65rem 0.85rem',
     borderRadius: '8px',
-    border: '1px solid #fecaca',
-    fontSize: '0.88rem',
-    fontWeight: '600',
+    border: '1px solid #cbd5e1',
+    fontSize: '0.85rem',
+    color: '#1e293b',
+    backgroundColor: '#ffffff',
+    outline: 'none',
   },
 };

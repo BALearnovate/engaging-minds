@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import {
   ActivityDefinition,
   ActivityBlock,
@@ -33,18 +33,26 @@ export class AiActivityGeneratorService implements ActivityGenerator {
           return geminiDefinition;
         } else {
           this.logger.warn(
-            `Gemini API response failed 3-Tier Validation: ${valResult.errors.join('; ')}. Falling back to deterministic generator.`,
+            `Gemini API response failed 3-Tier Validation: ${valResult.errors.join('; ')}.`,
           );
+          throw new BadRequestException('Could not create activity, try again later.');
         }
       } catch (err: any) {
-        this.logger.error(`Gemini API call error: ${err.message}. Falling back to deterministic generator.`);
+        if (err instanceof BadRequestException) {
+          throw err;
+        }
+        this.logger.error(`Gemini API call error: ${err.message}.`);
+        throw new BadRequestException('Could not create activity, try again later.');
       }
     } else {
       this.logger.log('No GEMINI_API_KEY provided in environment. Using deterministic activity generator.');
+      const fallbackDef = await this.generateDeterministic(prompt, subject, gradeLevel);
+      const valResult = ActivityValidator.validate(fallbackDef);
+      if (!valResult.valid) {
+        throw new BadRequestException('Could not create activity, try again later.');
+      }
+      return fallbackDef;
     }
-
-    // Deterministic Rule-Based Fallback Generator
-    return this.generateDeterministic(prompt, subject, gradeLevel);
   }
 
   /**
@@ -56,42 +64,42 @@ export class AiActivityGeneratorService implements ActivityGenerator {
     subject?: string,
     gradeLevel?: string,
   ): Promise<ActivityDefinition> {
-    const systemInstruction = `
-    
-    You are an expert secondary school educational curriculum designer.
-    Generate an interactive learning activity DSL strictly in valid JSON format adhering to schemaVersion "1.0".
-    The generated JSON MUST contain:
-    - "schemaVersion": "1.0"
-    - "title": A clear lesson title
-    - "description": A concise lesson overview
-    - "estimatedDurationMinutes": 15
-    - "blocks": An array of interactive exercise blocks suitable for secondary school students (e.g. Grade 6 / Year 7).
+    const systemInstruction = `You are an expert secondary school educational curriculum designer.
+Generate an interactive learning activity DSL strictly in valid JSON format adhering to schemaVersion "1.0".
+The generated JSON MUST contain:
+- "schemaVersion": "1.0"
+- "title": A clear lesson title
+- "description": A concise lesson overview
+- "estimatedDurationMinutes": 15
+- "blocks": An array of interactive exercise blocks suitable for secondary school students (e.g. Grade 6 / Year 7).
 
-Provide a rich mix of interactive exercise block types from the following supported types:
+Supported interactive exercise block types:
 1. "flashcards": config { "cards": [{ "id": "c1", "prompt": "...", "answer": "...", "hint": "..." }] }
 2. "multiple_choice": config { "question": "...", "options": ["..."], "correctAnswer": "...", "explanation": "..." }
 3. "fill_blank": config { "passage": "... [1] ... [2] ...", "blanks": [{ "id": "1", "answer": "...", "hint": "..." }] }
 4. "true_false": config { "statement": "...", "isTrue": true/false, "explanation": "..." }
 5. "ordering": config { "prompt": "...", "items": [{ "id": "i1", "content": "..." }], "correctOrder": ["i1", ...] }
 6. "drag_drop": config { "instructions": "...", "draggableItems": [{ "id": "d1", "content": "..." }], "dropTargets": [{ "id": "t1", "label": "...", "correctItemIds": ["d1"] }] }
+7. "find_hotspots": config { "imageUrl": "https://...", "instructions": "Click on the diagram to locate spots...", "hotspots": [{ "id": "h1", "label": "...", "x": 35, "y": 45, "radius": 10 }] }
+8. "clock_diagram": config { "prompt": "Fill in your 24-hour daily schedule...", "instructions": "Write what you do in each hour directly in front of the radial clock sectors...", "clockType": "24_hour", "hours": [{ "hour": 0, "label": "00:00", "expectedActivity": "..." }], "allowedOptions": ["Breakfast", "Class", "Lunch", "Homework", "Sleep"] }
 
 CRITICAL RULES:
+- Only include block types that are relevant to or requested in the prompt.
 - Every block MUST have a "title" string (e.g. "Step 1: Core Concepts"), "instructions" string, and a unique "id" string (e.g. "blk_1_fc", "blk_2_mc").
 - In "multiple_choice", "correctAnswer" MUST exactly match one of the string options.
 - In "fill_blank", placeholders like [1] or [2] in "passage" MUST match the "id" of the corresponding blank object.
 - In "ordering", "correctOrder" array MUST contain all item IDs.
-- In "drag_drop", "correctItemIds" in "dropTargets" MUST reference existing "draggableItems" IDs.`;
+- In "drag_drop", "correctItemIds" in "dropTargets" MUST reference existing "draggableItems" IDs.
+- In "find_hotspots", "x" and "y" MUST be percentages between 0 and 100 representing spot coordinates on the image.
+- In "clock_diagram", "hours" MUST be an array containing objects with "hour" (number 0-23 or 1-24).`;
 
     const userPromptText = `Subject: ${subject || 'General Secondary Education'}
 Grade Level: ${gradeLevel || 'Secondary School (Grade 6-8)'}
 Teacher Prompt: "${prompt}"
 
-Generate a complete, engaging interactive activity with a mix of flashcards, multiple choice, fill in the blanks, true/false, ordering, and drag & drop exercises.
-Also, its important to only include the blocks which are requested. Don't include all the blocks.
+Generate a complete, engaging interactive activity containing appropriate exercises matching the prompt requirements.`;
 
-`;
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -115,7 +123,6 @@ Also, its important to only include the blocks which are requested. Don't includ
     }
 
     const resData: any = await response.json();
-    console.log(resData);
     const candidateText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!candidateText) {
@@ -183,9 +190,50 @@ Also, its important to only include the blocks which are requested. Don't includ
         },
       },
       {
-        id: `blk_mc_${Date.now()}_2`,
+        id: `blk_clk_${Date.now()}_2`,
+        type: 'clock_diagram',
+        title: 'Step 2: 24-Hour Daily Schedule Radial Clock Diagram',
+        instructions: 'Type what you do in each hour directly in front of each 24-hour radial clock sector below.',
+        config: {
+          prompt: 'Record what activity takes place during each hour of the 24-hour schedule:',
+          instructions: 'Type your response into the input box positioned directly in front of each 24-hour clock sector.',
+          clockType: '24_hour',
+          allowedOptions: ['Breakfast / Prep', 'Math / Science Class', 'Lab Experiment', 'Lunch Break', 'Sports / PE', 'Homework', 'Dinner', 'Rest / Sleep'],
+          hours: Array.from({ length: 24 }, (_, i) => ({
+            hour: i,
+            label: `${i.toString().padStart(2, '0')}:00`,
+          })),
+        },
+      },
+      {
+        id: `blk_hs_${Date.now()}_3`,
+        type: 'find_hotspots',
+        title: 'Step 3: Find Multiple Hotspots in Diagram',
+        instructions: isPhotosynthesis
+          ? 'Click on the diagram image to locate the Chloroplast, Stomata, and Plant Cell Wall.'
+          : 'Click on the diagram image to find the Numerator region, Denominator region, and Fraction Bar.',
+        config: {
+          imageUrl: 'https://placeholder.svg',
+          instructions: isPhotosynthesis
+            ? 'Find and click on 1. Chloroplast, 2. Stomata, 3. Cell Wall.'
+            : 'Find and click on 1. Numerator Region, 2. Denominator Region, 3. Fraction Bar.',
+          hotspots: isPhotosynthesis
+            ? [
+                { id: 'hs1', label: 'Chloroplast Organelle', x: 35, y: 40, radius: 12, feedback: 'Chloroplasts absorb solar energy.' },
+                { id: 'hs2', label: 'Stomata Leaf Pore', x: 60, y: 30, radius: 12, feedback: 'Stomata regulate gas exchange.' },
+                { id: 'hs3', label: 'Plant Cell Wall', x: 50, y: 75, radius: 12, feedback: 'Provides structural cell support.' },
+              ]
+            : [
+                { id: 'hs1', label: 'Numerator Top Region', x: 35, y: 30, radius: 12, feedback: 'Upper part representing parts taken.' },
+                { id: 'hs2', label: 'Denominator Bottom Region', x: 65, y: 30, radius: 12, feedback: 'Lower part representing total whole.' },
+                { id: 'hs3', label: 'Fraction Division Bar', x: 50, y: 70, radius: 12, feedback: 'Separates numerator and denominator.' },
+              ],
+        },
+      },
+      {
+        id: `blk_mc_${Date.now()}_4`,
         type: 'multiple_choice',
-        title: 'Step 2: Multiple Choice Quiz',
+        title: 'Step 4: Multiple Choice Quiz',
         instructions: 'Select the best answer for the question below.',
         config: {
           question: isPhotosynthesis
@@ -201,9 +249,9 @@ Also, its important to only include the blocks which are requested. Don't includ
         },
       },
       {
-        id: `blk_fb_${Date.now()}_3`,
+        id: `blk_fb_${Date.now()}_5`,
         type: 'fill_blank',
-        title: 'Step 3: Fill in the Blank Passage',
+        title: 'Step 5: Fill in the Blank Passage',
         instructions: 'Type the correct missing terms into the input blanks.',
         config: {
           passage: isPhotosynthesis
@@ -221,9 +269,9 @@ Also, its important to only include the blocks which are requested. Don't includ
         },
       },
       {
-        id: `blk_tf_${Date.now()}_4`,
+        id: `blk_tf_${Date.now()}_6`,
         type: 'true_false',
-        title: 'Step 4: True / False Evaluation',
+        title: 'Step 6: True / False Evaluation',
         instructions: 'Determine whether the statement is True or False.',
         config: {
           statement: isPhotosynthesis
@@ -236,9 +284,9 @@ Also, its important to only include the blocks which are requested. Don't includ
         },
       },
       {
-        id: `blk_ord_${Date.now()}_5`,
+        id: `blk_ord_${Date.now()}_7`,
         type: 'ordering',
-        title: 'Step 5: Sequence & Ordering Exercise',
+        title: 'Step 7: Sequence & Ordering Exercise',
         instructions: 'Arrange the items into the correct sequence.',
         config: {
           prompt: isPhotosynthesis
@@ -259,9 +307,9 @@ Also, its important to only include the blocks which are requested. Don't includ
         },
       },
       {
-        id: `blk_dd_${Date.now()}_6`,
+        id: `blk_dd_${Date.now()}_8`,
         type: 'drag_drop',
-        title: 'Step 6: Drag & Drop Classification',
+        title: 'Step 8: Drag & Drop Classification',
         instructions: 'Drag each item into its correct target category bin.',
         config: {
           instructions: isPhotosynthesis

@@ -97,6 +97,8 @@ export class ZodSchemaValidator {
       'true_false',
       'ordering',
       'drag_drop',
+      'find_hotspots',
+      'clock_diagram',
     ];
 
     if (!validTypes.includes(block.type)) {
@@ -194,6 +196,32 @@ export class ZodSchemaValidator {
         }
         if (!Array.isArray(cfg.dropTargets) || cfg.dropTargets.length === 0) {
           errors.push({ path: `${cfgPath}.dropTargets`, message: 'Drag & Drop requires at least 1 drop target bin' });
+        }
+        break;
+
+      case 'find_hotspots':
+        if (typeof cfg.imageUrl !== 'string' || cfg.imageUrl.trim().length === 0) {
+          errors.push({ path: `${cfgPath}.imageUrl`, message: 'Find Hotspots requires a valid imageUrl string' });
+        }
+        if (!Array.isArray(cfg.hotspots) || cfg.hotspots.length === 0) {
+          errors.push({ path: `${cfgPath}.hotspots`, message: 'Find Hotspots requires at least 1 target hotspot' });
+        } else {
+          cfg.hotspots.forEach((spot: any, sIdx: number) => {
+            if (!spot || typeof spot !== 'object') {
+              errors.push({ path: `${cfgPath}.hotspots[${sIdx}]`, message: 'Hotspot definition must be an object' });
+            } else {
+              if (typeof spot.id !== 'string') errors.push({ path: `${cfgPath}.hotspots[${sIdx}].id`, message: 'Hotspot id is required' });
+              if (typeof spot.label !== 'string') errors.push({ path: `${cfgPath}.hotspots[${sIdx}].label`, message: 'Hotspot label is required' });
+              if (typeof spot.x !== 'number') errors.push({ path: `${cfgPath}.hotspots[${sIdx}].x`, message: 'Hotspot x percentage is required' });
+              if (typeof spot.y !== 'number') errors.push({ path: `${cfgPath}.hotspots[${sIdx}].y`, message: 'Hotspot y percentage is required' });
+            }
+          });
+        }
+        break;
+
+      case 'clock_diagram':
+        if (cfg.hours !== undefined && !Array.isArray(cfg.hours)) {
+          errors.push({ path: `${cfgPath}.hours`, message: 'Clock Diagram hours must be an array' });
         }
         break;
     }

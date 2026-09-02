@@ -3,11 +3,11 @@ import { AiActivityGeneratorService } from './ai/activityGenerator.service';
 import { ActivityDefinition } from './types/activityDsl';
 
 describe('ActivityValidator Unit Tests', () => {
-  it('should validate a valid activity definition containing all 6 block types', () => {
+  it('should validate a valid activity definition containing all 8 block types including clock_diagram', () => {
     const validDef: ActivityDefinition = {
       schemaVersion: '1.0',
-      title: 'Fractions Masterclass',
-      description: 'Practice fractions',
+      title: 'Fractions & Science Masterclass',
+      description: 'Practice interactive exercises',
       estimatedDurationMinutes: 15,
       blocks: [
         {
@@ -78,6 +78,34 @@ describe('ActivityValidator Unit Tests', () => {
             ],
           },
         },
+        {
+          id: 'b7',
+          type: 'find_hotspots',
+          title: 'Find Hotspots',
+          instructions: 'Locate target spots on diagram',
+          config: {
+            imageUrl: 'https://placeholder.svg',
+            instructions: 'Click on target spots',
+            hotspots: [
+              { id: 'h1', label: 'Chloroplast', x: 35, y: 40, radius: 10 },
+              { id: 'h2', label: 'Stomata', x: 60, y: 30, radius: 10 },
+            ],
+          },
+        },
+        {
+          id: 'b8',
+          type: 'clock_diagram',
+          title: 'Clock Schedule',
+          instructions: 'Fill in each hour',
+          config: {
+            prompt: 'Fill schedule',
+            instructions: 'Click hours to enter activity',
+            hours: [
+              { hour: 1, label: '1:00' },
+              { hour: 2, label: '2:00' },
+            ],
+          },
+        },
       ],
     };
 
@@ -133,13 +161,17 @@ describe('AiActivityGeneratorService Unit Tests', () => {
     generator = new AiActivityGeneratorService();
   });
 
-  it('should generate a valid ActivityDefinition DSL from natural language prompt', async () => {
-    const prompt = 'Create an activity for 6 class on photosynthesis';
+  it('should generate a valid ActivityDefinition DSL containing clock_diagram block from natural language prompt', async () => {
+    const prompt = 'Create an activity for 6 class on photosynthesis with clock schedule';
     const definition = await generator.generate(prompt, 'Science', 'Grade 6');
 
     expect(definition.schemaVersion).toBe('1.0');
     expect(definition.title).toContain('Photosynthesis');
     expect(definition.blocks.length).toBeGreaterThanOrEqual(3);
+
+    // Verify clock_diagram is included
+    const clockBlock = definition.blocks.find((b) => b.type === 'clock_diagram');
+    expect(clockBlock).toBeDefined();
 
     // 3-Tier Validation Check
     const validation = ActivityValidator.validate(definition);

@@ -1,30 +1,25 @@
 import {
   ActivityDefinition,
   ActivityBlock,
-  ValidationResult,
   MultipleChoiceConfig,
   FillBlankConfig,
-  FlashcardsConfig,
-  TrueFalseConfig,
   OrderingConfig,
   DragDropConfig,
+  FindHotspotsConfig,
+  ClockDiagramConfig,
+  ValidationResult,
 } from '../types/activityDsl';
 import { ZodSchemaValidator } from './zodSchemas';
 
+/**
+ * 3-Tier Validation Engine for Activity DSL 1.0
+ */
 export class ActivityValidator {
-  /**
-   * Complete 3-Tier Validation Pipeline:
-   * Tier 1: Zod Schema Validation
-   * Tier 2: Deterministic Structural & Referential Integrity Validation
-   * Tier 3: Semantic Educational Quality Validation
-   */
-  public static validate(def: unknown): ValidationResult {
+  public static validate(activity: ActivityDefinition): ValidationResult {
     const errors: string[] = [];
 
-    // ==========================================
-    // TIER 1: ZOD SCHEMA VALIDATION
-    // ==========================================
-    const zodResult = ZodSchemaValidator.validateActivityDefinition(def);
+    // TIER 1: Schema & Type Validation
+    const zodResult = ZodSchemaValidator.validateActivityDefinition(activity);
     if (!zodResult.success) {
       zodResult.errors.forEach((err) => {
         errors.push(`[Tier 1 Schema Error] ${err.path}: ${err.message}`);
@@ -32,29 +27,10 @@ export class ActivityValidator {
       return { valid: false, errors };
     }
 
-    const activity = def as ActivityDefinition;
+    // TIER 2: Deterministic Structural & Referential Integrity
+    this.validateDeterministicRules(activity, errors);
 
-    // ==========================================
-    // TIER 2: DETERMINISTIC STRUCTURAL & REFERENTIAL INTEGRITY
-    // ==========================================
-    const seenIds = new Set<string>();
-
-    activity.blocks.forEach((block, index) => {
-      const blockNum = index + 1;
-
-      // Duplicate block ID check
-      if (seenIds.has(block.id)) {
-        errors.push(`[Tier 2 Deterministic Error] Duplicate block ID "${block.id}" found in block #${blockNum}.`);
-      }
-      seenIds.add(block.id);
-
-      // Block-specific referential integrity checks
-      this.validateBlockDeterministic(block, blockNum, errors);
-    });
-
-    // ==========================================
-    // TIER 3: SEMANTIC EDUCATIONAL QUALITY
-    // ==========================================
+    // TIER 3: Semantic Quality & Pedagogical Logic
     this.validateSemanticQuality(activity, errors);
 
     return {
@@ -66,13 +42,41 @@ export class ActivityValidator {
   /**
    * Tier 2 Deterministic Structural Validation
    */
-  private static validateBlockDeterministic(block: ActivityBlock, blockNum: number, errors: string[]) {
+  private static validateDeterministicRules(activity: ActivityDefinition, errors: string[]) {
+    if (activity.schemaVersion !== '1.0') {
+      errors.push(
+        `[Tier 2 Deterministic Error] Invalid or missing schemaVersion. Expected "1.0", got "${activity.schemaVersion}".`,
+      );
+    }
+
+    const seenBlockIds = new Set<string>();
+
+    activity.blocks.forEach((block, idx) => {
+      const blockNum = idx + 1;
+
+      // Rule 2.1: Unique Block IDs
+      if (seenBlockIds.has(block.id)) {
+        errors.push(`[Tier 2 Deterministic Error] Duplicate block ID "${block.id}" found in block #${blockNum}.`);
+      } else {
+        seenBlockIds.add(block.id);
+      }
+
+      // Rule 2.2: Block-specific Referential Integrity
+      this.validateBlockDeterministic(block, blockNum, errors);
+    });
+  }
+
+  private static validateBlockDeterministic(
+    block: ActivityBlock,
+    blockNum: number,
+    errors: string[],
+  ) {
     switch (block.type) {
       case 'multiple_choice': {
         const config = block.config as MultipleChoiceConfig;
         if (!config.options.includes(config.correctAnswer)) {
           errors.push(
-            `[Tier 2 Deterministic Error] Block #${blockNum} (Multiple Choice): Correct answer "${config.correctAnswer}" must match one of the options [${config.options.join(', ')}].`,
+            `[Tier 2 Deterministic Error] Block #${blockNum} (Multiple Choice): correctAnswer "${config.correctAnswer}" does not exist in options array [${config.options.join(', ')}].`,
           );
         }
         break;
@@ -80,53 +84,36 @@ export class ActivityValidator {
 
       case 'fill_blank': {
         const config = block.config as FillBlankConfig;
-        config.blanks.forEach((b) => {
-          const placeholder = `[${b.id}]`;
-          if (!config.passage.includes(placeholder)) {
+        const blankIds = new Set(config.blanks.map((b) => b.id));
+
+        // Verify tokens [1], [2] in passage
+        const tokenRegex = /\[(\w+)\]/g;
+        let match: RegExpExecArray | null;
+        while ((match = tokenRegex.exec(config.passage)) !== null) {
+          const tokenId = match[1];
+          if (!blankIds.has(tokenId)) {
             errors.push(
-              `[Tier 2 Deterministic Error] Block #${blockNum} (Fill in Blank): Passage text missing placeholder "${placeholder}" for blank ID "${b.id}".`,
+              `[Tier 2 Deterministic Error] Block #${blockNum} (Fill Blank): Passage token [${tokenId}] has no corresponding blank definition.`,
             );
           }
-        });
-        break;
-      }
-
-      case 'flashcards': {
-        const config = block.config as FlashcardsConfig;
-        const cardIds = new Set<string>();
-        config.cards.forEach((card, idx) => {
-          if (card.id && cardIds.has(card.id)) {
-            errors.push(
-              `[Tier 2 Deterministic Error] Block #${blockNum} (Flashcards): Duplicate card ID "${card.id}" in card #${idx + 1}.`,
-            );
-          }
-          if (card.id) cardIds.add(card.id);
-        });
-        break;
-      }
-
-      case 'true_false': {
-        const config = block.config as TrueFalseConfig;
-        if (typeof config.isTrue !== 'boolean') {
-          errors.push(
-            `[Tier 2 Deterministic Error] Block #${blockNum} (True/False): "isTrue" must be explicitly true or false.`,
-          );
         }
         break;
       }
 
       case 'ordering': {
         const config = block.config as OrderingConfig;
-        const itemIds = new Set(config.items.map((i) => i.id));
+        const itemIds = new Set(config.items.map((item) => item.id));
+
         if (config.correctOrder.length !== config.items.length) {
           errors.push(
-            `[Tier 2 Deterministic Error] Block #${blockNum} (Ordering): "correctOrder" length (${config.correctOrder.length}) does not match items count (${config.items.length}).`,
+            `[Tier 2 Deterministic Error] Block #${blockNum} (Ordering): correctOrder length (${config.correctOrder.length}) does not match items length (${config.items.length}).`,
           );
         }
+
         config.correctOrder.forEach((id) => {
           if (!itemIds.has(id)) {
             errors.push(
-              `[Tier 2 Deterministic Error] Block #${blockNum} (Ordering): "correctOrder" references invalid item ID "${id}".`,
+              `[Tier 2 Deterministic Error] Block #${blockNum} (Ordering): correctOrder references unknown item ID "${id}".`,
             );
           }
         });
@@ -149,6 +136,40 @@ export class ActivityValidator {
         });
         break;
       }
+
+      case 'find_hotspots': {
+        const config = block.config as FindHotspotsConfig;
+        config.hotspots.forEach((spot) => {
+          if (spot.x < 0 || spot.x > 100 || spot.y < 0 || spot.y > 100) {
+            errors.push(
+              `[Tier 2 Deterministic Error] Block #${blockNum} (Find Hotspots): Spot "${spot.label}" coordinates (${spot.x}, ${spot.y}) out of percentage range (0-100).`,
+            );
+          }
+        });
+        break;
+      }
+
+      case 'clock_diagram': {
+        const config = block.config as ClockDiagramConfig;
+        if (config.hours) {
+          const seenHours = new Set<number>();
+          config.hours.forEach((slot) => {
+            if (slot.hour < 0 || slot.hour > 24) {
+              errors.push(
+                `[Tier 2 Deterministic Error] Block #${blockNum} (Clock Diagram): Hour "${slot.hour}" out of valid range (0-24).`,
+              );
+            }
+            if (seenHours.has(slot.hour)) {
+              errors.push(
+                `[Tier 2 Deterministic Error] Block #${blockNum} (Clock Diagram): Duplicate hour slot "${slot.hour}".`,
+              );
+            } else {
+              seenHours.add(slot.hour);
+            }
+          });
+        }
+        break;
+      }
     }
   }
 
@@ -156,7 +177,6 @@ export class ActivityValidator {
    * Tier 3 Semantic Quality Validation
    */
   private static validateSemanticQuality(activity: ActivityDefinition, errors: string[]) {
-    // Lesson metadata quality
     if (activity.title.length < 3) {
       errors.push('[Tier 3 Semantic Error] Activity title is too short to be descriptive.');
     }
@@ -172,19 +192,11 @@ export class ActivityValidator {
         errors.push(`[Tier 3 Semantic Error] Block #${blockNum} ("${block.type}") needs clear student instructions.`);
       }
 
-      // Check block specific semantic content
       if (block.type === 'multiple_choice') {
         const cfg = block.config as MultipleChoiceConfig;
         const uniqueOptions = new Set(cfg.options.map((o) => o.trim().toLowerCase()));
         if (uniqueOptions.size < cfg.options.length) {
           errors.push(`[Tier 3 Semantic Error] Block #${blockNum} (Multiple Choice): Contains duplicate option text choices.`);
-        }
-      }
-
-      if (block.type === 'drag_drop') {
-        const cfg = block.config as DragDropConfig;
-        if (cfg.dropTargets.length < 2) {
-          errors.push(`[Tier 3 Semantic Error] Block #${blockNum} (Drag & Drop): Should have at least 2 drop target category bins for meaningful classification.`);
         }
       }
     });

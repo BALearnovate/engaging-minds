@@ -4,7 +4,9 @@ export type ActivityBlockType =
   | 'flashcards'
   | 'true_false'
   | 'ordering'
-  | 'drag_drop';
+  | 'drag_drop'
+  | 'find_hotspots'
+  | 'clock_diagram';
 
 export interface MultipleChoiceConfig {
   question: string;
@@ -69,13 +71,47 @@ export interface DragDropConfig {
   dropTargets: DropTarget[];
 }
 
+export interface HotspotTarget {
+  id: string;
+  label: string;
+  x: number; // Percentage 0 - 100
+  y: number; // Percentage 0 - 100
+  radius: number; // Percentage radius e.g. 8 - 15
+  feedback?: string;
+}
+
+export interface FindHotspotsConfig {
+  imageUrl: string;
+  instructions: string;
+  hotspots: HotspotTarget[];
+  imageAlt?: string;
+}
+
+export interface ClockHourSlot {
+  hour: number; // 1 - 12 or 1 - 24
+  label?: string;
+  expectedActivity?: string;
+  hint?: string;
+}
+
+export interface ClockDiagramConfig {
+  prompt: string;
+  instructions: string;
+  clockType?: '12_hour' | '24_hour';
+  hours: ClockHourSlot[];
+  allowedOptions?: string[];
+  isQuizMode?: boolean;
+}
+
 export type BlockConfig =
   | MultipleChoiceConfig
   | FillBlankConfig
   | FlashcardsConfig
   | TrueFalseConfig
   | OrderingConfig
-  | DragDropConfig;
+  | DragDropConfig
+  | FindHotspotsConfig
+  | ClockDiagramConfig;
 
 export interface ActivityBlock {
   id: string;
@@ -97,4 +133,3 @@ export interface ValidationResult {
   valid: boolean;
   errors: string[];
 }
-
