@@ -79,7 +79,7 @@ export const ClockDiagramStudent: React.FC<
   };
 
   // Radial coordinate calculator (360 degrees divided by total hours)
-  const getPolarPos = (index: number, total: number, radius: number, cx = 400, cy = 400) => {
+  const getPolarPos = (index: number, total: number, radius: number, cx = 450, cy = 450) => {
     const angleDeg = (index / total) * 360 - 90; // Start at top (12 o'clock / 00:00)
     const angleRad = (angleDeg * Math.PI) / 180;
     return {
@@ -126,18 +126,18 @@ export const ClockDiagramStudent: React.FC<
       {/* 24-Hour Radial Clock Visual Diagram Container */}
       <div style={styles.radialClockCard}>
         <div style={styles.radialWrapper}>
-          <svg width="800" height="800" viewBox="0 0 800 800" style={styles.clockSvg}>
+          <svg width="900" height="900" viewBox="0 0 900 900" style={styles.clockSvg}>
             {/* Outer Decorative Ring */}
-            <circle cx="400" cy="400" r="390" fill="#f8fafc" stroke="#0066b2" strokeWidth="4" />
-            <circle cx="400" cy="400" r="260" fill="#ffffff" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
-            <circle cx="400" cy="400" r="120" fill="#e0f2fe" stroke="#0066b2" strokeWidth="3" />
+            <circle cx="450" cy="450" r="440" fill="#f8fafc" stroke="#0066b2" strokeWidth="4" />
+            <circle cx="450" cy="450" r="290" fill="#ffffff" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
+            <circle cx="450" cy="450" r="135" fill="#e0f2fe" stroke="#0066b2" strokeWidth="3" />
 
             {/* Radial Hour Sector Lines & Background Shading */}
             {hourSlots.map((slot, idx) => {
-              const linePosInner = getPolarPos(idx, totalHours, 120);
-              const linePosOuter = getPolarPos(idx, totalHours, 390);
+              const linePosInner = getPolarPos(idx, totalHours, 135);
+              const linePosOuter = getPolarPos(idx, totalHours, 440);
 
-              const midPos = getPolarPos(idx + 0.5, totalHours, 190);
+              const midPos = getPolarPos(idx + 0.5, totalHours, 210);
               const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
               const isSelected = selectedHour === slot.hour;
 
@@ -158,7 +158,7 @@ export const ClockDiagramStudent: React.FC<
                     x={midPos.x}
                     y={midPos.y + 4}
                     textAnchor="middle"
-                    fontSize="11"
+                    fontSize="12"
                     fontWeight="800"
                     fill={isSelected ? '#0066b2' : isFilled ? '#0369a1' : '#475569'}
                   >
@@ -169,27 +169,27 @@ export const ClockDiagramStudent: React.FC<
             })}
 
             {/* Center Clock Hub */}
-            <circle cx="400" cy="400" r="90" fill="#0066b2" />
-            <text x="400" y="392" textAnchor="middle" fill="#ffffff" fontSize="15" fontWeight="800">
+            <circle cx="450" cy="450" r="100" fill="#0066b2" />
+            <text x="450" y="442" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="800">
               24-HOUR
             </text>
-            <text x="400" y="412" textAnchor="middle" fill="#bae6fd" fontSize="12" fontWeight="700">
+            <text x="450" y="464" textAnchor="middle" fill="#bae6fd" fontSize="13" fontWeight="700">
               CLOCK DIAGRAM
             </text>
 
             {/* Radial Inputs via SVG ForeignObject positioned directly in front of each hour */}
             {hourSlots.map((slot, idx) => {
-              const midPos = getPolarPos(idx + 0.5, totalHours, 325);
+              const midPos = getPolarPos(idx + 0.5, totalHours, 365);
               const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
               const isSelected = selectedHour === slot.hour;
 
               return (
                 <foreignObject
                   key={slot.hour}
-                  x={midPos.x - 50}
-                  y={midPos.y - 15}
-                  width="100"
-                  height="30"
+                  x={midPos.x - 70}
+                  y={midPos.y - 19}
+                  width="140"
+                  height="38"
                 >
                   <input
                     type="text"
@@ -202,7 +202,7 @@ export const ClockDiagramStudent: React.FC<
                     style={{
                       width: '100%',
                       height: '100%',
-                      borderRadius: '6px',
+                      borderRadius: '8px',
                       border: isSelected
                         ? '2px solid #0066b2'
                         : isFilled
@@ -214,12 +214,13 @@ export const ClockDiagramStudent: React.FC<
                         ? '#f0f9ff'
                         : '#ffffff',
                       color: '#0f172a',
-                      fontSize: '0.72rem',
+                      fontSize: '0.82rem',
                       fontWeight: '700',
                       textAlign: 'center',
-                      boxShadow: isSelected ? '0 0 8px rgba(0,102,178,0.3)' : 'none',
+                      boxShadow: isSelected ? '0 0 10px rgba(0,102,178,0.3)' : 'none',
                       outline: 'none',
                       boxSizing: 'border-box',
+                      padding: '0.25rem 0.5rem',
                     }}
                   />
                 </foreignObject>
@@ -391,7 +392,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   radialWrapper: {
     display: 'flex',
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
     overflowX: 'auto',
     maxWidth: '100%',
@@ -473,7 +474,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   submitRow: {
     display: 'flex',
-    justify: 'flex-end',
+    justifyContent: 'flex-end',
   },
   submitBtn: {
     backgroundColor: '#0066b2',

@@ -82,6 +82,7 @@ export interface HotspotItem {
 
 export interface FindHotspotsConfig {
   imageUrl: string;
+  imageAlt?: string;
   instructions: string;
   hotspots: HotspotItem[];
 }
@@ -138,10 +139,12 @@ export interface ValidationResult {
 export type StudentBlockStatus = 'not_started' | 'in_progress' | 'completed' | 'stuck';
 
 export interface StudentBlockState {
+  blockId?: string;
   status: StudentBlockStatus;
   attempts: number;
   response?: unknown;
   score?: number;
+  hint?: string;
   lastInteractionAt?: Date;
 }
 
@@ -149,4 +152,28 @@ export interface ProgressSummary {
   percentage: number;
   score: number;
   completed: boolean;
+}
+
+export interface HotspotTarget {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  label: string;
+}
+
+export interface BlockProgress {
+  blockId: string;
+  completed: boolean;
+  score: number;
+}
+
+export interface ActivityEvent {
+  id: string;
+  sessionId: string;
+  studentId: string;
+  blockId: string;
+  type: string;
+  timestamp: string;
+  payload: any;
 }

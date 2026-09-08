@@ -212,10 +212,7 @@ export const ActivityCreationStudio: React.FC = () => {
         <div style={styles.mainStudioCard}>
           {/* Header */}
           <div style={styles.headerBox}>
-            <div style={styles.userRoleBadge}>
-              {user ? `👤 Logged in as: ${user.firstName} (${user.role})` : '⚠️ Unauthenticated Teacher Session'}
-            </div>
-            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO*</h1>
+            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO</h1>
             <p style={styles.studioSubtitle}>
               Pick a baseline setup pathway to draft interactive student activities.
             </p>
@@ -239,7 +236,7 @@ export const ActivityCreationStudio: React.FC = () => {
                 ...(activePathway === 'templates' ? styles.pathwayBtnActive : {}),
               }}
             >
-              📁 Select Existing Templates
+              🔲 Select Existing Templates
             </button>
             <button
               onClick={() => setActivePathway('scratch')}
@@ -440,12 +437,6 @@ export const ActivityCreationStudio: React.FC = () => {
                           {selectedTemplateActivity.description || selectedTemplateActivity.content.description}
                         </p>
                       </div>
-                      <button
-                        onClick={handleLoadTemplateIntoStudio}
-                        style={styles.useTemplateBtn}
-                      >
-                        ✏️ Copy to Studio Editor
-                      </button>
                     </div>
 
                     <ActivityRuntime definition={selectedTemplateActivity.content} />
@@ -568,75 +559,68 @@ const styles: Record<string, React.CSSProperties> = {
   },
   mainStudioCard: {
     backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    border: '1.5px solid #a2d2e2',
-    padding: '1.75rem',
+    borderRadius: '12px',
+    border: '2px solid #7dd3fc',
+    padding: '1.75rem 2rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+    gap: '1.25rem',
+    boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
   },
   headerBox: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.3rem',
-  },
-  userRoleBadge: {
-    fontSize: '0.78rem',
-    fontWeight: '700',
-    color: '#0369a1',
-    backgroundColor: '#e0f2fe',
-    padding: '0.2rem 0.6rem',
-    borderRadius: '12px',
-    width: 'fit-content',
-    marginBottom: '0.25rem',
+    gap: '0.2rem',
   },
   studioTitle: {
-    fontSize: '1.25rem',
+    fontSize: '1.15rem',
     fontWeight: '800',
-    color: '#0f3b60',
-    letterSpacing: '0.02em',
+    color: '#0055a5',
+    letterSpacing: '0.03em',
     margin: 0,
   },
   studioSubtitle: {
-    fontSize: '0.88rem',
+    fontSize: '0.82rem',
     color: '#64748b',
     margin: 0,
   },
   pathwayRow: {
     display: 'flex',
-    gap: '0.75rem',
-    backgroundColor: '#f1f5f9',
-    padding: '0.35rem',
-    borderRadius: '12px',
+    gap: '1rem',
+    marginTop: '0.5rem',
+    marginBottom: '0.5rem',
   },
   pathwayBtn: {
     flex: 1,
-    padding: '0.65rem 1rem',
-    borderRadius: '9px',
+    padding: '0.75rem 1rem',
+    borderRadius: '8px',
     border: 'none',
-    backgroundColor: 'transparent',
-    color: '#475569',
-    fontSize: '0.85rem',
+    backgroundColor: '#2b90b8',
+    color: '#ffffff',
+    fontSize: '0.88rem',
     fontWeight: '700',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
     transition: 'all 0.2s ease',
   },
   pathwayBtnActive: {
-    backgroundColor: '#0066b2',
+    backgroundColor: '#84cc16',
     color: '#ffffff',
-    boxShadow: '0 2px 8px rgba(0, 102, 178, 0.25)',
+    boxShadow: '0 2px 8px rgba(132, 204, 22, 0.35)',
   },
   promptSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.6rem',
+    gap: '0.5rem',
   },
   promptLabel: {
-    fontSize: '0.75rem',
+    fontSize: '0.72rem',
     fontWeight: '800',
     color: '#0055a5',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.04em',
   },
   errorBox: {
     backgroundColor: '#fef2f2',
@@ -650,30 +634,32 @@ const styles: Record<string, React.CSSProperties> = {
   promptTextarea: {
     width: '100%',
     padding: '0.85rem',
-    borderRadius: '10px',
-    border: '1.5px solid #cbd5e1',
-    fontSize: '0.9rem',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    fontSize: '0.88rem',
     color: '#1e293b',
     boxSizing: 'border-box',
     outline: 'none',
     resize: 'vertical',
     fontFamily: 'inherit',
     lineHeight: '1.5',
+    backgroundColor: '#ffffff',
   },
   actionRow: {
     display: 'flex',
-    justify: 'flex-start',
+    justifyContent: 'flex-end',
+    marginTop: '0.25rem',
   },
   runDraftBtn: {
-    backgroundColor: '#0066b2',
+    backgroundColor: '#0284c7',
     color: '#ffffff',
     border: 'none',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '800',
+    padding: '0.65rem 1.35rem',
+    borderRadius: '8px',
+    fontSize: '0.85rem',
+    fontWeight: '700',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.25)',
+    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
     transition: 'all 0.2s ease',
   },
   runDraftBtnDisabled: {
@@ -734,15 +720,16 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   blueprintBox: {
-    borderRadius: '14px',
-    border: '2px dashed #94a3b8',
-    backgroundColor: '#faf8f5',
-    minHeight: '260px',
-    padding: '1.5rem',
+    borderRadius: '12px',
+    border: '2px dashed #7dd3fc',
+    backgroundColor: '#f8fafc',
+    minHeight: '220px',
+    padding: '2rem 1.5rem',
     display: 'flex',
     flexDirection: 'column',
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: '0.5rem',
   },
   loaderContainer: {
     display: 'flex',
@@ -757,7 +744,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '64px',
     height: '64px',
     display: 'flex',
-    justify: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   spinnerRing: {
@@ -807,23 +794,24 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
-    gap: '0.5rem',
+    gap: '0.4rem',
     color: '#94a3b8',
   },
   robotIcon: {
-    fontSize: '2.5rem',
+    fontSize: '2.2rem',
   },
   emptyBlueprintTitle: {
-    fontSize: '1.05rem',
+    fontSize: '0.98rem',
     fontWeight: '800',
-    color: '#64748b',
+    color: '#0f3b60',
     margin: 0,
   },
   emptyBlueprintText: {
-    fontSize: '0.85rem',
-    color: '#94a3b8',
-    maxWidth: '360px',
+    fontSize: '0.82rem',
+    color: '#64748b',
+    maxWidth: '440px',
     margin: 0,
+    lineHeight: '1.4',
   },
   blueprintContent: {
     width: '100%',
@@ -833,7 +821,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   activityMetaHeader: {
     display: 'flex',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     borderBottom: '1px solid #e2e8f0',
     paddingBottom: '0.85rem',
@@ -851,27 +839,27 @@ const styles: Record<string, React.CSSProperties> = {
   },
   sidebarCard: {
     backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    border: '1.5px solid #a2d2e2',
+    borderRadius: '12px',
+    border: '2px solid #7dd3fc',
     padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
-    boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+    boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
   },
   sidebarTitle: {
     fontSize: '0.95rem',
     fontWeight: '800',
-    color: '#0f3b60',
+    color: '#0055a5',
     letterSpacing: '0.04em',
     margin: 0,
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #bae6fd',
     paddingBottom: '0.75rem',
   },
   sidebarSection: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.4rem',
+    gap: '0.35rem',
   },
   paramLabel: {
     fontSize: '0.72rem',
@@ -881,11 +869,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   paramSelect: {
     width: '100%',
-    padding: '0.65rem 0.85rem',
+    padding: '0.7rem 0.85rem',
     borderRadius: '8px',
     border: '1px solid #cbd5e1',
     fontSize: '0.85rem',
-    color: '#1e293b',
+    color: '#64748b',
     backgroundColor: '#ffffff',
     outline: 'none',
   },

@@ -59,6 +59,95 @@ export const SEED_ACTIVITIES: ActivityDefinition[] = [
     ],
   },
 
+  // 2. Pedagogy - Green - Yellow - Red Response Cards
+  {
+    schemaVersion: '1.0',
+    title: 'Green - Yellow - Red Response Cards',
+    description: 'A quick 3-card traffic light feedback strategy (Green = High Confidence / Agree, Yellow = Uncertain / Needs Clarification, Red = Confused / Disagree) to gauge student understanding and encourage participation.',
+    subject: 'Pedagogy & Classroom Strategy',
+    gradeLevel: 'Whole Class Teaching',
+    estimatedDurationMinutes: 5,
+    blocks: [
+      {
+        id: 'gyr_cards_deck',
+        type: 'flashcards',
+        title: '1. Understanding Your Green - Yellow - Red Response Cards',
+        instructions: 'Flip through the 3 response card meanings used for checking class understanding and participation.',
+        config: {
+          cards: [
+            {
+              id: 'gyr_c1',
+              prompt: '🟢 GREEN CARD: High Confidence / Agreement',
+              answer: 'Meaning: Full understanding, complete agreement, or ready to move on.\nExample: "Do you understand today\'s topic?" -> Green = Yes, I understand completely!',
+              hint: 'Hold up GREEN when you feel confident and ready.',
+            },
+            {
+              id: 'gyr_c2',
+              prompt: '🟡 YELLOW CARD: Uncertain / Needs Clarification',
+              answer: 'Meaning: Partial understanding, uncertainty, or needing a quick clarification.\nExample: "Do you feel ready for next week\'s assessment?" -> Yellow = Mostly ready, but I have a few questions.',
+              hint: 'Hold up YELLOW when you understand parts but need clarification.',
+            },
+            {
+              id: 'gyr_c3',
+              prompt: '🔴 RED CARD: Confused / Support Needed',
+              answer: 'Meaning: Confusion, disagreement, or needing additional support.\nExample: "Do you know where you need help with this topic?" -> Red = I need extra help understanding this.',
+              hint: 'Hold up RED honestly when you need assistance.',
+            },
+          ],
+        },
+      },
+      {
+        id: 'gyr_mcq_1',
+        type: 'multiple_choice',
+        title: "2. Check 1: Today's Topic Understanding",
+        instructions: 'Select the response card color that best represents your understanding right now.',
+        config: {
+          question: "How confident do you feel about today's lesson material?",
+          options: [
+            "🟢 Green: I understand today's topic clearly and can explain it.",
+            "🟡 Yellow: I understand most of it, but need clarification on a few points.",
+            "🔴 Red: I am confused and would like extra support with this topic.",
+          ],
+          correctAnswer: "🟢 Green: I understand today's topic clearly and can explain it.",
+          explanation: 'Holding up Green signals confidence, Yellow signals partial understanding, and Red signals support needed.',
+        },
+      },
+      {
+        id: 'gyr_mcq_2',
+        type: 'multiple_choice',
+        title: '3. Check 2: Assessment Preparedness',
+        instructions: 'Select your card response for upcoming assessment readiness.',
+        config: {
+          question: "Do you feel ready for next week's assessment?",
+          options: [
+            '🟢 Green: Yes, I feel well-prepared and confident.',
+            '🟡 Yellow: I am getting there, but need to review key areas.',
+            '🔴 Red: No, I need extra review sessions and assistance.',
+          ],
+          correctAnswer: '🟢 Green: Yes, I feel well-prepared and confident.',
+          explanation: 'Response cards give every student a voice without requiring whole-class public speaking.',
+        },
+      },
+      {
+        id: 'gyr_mcq_3',
+        type: 'multiple_choice',
+        title: '4. Strategy: Moving from Yellow/Red to Green',
+        instructions: 'Identify the most effective approach for classroom growth.',
+        config: {
+          question: 'What is the best way to move your response card from Yellow or Red to Green?',
+          options: [
+            'Asking a clarifying question or sharing what concept you found difficult.',
+            'Staying silent and hoping the confusion disappears later.',
+            'Hiding your card so the teacher cannot see it.',
+            'Guessing answers without asking for help.',
+          ],
+          correctAnswer: 'Asking a clarifying question or sharing what concept you found difficult.',
+          explanation: 'Honest card responses allow the teacher to address specific needs and guide everyone to Green!',
+        },
+      },
+    ],
+  },
+
   // 2. Science - Biology
   {
     schemaVersion: '1.0',

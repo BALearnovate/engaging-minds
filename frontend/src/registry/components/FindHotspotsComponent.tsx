@@ -337,7 +337,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   progressHeader: {
     display: 'flex',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   progressLabel: {

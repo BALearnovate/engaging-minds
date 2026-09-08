@@ -189,20 +189,13 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
   return (
     <div style={styles.container}>
-      {/* Top Session Progress Bar */}
+      {/* Top Session Header */}
       <div style={styles.topBar}>
         <div style={styles.titleInfo}>
           <h2 style={styles.actTitle}>{definition.title}</h2>
           <span style={styles.blockTracker}>
             Exercise {currentBlockIndex + 1} of {definition.blocks.length}
           </span>
-        </div>
-
-        <div style={styles.progressGroup}>
-          <div style={styles.progressTrack}>
-            <div style={{ ...styles.progressFill, width: `${progress.percent}%` }} />
-          </div>
-          <span style={styles.progressText}>{progress.percent}% Completed</span>
         </div>
       </div>
 
@@ -243,13 +236,14 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
       {/* Navigation Footer */}
       <div style={styles.footerNav}>
-        <button
-          disabled={currentBlockIndex === 0}
-          onClick={() => setCurrentIndex(currentBlockIndex - 1)}
-          style={styles.navBtn}
-        >
-          ← Previous
-        </button>
+        {currentBlockIndex > 0 && (
+          <button
+            onClick={() => setCurrentIndex(currentBlockIndex - 1)}
+            style={styles.navBtn}
+          >
+            ← Previous
+          </button>
+        )}
 
         <div style={styles.dotNav}>
           {definition.blocks.map((b, idx) => (
