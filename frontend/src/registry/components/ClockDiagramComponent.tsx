@@ -41,9 +41,13 @@ export const ClockDiagramStudent: React.FC<
   const filledCount = Object.values(hourActivities).filter((val) => val && val.trim().length > 0).length;
 
   const handleSetActivity = (hour: number, text: string) => {
-    if (submitted) return;
-    setHourActivities((prev) => ({ ...prev, [hour]: text }));
+    const nextActivities = { ...hourActivities, [hour]: text };
+    setHourActivities(nextActivities);
     setSelectedHour(hour);
+
+    const filledCountUpdated = Object.values(nextActivities).filter((val) => val && val.trim().length > 0).length;
+    const score = Math.round((filledCountUpdated / totalHours) * 100);
+    onAnswerSubmit(nextActivities, true, score);
   };
 
   const handleSubmit = () => {
@@ -229,57 +233,8 @@ export const ClockDiagramStudent: React.FC<
         </div>
       </div>
 
-      {/* Schedule Table Breakdown Overview */}
-      <div style={styles.tableCard}>
-        <h4 style={styles.tableTitle}>📋 Complete 24-Hour Schedule Summary Breakdown ({filledCount}/{totalHours} Filled)</h4>
-        <div style={styles.tableGrid}>
-          {hourSlots.map((slot) => {
-            const val = hourActivities[slot.hour];
-            return (
-              <div
-                key={slot.hour}
-                onClick={() => setSelectedHour(slot.hour)}
-                style={{
-                  ...styles.tableRow,
-                  ...(selectedHour === slot.hour ? styles.tableRowActive : {}),
-                }}
-              >
-                <span style={styles.tableHour}>{formatHourLabel(slot.hour)}</span>
-                <span style={val ? styles.tableTextFilled : styles.tableTextEmpty}>
-                  {val || '— Unassigned —'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Feedback Banner */}
       {feedback && <div style={styles.feedbackBanner}>{feedback.text}</div>}
-
-      {/* Submit Action */}
-      <div style={styles.submitRow}>
-        <button
-          disabled={submitted || filledCount === 0}
-          onClick={handleSubmit}
-          style={{
-            ...styles.submitBtn,
-            ...(submitted || filledCount === 0 ? styles.submitBtnDisabled : {}),
-          }}
-        >
-          {submitted ? '✓ 24-Hour Schedule Saved' : `Save 24-Hour Schedule (${filledCount}/${totalHours})`}
-        </button>
-      </div>
-
-      {/* Teacher Help */}
-      {onHelpRequest && !submitted && (
-        <button
-          onClick={() => onHelpRequest('I need assistance completing my 24-hour clock diagram.')}
-          style={styles.helpBtn}
-        >
-          🙋 Request Teacher Assistance
-        </button>
-      )}
     </div>
   );
 };

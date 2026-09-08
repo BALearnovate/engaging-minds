@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from './ActivityRuntime';
 import type { ActivityDefinition } from '../types/activityDsl';
+
+interface DatabaseActivity {
+  id: string;
+  title: string;
+  description?: string;
+  type: string;
+  content: ActivityDefinition;
+  teacherId: string;
+  createdAt: string;
+}
 
 export const ActivityCreationStudio: React.FC = () => {
   const { token: authContextToken, user } = useAuth();
@@ -20,19 +30,99 @@ export const ActivityCreationStudio: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityDefinition | null>(null);
 
+  // Template / SelectOneMenu State
+  const [dbActivities, setDbActivities] = useState<DatabaseActivity[]>([]);
+  const [selectedActivityId, setSelectedActivityId] = useState<string>('');
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState<boolean>(false);
+  const [subjectFilter, setSubjectFilter] = useState<string>('all');
+  const [gradeFilter, setGradeFilter] = useState<string>('all');
+  const [blockTypeFilter, setBlockTypeFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const activeToken =
+    authContextToken ||
+    localStorage.getItem('access_token') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    '';
+
+  // Fetch Database Activities for "Select Existing Templates" Tab
+  useEffect(() => {
+    if (activePathway === 'templates') {
+      fetchTemplates();
+    }
+  }, [activePathway]);
+
+  const fetchTemplates = async () => {
+    setIsLoadingTemplates(true);
+    try {
+      const response = await fetch('http://localhost:3000/activities', {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data: DatabaseActivity[] = await response.json();
+        setDbActivities(data);
+        if (data.length > 0 && !selectedActivityId) {
+          setSelectedActivityId(data[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch existing activities:', err);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
+
+  const filteredActivities = useMemo(() => {
+    return dbActivities.filter((act) => {
+      const content = act.content || {};
+      const actSubject = (content.subject || '').toLowerCase();
+      const actGrade = (content.gradeLevel || '').toLowerCase();
+      const actTitle = act.title.toLowerCase();
+
+      // Subject Filter
+      if (subjectFilter !== 'all' && !actSubject.includes(subjectFilter.toLowerCase()) && !actTitle.includes(subjectFilter.toLowerCase())) {
+        return false;
+      }
+
+      // Grade / Year Group Filter
+      if (gradeFilter !== 'all' && !actGrade.includes(gradeFilter.toLowerCase()) && !actTitle.includes(gradeFilter.toLowerCase())) {
+        return false;
+      }
+
+      // Block Type Filter
+      if (blockTypeFilter !== 'all') {
+        const blocks = Array.isArray(content.blocks) ? content.blocks : [];
+        const hasBlockType = blocks.some((b) => b.type === blockTypeFilter);
+        if (!hasBlockType) return false;
+      }
+
+      // Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = actTitle.includes(q);
+        const matchDesc = (act.description || '').toLowerCase().includes(q);
+        const matchSub = actSubject.includes(q);
+        if (!matchTitle && !matchDesc && !matchSub) return false;
+      }
+
+      return true;
+    });
+  }, [dbActivities, subjectFilter, gradeFilter, blockTypeFilter, searchQuery]);
+
+  const selectedTemplateActivity = useMemo(() => {
+    return dbActivities.find((a) => a.id === selectedActivityId);
+  }, [dbActivities, selectedActivityId]);
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
     setIsGenerating(true);
     setError(null);
     setActivity(null);
-
-    const activeToken =
-      authContextToken ||
-      localStorage.getItem('access_token') ||
-      localStorage.getItem('token') ||
-      localStorage.getItem('accessToken') ||
-      '';
 
     if (!activeToken) {
       setError('401 Unauthorized: Please log in as a Teacher or Admin to generate activities.');
@@ -71,13 +161,20 @@ export const ActivityCreationStudio: React.FC = () => {
       }
 
       const definition: ActivityDefinition = await response.json();
-      console.log('Generated Activity DSL:', definition);
+      console.log('Generated Activity DSL***:', definition);
       setActivity(definition);
     } catch (err: any) {
       console.error('AI Activity Generation Error:', err);
       setError(err.message || 'Could not create activity, try again later.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleLoadTemplateIntoStudio = () => {
+    if (selectedTemplateActivity?.content) {
+      setActivity(selectedTemplateActivity.content);
+      setActivePathway('ai');
     }
   };
 
@@ -107,7 +204,7 @@ export const ActivityCreationStudio: React.FC = () => {
             <div style={styles.userRoleBadge}>
               {user ? `👤 Logged in as: ${user.firstName} (${user.role})` : '⚠️ Unauthenticated Teacher Session'}
             </div>
-            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO</h1>
+            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO*</h1>
             <p style={styles.studioSubtitle}>
               Pick a baseline setup pathway to draft interactive student activities.
             </p>
@@ -144,77 +241,227 @@ export const ActivityCreationStudio: React.FC = () => {
             </button>
           </div>
 
-          {/* Prompt Input Section */}
-          <div style={styles.promptSection}>
-            <label style={styles.promptLabel}>PROMPT INSTRUCTIONS FOR AI GENERATOR</label>
-            {error && <div style={styles.errorBox}>⚠️ {error}</div>}
+          {/* AI PATHWAY CONTENT */}
+          {activePathway === 'ai' && (
+            <>
+              <div style={styles.promptSection}>
+                <label style={styles.promptLabel}>PROMPT INSTRUCTIONS FOR AI GENERATOR</label>
+                {error && <div style={styles.errorBox}>⚠️ {error}</div>}
 
-            <textarea
-              rows={4}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter instructional details here..."
-              style={styles.promptTextarea}
-            />
+                <textarea
+                  rows={4}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Enter instructional details here..."
+                  style={styles.promptTextarea}
+                />
 
-            <div style={styles.actionRow}>
-              <button
-                disabled={isGenerating || !prompt.trim()}
-                onClick={handleGenerate}
-                style={{
-                  ...styles.runDraftBtn,
-                  ...(isGenerating ? styles.runDraftBtnDisabled : {}),
-                }}
-              >
-                {isGenerating ? '⚡ Generating AI Activity Draft...' : 'Run AI Generator Draft'}
-              </button>
-            </div>
-          </div>
-
-          {/* AI Draft Blueprint Preview Box */}
-          <div style={styles.blueprintBox}>
-            {isGenerating ? (
-              <div style={styles.loaderContainer}>
-                <div style={styles.spinnerWrapper}>
-                  <div style={styles.spinnerRing} />
-                  <span style={styles.robotLoaderIcon}>🤖</span>
-                </div>
-                <h3 style={styles.loaderTitle}>Generating AI Activity Blueprint...</h3>
-                <p style={styles.loaderText}>
-                  Analyzing prompt instructions, composing interactive exercise blocks (MCQs, Flashcards, Fill-in-blanks, Drag & Drop), and validating DSL schema...
-                </p>
-                <div style={styles.shimmerTrack}>
-                  <div style={styles.shimmerBar} />
+                <div style={styles.actionRow}>
+                  <button
+                    disabled={isGenerating || !prompt.trim()}
+                    onClick={handleGenerate}
+                    style={{
+                      ...styles.runDraftBtn,
+                      ...(isGenerating ? styles.runDraftBtnDisabled : {}),
+                    }}
+                  >
+                    {isGenerating ? '⚡ Generating AI Activity Draft...' : 'Run AI Generator Draft'}
+                  </button>
                 </div>
               </div>
-            ) : activity ? (
-              <div style={styles.blueprintContent}>
-                <div style={styles.activityMetaHeader}>
-                  <div>
-                    <h3 style={styles.activityMetaTitle}>{activity.title}</h3>
-                    <p style={styles.activityMetaDesc}>{activity.description}</p>
+
+              {/* AI Draft Blueprint Preview Box */}
+              <div style={styles.blueprintBox}>
+                {isGenerating ? (
+                  <div style={styles.loaderContainer}>
+                    <div style={styles.spinnerWrapper}>
+                      <div style={styles.spinnerRing} />
+                      <span style={styles.robotLoaderIcon}>🤖</span>
+                    </div>
+                    <h3 style={styles.loaderTitle}>Generating AI Activity Blueprint...</h3>
+                    <p style={styles.loaderText}>
+                      Analyzing prompt instructions, composing interactive exercise blocks (MCQs, Flashcards, Fill-in-blanks, Drag & Drop, Hotspots, Clock Diagrams), and validating DSL schema...
+                    </p>
+                    <div style={styles.shimmerTrack}>
+                      <div style={styles.shimmerBar} />
+                    </div>
                   </div>
-                  <span style={styles.blocksBadge}>
-                    🧩 {activity.blocks.length} Interactive Exercises
-                  </span>
+                ) : activity ? (
+                  <div style={styles.blueprintContent}>
+                    <div style={styles.activityMetaHeader}>
+                      <div>
+                        <h3 style={styles.activityMetaTitle}>{activity.title}</h3>
+                        <p style={styles.activityMetaDesc}>{activity.description}</p>
+                      </div>
+                      <span style={styles.blocksBadge}>
+                        🧩 {activity.blocks.length} Interactive Exercises
+                      </span>
+                    </div>
+
+                    <ActivityRuntime definition={activity} />
+                  </div>
+                ) : (
+                  <div style={styles.emptyBlueprint}>
+                    <div style={styles.robotIcon}>🤖</div>
+                    <h3 style={styles.emptyBlueprintTitle}>
+                      {error ? 'Authentication Required' : 'AI Draft Blueprint Empty'}
+                    </h3>
+                    <p style={styles.emptyBlueprintText}>
+                      {error
+                        ? error
+                        : 'Enter parameters inside the prompt field above and execute to review real-time graphic block previews.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* TEMPLATES PATHWAY CONTENT */}
+          {activePathway === 'templates' && (
+            <div style={styles.templatesContainer}>
+              <div style={styles.filterGrid}>
+                <div>
+                  <label style={styles.promptLabel}>SUBJECT FILTER</label>
+                  <select
+                    value={subjectFilter}
+                    onChange={(e) => setSubjectFilter(e.target.value)}
+                    style={styles.paramSelect}
+                  >
+                    <option value="all">All Subjects</option>
+                    <option value="Science">Science</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="English">English</option>
+                    <option value="History">History</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Geography">Geography</option>
+                    <option value="French">French</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Design Technology">Design Technology</option>
+                  </select>
                 </div>
 
-                <ActivityRuntime definition={activity} />
+                <div>
+                  <label style={styles.promptLabel}>YEAR GROUP FILTER</label>
+                  <select
+                    value={gradeFilter}
+                    onChange={(e) => setGradeFilter(e.target.value)}
+                    style={styles.paramSelect}
+                  >
+                    <option value="all">All Year Groups</option>
+                    <option value="Year 7">Year 7</option>
+                    <option value="Year 8">Year 8</option>
+                    <option value="Year 9">Year 9</option>
+                    <option value="Year 10">Year 10</option>
+                    <option value="Year 11">Year 11</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={styles.promptLabel}>ACTIVITY TYPE FILTER</label>
+                  <select
+                    value={blockTypeFilter}
+                    onChange={(e) => setBlockTypeFilter(e.target.value)}
+                    style={styles.paramSelect}
+                  >
+                    <option value="all">All 8 Activity Types</option>
+                    <option value="multiple_choice">Multiple Choice</option>
+                    <option value="fill_blank">Fill in the Blanks</option>
+                    <option value="flashcards">Flashcards</option>
+                    <option value="true_false">True / False</option>
+                    <option value="ordering">Sequence Ordering</option>
+                    <option value="drag_drop">Drag & Drop</option>
+                    <option value="find_hotspots">Find Multiple Hotspots</option>
+                    <option value="clock_diagram">24-Hour Clock Diagram</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={styles.promptLabel}>SEARCH TEMPLATES</label>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by topic or title..."
+                    style={styles.searchInput}
+                  />
+                </div>
               </div>
-            ) : (
-              <div style={styles.emptyBlueprint}>
-                <div style={styles.robotIcon}>🤖</div>
-                <h3 style={styles.emptyBlueprintTitle}>
-                  {error ? 'Authentication Required' : 'AI Draft Blueprint Empty'}
-                </h3>
-                <p style={styles.emptyBlueprintText}>
-                  {error
-                    ? error
-                    : 'Enter parameters inside the prompt field above and execute to review real-time graphic block previews.'}
-                </p>
+
+              {/* SELECT ONE MENU DROPDOWN */}
+              <div style={styles.selectMenuWrapper}>
+                <label style={styles.promptLabel}>
+                  📂 SELECT EXISTING ACTIVITY ({filteredActivities.length} MATCHING IN DATABASE)
+                </label>
+                <select
+                  value={selectedActivityId}
+                  onChange={(e) => setSelectedActivityId(e.target.value)}
+                  style={styles.selectOneMenu}
+                >
+                  <option value="">-- Choose an activity from database to load preview --</option>
+                  {filteredActivities.map((act) => {
+                    const content = act.content || {};
+                    const subjectStr = content.subject || 'General';
+                    const gradeStr = content.gradeLevel || 'Secondary';
+                    const blockCount = Array.isArray(content.blocks) ? content.blocks.length : 0;
+                    return (
+                      <option key={act.id} value={act.id}>
+                        [{subjectStr} | {gradeStr}] {act.title} ({blockCount} exercises)
+                      </option>
+                    );
+                  })}
+                </select>
               </div>
-            )}
-          </div>
+
+              {/* TEMPLATE PREVIEW BOX */}
+              <div style={styles.blueprintBox}>
+                {isLoadingTemplates ? (
+                  <div style={styles.loaderContainer}>
+                    <p style={styles.loaderTitle}>Loading Database Templates...</p>
+                  </div>
+                ) : selectedTemplateActivity?.content ? (
+                  <div style={styles.blueprintContent}>
+                    <div style={styles.activityMetaHeader}>
+                      <div>
+                        <h3 style={styles.activityMetaTitle}>{selectedTemplateActivity.title}</h3>
+                        <p style={styles.activityMetaDesc}>
+                          {selectedTemplateActivity.description || selectedTemplateActivity.content.description}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleLoadTemplateIntoStudio}
+                        style={styles.useTemplateBtn}
+                      >
+                        ✏️ Copy to Studio Editor
+                      </button>
+                    </div>
+
+                    <ActivityRuntime definition={selectedTemplateActivity.content} />
+                  </div>
+                ) : (
+                  <div style={styles.emptyBlueprint}>
+                    <div style={styles.robotIcon}>📂</div>
+                    <h3 style={styles.emptyBlueprintTitle}>No Activity Selected</h3>
+                    <p style={styles.emptyBlueprintText}>
+                      Choose an activity from the dropdown menu above to render its interactive student preview below.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* START FROM SCRATCH PATHWAY */}
+          {activePathway === 'scratch' && (
+            <div style={styles.emptyBlueprint}>
+              <div style={styles.robotIcon}>✏️</div>
+              <h3 style={styles.emptyBlueprintTitle}>Blank Slate Editor</h3>
+              <p style={styles.emptyBlueprintText}>
+                Custom manual block authoring canvas. Add your own Multiple Choice, Flashcard, Fill-in-blank, Hotspot, and Clock Diagram blocks.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
@@ -395,6 +642,58 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'not-allowed',
     boxShadow: 'none',
   },
+  templatesContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  filterGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '0.85rem',
+    backgroundColor: '#f8fafc',
+    padding: '1rem',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '0.65rem 0.85rem',
+    borderRadius: '8px',
+    border: '1px solid #cbd5e1',
+    fontSize: '0.85rem',
+    color: '#1e293b',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  selectMenuWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  selectOneMenu: {
+    width: '100%',
+    padding: '0.85rem 1rem',
+    borderRadius: '10px',
+    border: '2px solid #0066b2',
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    color: '#0f3b60',
+    backgroundColor: '#f0f9ff',
+    outline: 'none',
+    cursor: 'pointer',
+  },
+  useTemplateBtn: {
+    backgroundColor: '#0284c7',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    fontSize: '0.82rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+  },
   blueprintBox: {
     borderRadius: '14px',
     border: '2px dashed #94a3b8',
@@ -510,14 +809,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.85rem',
     color: '#64748b',
     margin: 0,
-  },
-  blocksBadge: {
-    backgroundColor: '#e0f2fe',
-    color: '#0369a1',
-    padding: '0.35rem 0.75rem',
-    borderRadius: '12px',
-    fontSize: '0.8rem',
-    fontWeight: '800',
   },
   sidebarCard: {
     backgroundColor: '#ffffff',

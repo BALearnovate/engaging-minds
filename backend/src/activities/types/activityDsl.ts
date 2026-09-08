@@ -54,7 +54,7 @@ export interface OrderingConfig {
   correctOrder: string[];
 }
 
-export interface DraggableItem {
+export interface DragItem {
   id: string;
   content: string;
 }
@@ -67,28 +67,27 @@ export interface DropTarget {
 
 export interface DragDropConfig {
   instructions: string;
-  draggableItems: DraggableItem[];
+  draggableItems: DragItem[];
   dropTargets: DropTarget[];
 }
 
-export interface HotspotTarget {
+export interface HotspotItem {
   id: string;
   label: string;
-  x: number; // Percentage 0 - 100
-  y: number; // Percentage 0 - 100
-  radius: number; // Percentage radius e.g. 8 - 15
+  x: number; // percentage (0-100)
+  y: number; // percentage (0-100)
+  radius?: number; // percentage (default: 10)
   feedback?: string;
 }
 
 export interface FindHotspotsConfig {
   imageUrl: string;
   instructions: string;
-  hotspots: HotspotTarget[];
-  imageAlt?: string;
+  hotspots: HotspotItem[];
 }
 
 export interface ClockHourSlot {
-  hour: number; // 1 - 12 or 1 - 24
+  hour: number; // 0..23 or 1..24
   label?: string;
   expectedActivity?: string;
   hint?: string;
@@ -96,7 +95,7 @@ export interface ClockHourSlot {
 
 export interface ClockDiagramConfig {
   prompt: string;
-  instructions: string;
+  instructions?: string;
   clockType?: '12_hour' | '24_hour';
   hours: ClockHourSlot[];
   allowedOptions?: string[];
@@ -125,6 +124,8 @@ export interface ActivityDefinition {
   schemaVersion: '1.0';
   title: string;
   description?: string;
+  subject?: string;
+  gradeLevel?: string;
   estimatedDurationMinutes?: number;
   blocks: ActivityBlock[];
 }

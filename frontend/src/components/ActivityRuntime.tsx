@@ -247,13 +247,24 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           ))}
         </div>
 
-        <button
-          disabled={currentBlockIndex === definition.blocks.length - 1}
-          onClick={() => setCurrentIndex(currentBlockIndex + 1)}
-          style={styles.navBtnPrimary}
-        >
-          Next →
-        </button>
+        {currentBlockIndex < definition.blocks.length - 1 ? (
+          <button
+            onClick={() => setCurrentIndex(currentBlockIndex + 1)}
+            style={styles.navBtnPrimary}
+          >
+            Next →
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              if (onCompleted) onCompleted();
+              alert('🎉 Activity Completed!');
+            }}
+            style={styles.navBtnSuccess}
+          >
+            Complete Activity ✓
+          </button>
+        )}
       </div>
     </div>
   );
@@ -365,6 +376,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     border: 'none',
     backgroundColor: '#2563eb',
+    color: '#ffffff',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  navBtnSuccess: {
+    padding: '0.55rem 1.1rem',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: '#10b981',
     color: '#ffffff',
     fontWeight: '700',
     cursor: 'pointer',

@@ -5,6 +5,14 @@ import { SubmitActivityDto } from './dto/submit-activity.dto';
 import { ActivityDefinition, ActivityBlock } from './types/activityDsl';
 import { ActivityValidator } from './validation/activityValidator';
 
+export interface ActivityFilterOptions {
+  subject?: string;
+  yearGroup?: string;
+  gradeLevel?: string;
+  activityType?: string;
+  search?: string;
+}
+
 @Injectable()
 export class ActivitiesService {
   constructor(private prisma: PrismaService) {}
@@ -272,7 +280,7 @@ export class ActivitiesService {
   }
 
   // ==========================================
-  // EXISTING API METHODS (BACKWARD COMPATIBILITY)
+  // EXISTING API METHODS (WITH FILTERING SUPPORT)
   // ==========================================
 
   async createActivity(teacherId: string, dto: CreateActivityDto) {
@@ -299,8 +307,8 @@ export class ActivitiesService {
     });
   }
 
-  async findAllActivities(userId?: string) {
-    return this.prisma.activity.findMany({
+  async findAllActivities(filters?: ActivityFilterOptions) {
+    const activities = await this.prisma.activity.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         teacher: {
@@ -310,6 +318,58 @@ export class ActivitiesService {
           select: { submissions: true },
         },
       },
+    });
+
+    if (!filters) return activities;
+
+    const { subject, yearGroup, gradeLevel, activityType, search } = filters;
+
+    const targetGrade = (yearGroup || gradeLevel || '').trim().toLowerCase();
+    const targetSubject = (subject || '').trim().toLowerCase();
+    const targetType = (activityType || '').trim().toLowerCase();
+    const targetSearch = (search || '').trim().toLowerCase();
+
+    return activities.filter((act) => {
+      const content = (act.content as any) || {};
+
+      // Filter by subject
+      if (targetSubject && targetSubject !== 'all') {
+        const actSubject = (content.subject || '').toLowerCase();
+        const actTitle = act.title.toLowerCase();
+        if (!actSubject.includes(targetSubject) && !actTitle.includes(targetSubject)) {
+          return false;
+        }
+      }
+
+      // Filter by yearGroup / gradeLevel
+      if (targetGrade && targetGrade !== 'all') {
+        const actGrade = (content.gradeLevel || '').toLowerCase();
+        const actTitle = act.title.toLowerCase();
+        if (!actGrade.includes(targetGrade) && !actTitle.includes(targetGrade)) {
+          return false;
+        }
+      }
+
+      // Filter by activityType (check if any block in DSL matches activityType)
+      if (targetType && targetType !== 'all') {
+        const blocks = Array.isArray(content.blocks) ? content.blocks : [];
+        const hasBlockType = blocks.some((b: any) => b.type === targetType);
+        if (!hasBlockType && act.type.toLowerCase() !== targetType) {
+          return false;
+        }
+      }
+
+      // Search filter
+      if (targetSearch) {
+        const matchTitle = act.title.toLowerCase().includes(targetSearch);
+        const matchDesc = (act.description || '').toLowerCase().includes(targetSearch);
+        const matchSub = (content.subject || '').toLowerCase().includes(targetSearch);
+        if (!matchTitle && !matchDesc && !matchSub) {
+          return false;
+        }
+      }
+
+      return true;
     });
   }
 

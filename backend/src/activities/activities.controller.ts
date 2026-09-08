@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { AiActivityGeneratorService } from './ai/activityGenerator.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -118,8 +118,20 @@ export class ActivitiesController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.STUDENT, Role.TEACHER, Role.ADMIN)
-  async findAllActivities(@CurrentUser() user: any) {
-    return this.activitiesService.findAllActivities(user?.id);
+  async findAllActivities(
+    @Query('subject') subject?: string,
+    @Query('yearGroup') yearGroup?: string,
+    @Query('gradeLevel') gradeLevel?: string,
+    @Query('activityType') activityType?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.activitiesService.findAllActivities({
+      subject,
+      yearGroup,
+      gradeLevel,
+      activityType,
+      search,
+    });
   }
 
   @Get(':id')
