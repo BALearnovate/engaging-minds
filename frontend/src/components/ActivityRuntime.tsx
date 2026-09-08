@@ -7,13 +7,14 @@ import type {
   ActivityEvent,
 } from '../types/activityDsl';
 import { ComponentRegistry } from '../registry';
+import { ConfigureGroupModal } from './ConfigureGroupModal';
 
 interface ActivityRuntimeProps {
   definition: ActivityDefinition;
   shareCode?: string;
   studentSessionId?: string;
   studentName?: string;
-  onCompleted?: () => void;
+  onCompleted?: (groupName?: string, selectedStudents?: string[]) => void;
 }
 
 export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
@@ -36,6 +37,16 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const [liveHintBanner, setLiveHintBanner] = useState<string | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
+  const [assignmentBanner, setAssignmentBanner] = useState<string | null>(null);
+
+  const handleConfirmAssignment = (groupName: string, selectedStudents: string[]) => {
+    const bannerMsg = `🎉 Activity successfully assigned to "${groupName}" (${selectedStudents.length} student${selectedStudents.length === 1 ? '' : 's'}: ${selectedStudents.join(', ')})!`;
+    setAssignmentBanner(bannerMsg);
+    if (onCompleted) {
+      onCompleted(groupName, selectedStudents);
+    }
+  };
 
   // Sync blockStates whenever definition changes
   useEffect(() => {
@@ -195,6 +206,15 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
         </div>
       </div>
 
+      {assignmentBanner && (
+        <div style={styles.assignmentBanner}>
+          <span>{assignmentBanner}</span>
+          <button onClick={() => setAssignmentBanner(null)} style={styles.closeHintBtn}>
+            ✕
+          </button>
+        </div>
+      )}
+
       {liveHintBanner && (
         <div style={styles.hintBanner}>
           {liveHintBanner}
@@ -256,16 +276,20 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           </button>
         ) : (
           <button
-            onClick={() => {
-              if (onCompleted) onCompleted();
-              alert('🎉 Activity Completed!');
-            }}
+            onClick={() => setIsAssignModalOpen(true)}
             style={styles.navBtnSuccess}
           >
             Complete Activity ✓
           </button>
         )}
       </div>
+
+      {/* Configure Group Roster Modal */}
+      <ConfigureGroupModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onConfirm={handleConfirmAssignment}
+      />
     </div>
   );
 };
@@ -325,6 +349,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.82rem',
     fontWeight: '700',
     color: '#059669',
+  },
+  assignmentBanner: {
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    color: '#166534',
+    padding: '0.85rem 1.1rem',
+    borderRadius: '10px',
+    fontSize: '0.92rem',
+    fontWeight: '700',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)',
   },
   hintBanner: {
     backgroundColor: '#fef3c7',

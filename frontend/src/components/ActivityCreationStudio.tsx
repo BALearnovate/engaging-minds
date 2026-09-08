@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from './ActivityRuntime';
+import { ConfigureGroupModal } from './ConfigureGroupModal';
 import type { ActivityDefinition } from '../types/activityDsl';
 
 interface DatabaseActivity {
@@ -25,6 +26,16 @@ export const ActivityCreationStudio: React.FC = () => {
   const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
   const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stickers');
   const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState<boolean>(false);
+  const [configuredGroupName, setConfiguredGroupName] = useState<string>('Support Group Alpha');
+  const [configuredStudents, setConfiguredStudents] = useState<string[]>(['Leo Vance', 'Tommy Miller']);
+  const [groupAssignmentNotice, setGroupAssignmentNotice] = useState<string | null>(null);
+
+  const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
+    setConfiguredGroupName(groupName);
+    setConfiguredStudents(students);
+    setGroupAssignmentNotice(`👥 Target Group Configured: ${groupName} (${students.length} student${students.length === 1 ? '' : 's'}: ${students.join(', ')})`);
+  };
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -500,16 +511,44 @@ export const ActivityCreationStudio: React.FC = () => {
             <label style={styles.paramLabel}>ASSIGN TARGET SCOPE</label>
             <select
               value={targetScope}
-              onChange={(e) => setTargetScope(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTargetScope(val);
+                if (val === 'Individual Students' || val === 'Small Focus Groups') {
+                  setIsGroupModalOpen(true);
+                }
+              }}
               style={styles.paramSelect}
             >
               <option value="Full Classroom Scope">Full Classroom Scope</option>
               <option value="Individual Students">Individual Students</option>
               <option value="Small Focus Groups">Small Focus Groups</option>
             </select>
+
+            <button
+              onClick={() => setIsGroupModalOpen(true)}
+              style={styles.configureGroupBtn}
+            >
+              👥 Configure Specific Group
+            </button>
+
+            {groupAssignmentNotice && (
+              <div style={styles.groupNoticeBox}>
+                {groupAssignmentNotice}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Group Configuration Dialog */}
+      <ConfigureGroupModal
+        isOpen={isGroupModalOpen}
+        onClose={() => setIsGroupModalOpen(false)}
+        onConfirm={handleConfirmGroupSelection}
+        initialGroupName={configuredGroupName}
+        initialStudents={configuredStudents}
+      />
     </div>
   );
 };
@@ -849,5 +888,28 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#1e293b',
     backgroundColor: '#ffffff',
     outline: 'none',
+  },
+  configureGroupBtn: {
+    marginTop: '0.4rem',
+    backgroundColor: '#0066b2',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.6rem 0.9rem',
+    borderRadius: '8px',
+    fontSize: '0.82rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0, 102, 178, 0.2)',
+  },
+  groupNoticeBox: {
+    marginTop: '0.4rem',
+    backgroundColor: '#f0f9ff',
+    border: '1px solid #bae6fd',
+    color: '#0369a1',
+    padding: '0.6rem 0.75rem',
+    borderRadius: '8px',
+    fontSize: '0.78rem',
+    fontWeight: '700',
+    lineHeight: '1.4',
   },
 };
