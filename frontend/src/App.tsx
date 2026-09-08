@@ -5,28 +5,14 @@ import { Sidebar } from './components/Sidebar';
 import { ActivityCreationStudio } from './components/ActivityCreationStudio';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { TeacherDashboard } from './pages/TeacherDashboard';
-import { StudentDashboard } from './pages/StudentDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('home');
 
-  const handleLoginSuccess = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        setCurrentTab('dashboard');
-        break;
-      case 'TEACHER':
-        setCurrentTab('dashboard');
-        break;
-      case 'STUDENT':
-      default:
-        setCurrentTab('dashboard');
-        break;
-    }
+  const handleLoginSuccess = (_role: string) => {
+    setCurrentTab('activity_creation');
   };
 
   const renderContent = () => {
@@ -48,7 +34,7 @@ const MainApp: React.FC = () => {
       );
     }
 
-    if (currentTab === 'activity_creation') {
+    if (currentTab === 'activity_creation' || currentTab === 'home') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
           <ActivityCreationStudio />
@@ -56,32 +42,10 @@ const MainApp: React.FC = () => {
       );
     }
 
-    if (currentTab === 'dashboard') {
-      if (user.role === 'ADMIN') {
-        return (
-          <ProtectedRoute allowedRoles={['ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        );
-      }
-      if (user.role === 'TEACHER') {
-        return (
-          <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-            <TeacherDashboard />
-          </ProtectedRoute>
-        );
-      }
-      return (
-        <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <StudentDashboard />
-        </ProtectedRoute>
-      );
-    }
-
-    // Default 'home' view
+    // Default view
     return (
       <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-        <StudentDashboard />
+        <ActivityCreationStudio />
       </ProtectedRoute>
     );
   };

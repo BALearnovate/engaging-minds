@@ -80,7 +80,6 @@ export const ClockDiagramStudent: React.FC<
 
   // Radial coordinate calculator (360 degrees divided by total hours)
   const getPolarPos = (index: number, total: number, radius: number, cx = 450, cy = 450) => {
-    const angleDeg = (index / total) * 360 - 90; // Start at top (12 o'clock / 00:00)
     const angleRad = (angleDeg * Math.PI) / 180;
     return {
       x: cx + radius * Math.cos(angleRad),
@@ -233,7 +232,6 @@ export const ClockDiagramStudent: React.FC<
           Selected Hour Slot: <strong>{formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)
         </div>
       </div>
-
       {/* Feedback Banner */}
       {feedback && <div style={styles.feedbackBanner}>{feedback.text}</div>}
     </div>

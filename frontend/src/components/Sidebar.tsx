@@ -11,7 +11,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
 
   const menuItems = [
     { id: 'home', label: 'Home', icon: '🏠' },
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'activity_creation', label: 'Activity Creation', icon: '✨' },
   ];
 

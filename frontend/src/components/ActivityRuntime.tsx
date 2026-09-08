@@ -236,14 +236,13 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
       {/* Navigation Footer */}
       <div style={styles.footerNav}>
-        {currentBlockIndex > 0 && (
-          <button
-            onClick={() => setCurrentIndex(currentBlockIndex - 1)}
-            style={styles.navBtn}
-          >
-            ← Previous
-          </button>
-        )}
+        <button
+          disabled={currentBlockIndex === 0}
+          onClick={() => setCurrentIndex(currentBlockIndex - 1)}
+          style={styles.navBtn}
+        >
+          ← Previous
+        </button>
 
         <div style={styles.dotNav}>
           {definition.blocks.map((b, idx) => (
