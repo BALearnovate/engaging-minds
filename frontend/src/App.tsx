@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ActivityCreationStudio } from './components/ActivityCreationStudio';
+import { StudentDashboard } from './pages/StudentDashboard';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -11,8 +12,12 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('home');
 
-  const handleLoginSuccess = (_role: string) => {
-    setCurrentTab('activity_creation');
+  const handleLoginSuccess = (role: string) => {
+    if (role === 'STUDENT') {
+      setCurrentTab('student_home');
+    } else {
+      setCurrentTab('activity_creation');
+    }
   };
 
   const renderContent = () => {
@@ -31,6 +36,14 @@ const MainApp: React.FC = () => {
           onSuccess={handleLoginSuccess}
           onNavigateToLogin={() => setCurrentTab('login')}
         />
+      );
+    }
+
+    if (user.role === 'STUDENT' || currentTab === 'student_home') {
+      return (
+        <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
+          <StudentDashboard />
+        </ProtectedRoute>
       );
     }
 
