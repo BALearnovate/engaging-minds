@@ -6,14 +6,13 @@ import type {
 } from '../types';
 import type {
   ClockDiagramConfig,
-  StudentBlockState,
   ValidationResult,
   ClockHourSlot,
 } from '../../types/activityDsl';
 
 export const ClockDiagramStudent: React.FC<
   StudentBlockProps<ClockDiagramConfig, Record<number, string>>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, onAnswerSubmit }) => {
   const [hourActivities, setHourActivities] = useState<Record<number, string>>(() => {
     return (studentState.response as Record<number, string>) || {};
   });
@@ -230,7 +229,24 @@ export const ClockDiagramStudent: React.FC<
         </div>
 
         <div style={styles.clockFooterNote}>
-          Selected Hour Slot: <strong>{formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)
+          <span>Selected Hour Slot: <strong>{formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)</span>
+          {!submitted && (
+            <button
+              onClick={handleSubmit}
+              style={{
+                marginLeft: '1rem',
+                padding: '0.4rem 0.8rem',
+                backgroundColor: '#0066b2',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: '700',
+                cursor: 'pointer',
+              }}
+            >
+              💾 Save & Submit Schedule
+            </button>
+          )}
         </div>
       </div>
       {/* Feedback Banner */}
@@ -291,6 +307,7 @@ export const clockDiagramDefinition: ActivityComponentDefinition<
     const percentage = Math.round((filledCount / total) * 100);
 
     return {
+      blockId: state.blockId,
       percentage,
       score: percentage,
       completed: state.status === 'completed' || filledCount === total,

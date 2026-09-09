@@ -196,6 +196,7 @@ export const trueFalseDefinition: ActivityComponentDefinition<TrueFalseConfig, b
   calculateProgress(state, _config) {
     const completed = state.status === 'completed';
     return {
+      blockId: state.blockId,
       percentage: completed ? 100 : state.status === 'in_progress' ? 50 : 0,
       score: state.score || 0,
       completed,

@@ -8,6 +8,7 @@ import type {
 } from '../types/activityDsl';
 import { ComponentRegistry } from '../registry';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
+import { logXApiEvent, XAPI_VERBS } from '../utils/xapiTelemetry';
 
 interface ActivityRuntimeProps {
   definition: ActivityDefinition;
@@ -101,6 +102,19 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   const handleAnswerSubmit = (response: any, isCorrect: boolean, score: number) => {
     if (!currentBlock) return;
 
+    // Emit Standardized xAPI Statement
+    logXApiEvent({
+      studentName: studentName || 'Student Learner',
+      verb: isCorrect ? XAPI_VERBS.COMPLETED : XAPI_VERBS.ANSWERED,
+      activityId: definition.id || shareCode || 'preview_activity',
+      activityTitle: definition.title || 'Interactive Activity',
+      blockId: currentBlock.id,
+      blockType: currentBlock.type,
+      responsePayload: response,
+      completion: isCorrect,
+      score,
+    });
+
     const event: ActivityEvent = {
       id: `evt_${Date.now()}`,
       sessionId: shareCode || 'preview',
@@ -148,6 +162,17 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   const handleHelpRequest = (message: string) => {
     if (!currentBlock) return;
 
+    // Log xAPI Statement for Help Request
+    logXApiEvent({
+      studentName: studentName || 'Student Learner',
+      verb: XAPI_VERBS.ASKED,
+      activityId: definition.id || shareCode || 'preview_activity',
+      activityTitle: definition.title || 'Interactive Activity',
+      blockId: currentBlock.id,
+      blockType: currentBlock.type,
+      responsePayload: { helpMessage: message },
+    });
+
     if (socket && shareCode) {
       socket.emit('request_help', {
         activityId: shareCode,
@@ -194,7 +219,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
         <div style={styles.titleInfo}>
           <h2 style={styles.actTitle}>{definition.title}</h2>
           <span style={styles.blockTracker}>
-            Exercise {currentBlockIndex + 1} of {definition.blocks.length}
+            Exercise {currentBlockIndex + 1} of {definition.blocks.length} ({progress.percent}% Completed)
           </span>
         </div>
       </div>

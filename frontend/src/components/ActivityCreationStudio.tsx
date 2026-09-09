@@ -15,14 +15,14 @@ interface DatabaseActivity {
 }
 
 export const ActivityCreationStudio: React.FC = () => {
-  const { token: authContextToken, user } = useAuth();
+  const { token: authContextToken } = useAuth();
 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
   const [prompt, setPrompt] = useState<string>(
     'Create a Grade 6 Science activity on Photosynthesis with core concept flashcards, a 24-hour radial clock schedule, hotspot diagram, and multiple choice quiz.',
   );
-  const [subject, setSubject] = useState<string>('Science');
-  const [gradeLevel, setGradeLevel] = useState<string>('Grade 6');
+  const [subject] = useState<string>('Science');
+  const [gradeLevel] = useState<string>('Grade 6');
   const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
   const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stickers');
   const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
@@ -448,6 +448,9 @@ export const ActivityCreationStudio: React.FC = () => {
                           {selectedTemplateActivity.description || selectedTemplateActivity.content.description}
                         </p>
                       </div>
+                      <button onClick={handleLoadTemplateIntoStudio} style={styles.configureGroupBtn}>
+                        📥 Load Template into Studio
+                      </button>
                     </div>
 
                     <ActivityRuntime definition={selectedTemplateActivity.content} />

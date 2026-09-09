@@ -122,6 +122,7 @@ export interface ActivityBlock {
 }
 
 export interface ActivityDefinition {
+  id?: string;
   schemaVersion: '1.0';
   title: string;
   description?: string;
@@ -163,9 +164,10 @@ export interface HotspotTarget {
 }
 
 export interface BlockProgress {
-  blockId: string;
+  blockId?: string;
   completed: boolean;
   score: number;
+  percentage?: number;
 }
 
 export interface ActivityEvent {

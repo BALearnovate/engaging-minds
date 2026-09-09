@@ -6,9 +6,7 @@ import type {
 } from '../types';
 import type {
   FindHotspotsConfig,
-  StudentBlockState,
   ValidationResult,
-  HotspotTarget,
 } from '../../types/activityDsl';
 
 export const FindHotspotsStudent: React.FC<
@@ -207,7 +205,6 @@ export const FindHotspotsStudent: React.FC<
 
 export const FindHotspotsTeacherEditor: React.FC<TeacherEditorProps<FindHotspotsConfig>> = ({
   config,
-  onChange,
 }) => {
   return (
     <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
@@ -268,6 +265,7 @@ export const findHotspotsDefinition: ActivityComponentDefinition<
     const total = config.hotspots?.length || 1;
     const percentage = Math.round((foundIds.length / total) * 100);
     return {
+      blockId: state.blockId,
       percentage,
       score: percentage,
       completed: state.status === 'completed' || foundIds.length === total,

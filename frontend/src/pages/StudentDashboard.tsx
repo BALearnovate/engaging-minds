@@ -119,6 +119,7 @@ export const StudentDashboard: React.FC = () => {
           status: 'assigned',
           dueDate: 'Today at 5:00 PM',
           content: {
+            schemaVersion: '1.0',
             id: 'photosynthesis-dsl',
             title: 'Photosynthesis & Plant Biology',
             subject: 'Science',
@@ -126,15 +127,25 @@ export const StudentDashboard: React.FC = () => {
             blocks: [
               {
                 id: 'b1',
-                type: 'flashcard',
+                type: 'flashcards',
                 title: 'Core Concept Flashcards',
-                prompt: 'Flip through key terms before attempting the radial clock diagram.',
+                instructions: 'Flip through key terms before attempting the radial clock diagram.',
+                config: {
+                  cards: [
+                    { id: 'fc1', prompt: 'What is Chlorophyll?', answer: 'Green pigment that absorbs light energy.' },
+                    { id: 'fc2', prompt: 'What is Stomata?', answer: 'Microscopic pores for gas exchange.' },
+                  ],
+                },
               },
               {
                 id: 'b2',
                 type: 'clock_diagram',
                 title: '24-Hour Plant Rhythm Clock',
-                prompt: 'Specify plant metabolic activities for each radial hour slot.',
+                instructions: 'Specify plant metabolic activities for each radial hour slot.',
+                config: {
+                  prompt: 'Specify plant metabolic activities for each radial hour slot.',
+                  hours: Array.from({ length: 24 }, (_, i) => ({ hour: i })),
+                },
               },
             ],
           },
@@ -152,6 +163,7 @@ export const StudentDashboard: React.FC = () => {
           status: 'in_progress',
           dueDate: 'Tomorrow at 10:00 AM',
           content: {
+            schemaVersion: '1.0',
             id: 'gyr-response-cards',
             title: 'Green-Yellow-Red Response Cards',
             subject: 'General Education',
@@ -161,7 +173,12 @@ export const StudentDashboard: React.FC = () => {
                 id: 'gyr-1',
                 type: 'multiple_choice',
                 title: 'Card Selection Activity',
-                prompt: 'Select Green (Understand), Yellow (Unsure), or Red (Need Help).',
+                instructions: 'Select Green (Understand), Yellow (Unsure), or Red (Need Help).',
+                config: {
+                  question: 'How comfortable do you feel with today’s topic?',
+                  options: ['🟢 Green - I get it!', '🟡 Yellow - I need practice', '🔴 Red - I need help'],
+                  correctAnswer: '🟢 Green - I get it!',
+                },
               },
             ],
           },
