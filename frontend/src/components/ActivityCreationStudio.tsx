@@ -30,11 +30,22 @@ export const ActivityCreationStudio: React.FC = () => {
   const [configuredGroupName, setConfiguredGroupName] = useState<string>('Support Group Alpha');
   const [configuredStudents, setConfiguredStudents] = useState<string[]>(['Leo Vance', 'Tommy Miller']);
   const [groupAssignmentNotice, setGroupAssignmentNotice] = useState<string | null>(null);
+  const [publishNotice, setPublishNotice] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
 
   const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
     setConfiguredGroupName(groupName);
     setConfiguredStudents(students);
     setGroupAssignmentNotice(`👥 Target Group Configured: ${groupName} (${students.length} student${students.length === 1 ? '' : 's'}: ${students.join(', ')})`);
+  };
+
+  const handlePublishActivity = () => {
+    setIsPublishing(true);
+    setPublishNotice(null);
+    setTimeout(() => {
+      setIsPublishing(false);
+      setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope} (${timerMode}, ${rewardMode}).`);
+    }, 500);
   };
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -529,6 +540,26 @@ export const ActivityCreationStudio: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Publish Activity Action */}
+          <div style={styles.publishSection}>
+            <button
+              onClick={handlePublishActivity}
+              disabled={isPublishing}
+              style={{
+                ...styles.publishBtn,
+                ...(isPublishing ? styles.publishBtnDisabled : {}),
+              }}
+            >
+              {isPublishing ? '⏳ Publishing Activity...' : '🚀 Publish Activity'}
+            </button>
+
+            {publishNotice && (
+              <div style={styles.publishNoticeBox}>
+                {publishNotice}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -899,5 +930,41 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.78rem',
     fontWeight: '700',
     lineHeight: '1.4',
+  },
+  publishSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px dashed #cbd5e1',
+  },
+  publishBtn: {
+    width: '100%',
+    backgroundColor: '#0066b2',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.85rem 1.25rem',
+    borderRadius: '10px',
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.3)',
+    transition: 'all 0.2s ease',
+  },
+  publishBtnDisabled: {
+    backgroundColor: '#94a3b8',
+    cursor: 'not-allowed',
+    boxShadow: 'none',
+  },
+  publishNoticeBox: {
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    color: '#166534',
+    padding: '0.75rem',
+    borderRadius: '8px',
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    textAlign: 'center',
   },
 };
