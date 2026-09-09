@@ -9,6 +9,7 @@ import type {
   StudentBlockState,
   ValidationResult,
 } from '../../types/activityDsl';
+import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const TrueFalseStudent: React.FC<
   StudentBlockProps<TrueFalseConfig, boolean>
@@ -18,9 +19,23 @@ export const TrueFalseStudent: React.FC<
   );
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
 
+  const expectedBool = String(config.isTrue).toLowerCase() === 'true';
+
+  const handleSelectOption = (val: boolean) => {
+    setSelected(val);
+    logXApiEvent({
+      verb: XAPI_VERBS.INTERACTED,
+      activityId: block.id || 'tf_activity',
+      activityTitle: block.title || 'True/False Statement',
+      blockId: block.id,
+      blockType: 'true_false',
+      responsePayload: { selectedOption: val ? 'TRUE' : 'FALSE', statement: config.statement },
+    });
+  };
+
   const handleSubmit = () => {
     if (selected === null) return;
-    const isCorrect = selected === config.isTrue;
+    const isCorrect = selected === expectedBool;
     setSubmitted(true);
     onAnswerSubmit(selected, isCorrect, isCorrect ? 100 : 0);
   };
@@ -36,7 +51,7 @@ export const TrueFalseStudent: React.FC<
         <div style={styles.btnRow}>
           {[true, false].map((val) => {
             const isSelected = selected === val;
-            const isCorrect = val === config.isTrue;
+            const isCorrect = val === expectedBool;
             let btnStyle = { ...styles.optionBtn };
 
             if (isSelected) btnStyle = { ...btnStyle, ...styles.selectedBtn };
@@ -49,7 +64,7 @@ export const TrueFalseStudent: React.FC<
               <button
                 key={val ? 'true' : 'false'}
                 disabled={submitted}
-                onClick={() => setSelected(val)}
+                onClick={() => handleSelectOption(val)}
                 style={btnStyle}
               >
                 {val ? '👍 TRUE' : '👎 FALSE'}

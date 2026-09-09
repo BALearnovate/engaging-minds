@@ -9,6 +9,7 @@ import type {
   StudentBlockState,
   ValidationResult,
 } from '../../types/activityDsl';
+import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const MultipleChoiceStudent: React.FC<
   StudentBlockProps<MultipleChoiceConfig, string>
@@ -18,9 +19,22 @@ export const MultipleChoiceStudent: React.FC<
   );
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
 
+  const handleSelectOption = (option: string) => {
+    setSelected(option);
+    logXApiEvent({
+      verb: XAPI_VERBS.INTERACTED,
+      activityId: block.id || 'mcq_activity',
+      activityTitle: block.title || 'Multiple Choice Question',
+      blockId: block.id,
+      blockType: 'multiple_choice',
+      responsePayload: { selectedOption: option, question: config.question },
+    });
+  };
+
   const handleSubmit = () => {
     if (!selected) return;
-    const isCorrect = selected === config.correctAnswer;
+    const expected = config.correctAnswer || (config as any).answer;
+    const isCorrect = selected === expected;
     setSubmitted(true);
     onAnswerSubmit(selected, isCorrect, isCorrect ? 100 : 0);
   };
@@ -51,7 +65,7 @@ export const MultipleChoiceStudent: React.FC<
               <button
                 key={idx}
                 disabled={submitted}
-                onClick={() => setSelected(option)}
+                onClick={() => handleSelectOption(option)}
                 style={btnStyle}
               >
                 <span style={styles.optionIndex}>{String.fromCharCode(65 + idx)}.</span>

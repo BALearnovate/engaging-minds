@@ -9,6 +9,7 @@ import type {
   StudentBlockState,
   ValidationResult,
 } from '../../types/activityDsl';
+import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const FillBlankStudent: React.FC<
   StudentBlockProps<FillBlankConfig, Record<string, string>>
@@ -21,7 +22,16 @@ export const FillBlankStudent: React.FC<
   const [evaluation, setEvaluation] = useState<Record<string, boolean>>({});
 
   const handleInputChange = (blankId: string, val: string) => {
-    setUserAnswers((prev) => ({ ...prev, [blankId]: val }));
+    const updated = { ...userAnswers, [blankId]: val };
+    setUserAnswers(updated);
+    logXApiEvent({
+      verb: XAPI_VERBS.INTERACTED,
+      activityId: block.id || 'fill_blank_activity',
+      activityTitle: block.title || 'Fill in the Blank',
+      blockId: block.id,
+      blockType: 'fill_in_the_blank',
+      responsePayload: { blankId, value: val, currentAnswers: updated },
+    });
   };
 
   const handleSubmit = () => {
