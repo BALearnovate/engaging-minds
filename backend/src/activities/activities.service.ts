@@ -183,12 +183,57 @@ export class ActivitiesService {
     blockId: string | undefined,
     payload: any,
   ) {
-    const studentSession = await this.prisma.studentSession.findUnique({
+    let studentSession = await this.prisma.studentSession.findUnique({
       where: { id: studentSessionId },
     });
 
     if (!studentSession) {
-      throw new NotFoundException(`Student session "${studentSessionId}" not found`);
+      // Auto-provision a standalone StudentSession if it doesn't exist yet
+      let actSession = await this.prisma.activitySession.findFirst();
+      if (!actSession) {
+        let version = await this.prisma.activityVersion.findFirst();
+        if (!version) {
+          const act = await this.prisma.activity.findFirst();
+          if (act) {
+            version = await this.prisma.activityVersion.create({
+              data: {
+                activityId: act.id,
+                version: 1,
+                definition: act.content as any,
+                status: 'PUBLISHED',
+                shareCode: `AUTO_VER_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+              },
+            });
+          }
+        }
+        if (version) {
+          const teacher = await this.prisma.user.findFirst({ where: { role: 'TEACHER' } });
+          const uniqueShareCode = `AUTO_SESS_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          actSession = await this.prisma.activitySession.create({
+            data: {
+              activityVersionId: version.id,
+              teacherId: teacher?.id || 'system',
+              shareCode: uniqueShareCode,
+              status: 'ACTIVE',
+            },
+          });
+        }
+      }
+
+      if (actSession) {
+        studentSession = await this.prisma.studentSession.create({
+          data: {
+            id: studentSessionId,
+            activitySessionId: actSession.id,
+            studentName: payload?.actor?.name || 'Student Learner',
+            status: 'IN_PROGRESS',
+            progress: 0,
+            score: 0,
+          },
+        });
+      } else {
+        throw new NotFoundException(`Student session "${studentSessionId}" not found`);
+      }
     }
 
     const event = await this.prisma.activityEvent.create({
@@ -205,14 +250,21 @@ export class ActivitiesService {
     let updatedProgress = studentSession.progress;
     let updatedScore = studentSession.score;
 
-    if (type === 'ANSWER_SUBMITTED') {
+    if (type === 'ANSWERED' || type === 'ANSWER_SUBMITTED') {
+      updatedStatus = 'IN_PROGRESS';
       updatedProgress = Math.min(100, updatedProgress + 20);
-      if (payload?.isCorrect) {
-        updatedScore += (payload?.score as number) || 100;
+      if (payload?.result?.completion || payload?.isCorrect) {
+        updatedScore += (payload?.result?.score?.raw as number) || (payload?.score as number) || 100;
       }
-    } else if (type === 'ACTIVITY_COMPLETED') {
+    } else if (type === 'COMPLETED' || type === 'ACTIVITY_COMPLETED') {
       updatedStatus = 'COMPLETED';
       updatedProgress = 100;
+    } else if (type === 'INTERACTED') {
+      if (updatedStatus === 'NOT_STARTED') {
+        updatedStatus = 'IN_PROGRESS';
+      }
+    } else if (type === 'ASKED') {
+      updatedStatus = 'STUCK';
     } else if (type === 'TEACHER_INTERVENTION') {
       if (payload?.action === 'SHOW_HINT') {
         updatedStatus = 'IN_PROGRESS';

@@ -10,9 +10,11 @@ import type {
   ValidationResult,
 } from '../../types/activityDsl';
 
+import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
+
 export const FlashcardsStudent: React.FC<
   StudentBlockProps<FlashcardsConfig, number>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, studentSessionId, studentName, onAnswerSubmit, onHelpRequest }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewedCards, setReviewedCards] = useState<Set<number>>(new Set());
@@ -20,10 +22,22 @@ export const FlashcardsStudent: React.FC<
   const currentCard = config.cards[currentIndex];
 
   const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+    const newFlippedState = !isFlipped;
+    setIsFlipped(newFlippedState);
     const nextSet = new Set(reviewedCards);
     nextSet.add(currentIndex);
     setReviewedCards(nextSet);
+
+    logXApiEvent({
+      studentSessionId,
+      studentName,
+      verb: XAPI_VERBS.INTERACTED,
+      activityId: block.id || 'flashcards_activity',
+      activityTitle: block.title || 'Flashcards',
+      blockId: block.id,
+      blockType: 'flashcards',
+      responsePayload: { cardIndex: currentIndex, prompt: currentCard?.prompt, answer: currentCard?.answer, flipped: newFlippedState },
+    });
 
     if (nextSet.size === config.cards.length) {
       onAnswerSubmit(nextSet.size, true, 100);

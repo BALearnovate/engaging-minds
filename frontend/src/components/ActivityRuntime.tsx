@@ -53,7 +53,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
   const handleCompleteActivity = () => {
     logXApiEvent({
-      studentName: studentName || 'Student Learner',
+      studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
       verb: XAPI_VERBS.COMPLETED,
       activityId: definition.id || shareCode || 'activity_session',
       activityTitle: definition.title || 'Interactive Activity',
@@ -127,8 +127,8 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
     // Emit Standardized xAPI Statement
     logXApiEvent({
+      studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
       studentName: studentName || 'Student Learner',
-      verb: isCorrect ? XAPI_VERBS.COMPLETED : XAPI_VERBS.ANSWERED,
       activityId: definition.id || shareCode || 'preview_activity',
       activityTitle: definition.title || 'Interactive Activity',
       blockId: currentBlock.id,
@@ -187,6 +187,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
     // Log xAPI Statement for Help Request
     logXApiEvent({
+      studentSessionId,
       studentName: studentName || 'Student Learner',
       verb: XAPI_VERBS.ASKED,
       activityId: definition.id || shareCode || 'preview_activity',
@@ -242,7 +243,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
         <div style={styles.titleInfo}>
           <h2 style={styles.actTitle}>{definition.title}</h2>
           <span style={styles.blockTracker}>
-            Exercise {currentBlockIndex + 1} of {definition.blocks.length} ({progress.percent}% Completed)
+            Exercise*********** {currentBlockIndex + 1} of {definition.blocks.length} ({progress.percent}% Completed)
           </span>
         </div>
       </div>
@@ -272,8 +273,8 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             block: currentBlock,
             config: currentBlock.config,
             studentState: currentBlockState,
-            onAnswerSubmit: handleAnswerSubmit,
-            onHelpRequest: handleHelpRequest,
+            studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
+            studentName: studentName || 'Student Learner',
           })}
         </div>
       ) : (

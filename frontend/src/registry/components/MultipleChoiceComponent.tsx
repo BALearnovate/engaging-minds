@@ -13,7 +13,7 @@ import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const MultipleChoiceStudent: React.FC<
   StudentBlockProps<MultipleChoiceConfig, string>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, studentSessionId, studentName, onAnswerSubmit, onHelpRequest }) => {
   const [selected, setSelected] = useState<string>(
     typeof studentState.response === 'string' ? studentState.response : '',
   );
@@ -22,6 +22,8 @@ export const MultipleChoiceStudent: React.FC<
   const handleSelectOption = (option: string) => {
     setSelected(option);
     logXApiEvent({
+      studentSessionId,
+      studentName,
       verb: XAPI_VERBS.INTERACTED,
       activityId: block.id || 'mcq_activity',
       activityTitle: block.title || 'Multiple Choice Question',

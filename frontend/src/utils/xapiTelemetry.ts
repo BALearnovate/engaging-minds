@@ -80,6 +80,7 @@ export const XAPI_VERBS = {
  * Creates, formats, and console.logs a standardized xAPI Statement
  */
 export const logXApiEvent = (params: {
+  studentSessionId?: string;
   studentName?: string;
   studentEmail?: string;
   verb: { id: string; display: { [lang: string]: string } };
@@ -135,6 +136,25 @@ export const logXApiEvent = (params: {
   console.log('Result:', statement.result);
   console.log('Full JSON Statement:', statement);
   console.groupEnd();
+
+  // Asynchronously persist event to database
+  const effectiveSessionId = params.studentSessionId || 'guest_session_preview';
+  const verbType = params.verb.display['en-US']?.toUpperCase() || 'INTERACTED';
+
+  fetch('http://localhost:3000/activities/event', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      studentSessionId: effectiveSessionId,
+      type: verbType,
+      blockId: params.blockId,
+      payload: statement,
+    }),
+  }).catch((err) => {
+    console.warn('⚠️ Failed to persist xAPI event to backend database:', err);
+  });
 
   return statement;
 };

@@ -12,6 +12,8 @@ export interface StudentBlockProps<TConfig = any, TResponse = any> {
   block: ActivityBlock;
   config: TConfig;
   studentState: StudentBlockState;
+  studentSessionId?: string;
+  studentName?: string;
   onAnswerSubmit: (response: TResponse, isCorrect: boolean, score: number) => void;
   onHelpRequest?: (message: string) => void;
 }
