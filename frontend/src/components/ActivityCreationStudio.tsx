@@ -317,7 +317,7 @@ export const ActivityCreationStudio: React.FC = () => {
                       </span>
                     </div>
 
-                    <ActivityRuntime definition={activity} />
+                    <ActivityRuntime definition={activity} isTeacherView={true} />
                   </div>
                 ) : (
                   <div style={styles.emptyBlueprint}>
@@ -453,7 +453,7 @@ export const ActivityCreationStudio: React.FC = () => {
                       </button>
                     </div>
 
-                    <ActivityRuntime definition={selectedTemplateActivity.content} />
+                    <ActivityRuntime definition={selectedTemplateActivity.content} isTeacherView={true} />
                   </div>
                 ) : (
                   <div style={styles.emptyBlueprint}>

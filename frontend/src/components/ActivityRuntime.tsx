@@ -15,6 +15,7 @@ interface ActivityRuntimeProps {
   shareCode?: string;
   studentSessionId?: string;
   studentName?: string;
+  isTeacherView?: boolean;
   onCompleted?: (groupName?: string, selectedStudents?: string[]) => void;
 }
 
@@ -23,6 +24,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   shareCode,
   studentSessionId,
   studentName,
+  isTeacherView = false,
   onCompleted,
 }) => {
   const [currentBlockIndex, setCurrentIndex] = useState(0);
@@ -46,6 +48,27 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     setAssignmentBanner(bannerMsg);
     if (onCompleted) {
       onCompleted(groupName, selectedStudents);
+    }
+  };
+
+  const handleCompleteActivity = () => {
+    logXApiEvent({
+      studentName: studentName || 'Student Learner',
+      verb: XAPI_VERBS.COMPLETED,
+      activityId: definition.id || shareCode || 'activity_session',
+      activityTitle: definition.title || 'Interactive Activity',
+      responsePayload: { status: 'COMPLETED', progressPercent: progress.percent },
+      completion: true,
+      score: progress.avgScore,
+    });
+
+    if (isTeacherView) {
+      setIsAssignModalOpen(true);
+    } else {
+      setAssignmentBanner('🎉 Activity completed successfully! Excellent work!');
+      if (onCompleted) {
+        onCompleted();
+      }
     }
   };
 
@@ -294,7 +317,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           </button>
         ) : (
           <button
-            onClick={() => setIsAssignModalOpen(true)}
+            onClick={handleCompleteActivity}
             style={styles.navBtnSuccess}
           >
             Complete Activity ✓
