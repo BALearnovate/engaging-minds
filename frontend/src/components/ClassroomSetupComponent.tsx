@@ -1,47 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { classroomsApi } from '../api/classrooms';
+import type { ClassroomProfile, StudentRecord } from '../api/classrooms';
 
-export interface StudentRecord {
-  id: string;
-  firstName: string;
-  lastName: string;
-  loginCode: string;
-}
-
-export interface ClassroomProfile {
-  id: string;
-  subject: string;
-  grade: string;
-  year: string;
-  students: StudentRecord[];
-}
-
-const INITIAL_CLASSROOMS: ClassroomProfile[] = [
-  {
-    id: 'class-1',
-    subject: 'Mathematics',
-    grade: 'Grade 4',
-    year: '2026',
-    students: [
-      { id: 's1', firstName: 'Leo', lastName: 'Vance', loginCode: '4829' },
-      { id: 's2', firstName: 'Tommy', lastName: 'Miller', loginCode: '9120' },
-      { id: 's3', firstName: 'Penny', lastName: 'Woods', loginCode: '3741' },
-    ],
-  },
-  {
-    id: 'class-2',
-    subject: 'Social Studies',
-    grade: 'Grade 5',
-    year: '2026',
-    students: [
-      { id: 's4', firstName: 'Alex', lastName: 'Rivera', loginCode: '1058' },
-      { id: 's5', firstName: 'Maya', lastName: 'Lin', loginCode: '6294' },
-    ],
-  },
-];
+export type { StudentRecord, ClassroomProfile };
 
 export const ClassroomSetupComponent: React.FC = () => {
-  const [classrooms, setClassrooms] = useState<ClassroomProfile[]>(INITIAL_CLASSROOMS);
-  const [selectedClassId, setSelectedClassId] = useState<string>('class-1');
+  const { token: authContextToken } = useAuth();
+  const activeToken =
+    authContextToken ||
+    localStorage.getItem('access_token') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('accessToken') ||
+    '';
+
+  const [classrooms, setClassrooms] = useState<ClassroomProfile[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isCreatingClass, setIsCreatingClass] = useState<boolean>(false);
 
   // New Classroom Form State: Subject, Grade, Year
@@ -50,7 +26,7 @@ export const ClassroomSetupComponent: React.FC = () => {
   const [newYear, setNewYear] = useState<string>('2026');
 
   // Roster Entry Mode ('manual' | 'bulk')
-  const [entryMode, setEntryMode] = useState<'manual' | 'bulk'>('bulk');
+  const [entryMode, setEntryMode] = useState<'manual' | 'bulk'>('manual');
 
   // Manual Entry Form State
   const [manualFirstName, setManualFirstName] = useState<string>('');
@@ -69,92 +45,159 @@ export const ClassroomSetupComponent: React.FC = () => {
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   const [printMode, setPrintMode] = useState<'slips' | 'master'>('slips');
 
-  const selectedClassroom = classrooms.find((c) => c.id === selectedClassId) || classrooms[0];
+  // Load Classrooms from DB on Mount
+  useEffect(() => {
+    loadClassroomsFromDb();
+  }, [activeToken]);
 
-  const generateLoginCode = (): string => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
+  const loadClassroomsFromDb = async () => {
+    if (!activeToken) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const data = await classroomsApi.getClassrooms(activeToken);
+      setClassrooms(data);
+      if (data.length > 0) {
+        setSelectedClassId((prev) => (data.some((c) => c.id === prev) ? prev : data[0].id));
+      } else {
+        setIsCreatingClass(true);
+      }
+    } catch (err) {
+      console.error('Failed to load classrooms from database:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCreateClassroom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSubject.trim()) return;
-
-    const created: ClassroomProfile = {
-      id: `class-${Date.now()}`,
-      subject: newSubject.trim(),
-      grade: newGrade.trim() || 'Grade 4',
-      year: newYear.trim() || '2026',
+  const selectedClassroom =
+    classrooms.find((c) => c.id === selectedClassId) ||
+    classrooms[0] || {
+      id: '',
+      subject: 'Select / Create a Classroom',
+      grade: 'Grade 1',
+      year: '2026',
       students: [],
     };
 
-    setClassrooms([created, ...classrooms]);
-    setSelectedClassId(created.id);
-    setNewSubject('');
-    setIsCreatingClass(false);
-  };
-
-  const handleAddManualStudent = (e: React.FormEvent) => {
+  const handleCreateClassroom = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualFirstName.trim()) return;
+    if (!newSubject.trim()) return;
 
-    const newStudent: StudentRecord = {
-      id: `std_${Date.now()}_${Math.random()}`,
-      firstName: manualFirstName.trim(),
-      lastName: manualLastName.trim() || 'S.',
-      loginCode: generateLoginCode(),
-    };
+    setIsSaving(true);
+    try {
+      const created = await classroomsApi.createClassroom(
+        {
+          subject: newSubject.trim(),
+          grade: newGrade.trim() || 'Grade 4',
+          year: newYear.trim() || '2026',
+        },
+        activeToken,
+      );
 
-    setClassrooms((prev) =>
-      prev.map((c) =>
-        c.id === selectedClassId
-          ? { ...c, students: [...c.students, newStudent] }
-          : c,
-      ),
-    );
-
-    setManualFirstName('');
-    setManualLastName('');
+      setClassrooms([created, ...classrooms]);
+      setSelectedClassId(created.id);
+      setNewSubject('');
+      setIsCreatingClass(false);
+    } catch (err) {
+      console.error('Failed to create classroom in DB:', err);
+      alert('⚠️ Could not save classroom to database. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleParseBulkCsv = () => {
-    if (!bulkCsvText.trim()) return;
+  const handleAddManualStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualFirstName.trim() || !selectedClassroom.id) return;
+
+    setIsSaving(true);
+    try {
+      const updatedStudents = await classroomsApi.addStudents(
+        selectedClassroom.id,
+        [
+          {
+            firstName: manualFirstName.trim(),
+            lastName: manualLastName.trim() || 'S.',
+          },
+        ],
+        activeToken,
+      );
+
+      setClassrooms((prev) =>
+        prev.map((c) =>
+          c.id === selectedClassroom.id ? { ...c, students: updatedStudents } : c,
+        ),
+      );
+
+      setManualFirstName('');
+      setManualLastName('');
+    } catch (err) {
+      console.error('Failed to add student to DB:', err);
+      alert('⚠️ Could not save student to database. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleParseBulkCsv = async () => {
+    if (!bulkCsvText.trim() || !selectedClassroom.id) return;
 
     const lines = bulkCsvText
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
 
-    const parsedStudents: StudentRecord[] = lines.map((line, idx) => {
+    const parsedStudents = lines.map((line, idx) => {
       const parts = line.split(/[\s,]+/);
       const firstName = parts[0] || 'Student';
       const lastName = parts.slice(1).join(' ') || `${idx + 1}`;
-      return {
-        id: `std_bulk_${Date.now()}_${idx}`,
-        firstName,
-        lastName,
-        loginCode: generateLoginCode(),
-      };
+      return { firstName, lastName };
     });
 
-    setClassrooms((prev) =>
-      prev.map((c) =>
-        c.id === selectedClassId
-          ? { ...c, students: [...c.students, ...parsedStudents] }
-          : c,
-      ),
-    );
+    setIsSaving(true);
+    try {
+      const updatedStudents = await classroomsApi.addStudents(
+        selectedClassroom.id,
+        parsedStudents,
+        activeToken,
+      );
 
-    alert(`✅ Parsed and added ${parsedStudents.length} student records to ${selectedClassroom.subject} - ${selectedClassroom.grade}!`);
+      setClassrooms((prev) =>
+        prev.map((c) =>
+          c.id === selectedClassroom.id ? { ...c, students: updatedStudents } : c,
+        ),
+      );
+
+      alert(`✅ Parsed and saved ${parsedStudents.length} student records to DB!`);
+    } catch (err) {
+      console.error('Failed to save bulk students to DB:', err);
+      alert('⚠️ Could not save bulk students to database. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleRemoveStudent = (studentId: string) => {
+  const handleRemoveStudent = async (studentId: string) => {
+    if (!selectedClassroom.id) return;
+
+    // Optimistically update local state
     setClassrooms((prev) =>
       prev.map((c) =>
-        c.id === selectedClassId
+        c.id === selectedClassroom.id
           ? { ...c, students: c.students.filter((s) => s.id !== studentId) }
           : c,
       ),
     );
+
+    try {
+      await classroomsApi.deleteStudent(selectedClassroom.id, studentId, activeToken);
+    } catch (err) {
+      console.error('Failed to delete student from DB:', err);
+      // Re-sync with DB on error
+      loadClassroomsFromDb();
+    }
   };
 
   const toggleSingleCodeReveal = (studentId: string) => {
@@ -195,7 +238,11 @@ export const ClassroomSetupComponent: React.FC = () => {
       <div style={styles.mainStudioCard}>
         {/* Header */}
         <div style={styles.headerBox}>
-          <h1 style={styles.bannerTitle}>CLASSROOM SETUP</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 style={styles.bannerTitle}>CLASSROOM SETUP</h1>
+            {isLoading && <span style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: '700' }}>⚡ Syncing Database...</span>}
+            {isSaving && <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>💾 Saving Changes...</span>}
+          </div>
           <p style={styles.bannerSubtitle}>
             Configure classroom profiles, academic rosters, and student access credentials.
           </p>
@@ -314,10 +361,10 @@ export const ClassroomSetupComponent: React.FC = () => {
           {/* Top Classroom Title & Subtitle */}
           <div style={styles.rosterHeader}>
             <h1 style={styles.rosterTitle}>
-              Roster Assignment: {selectedClassroom.subject} - {selectedClassroom.grade} ({selectedClassroom.year})
+               {selectedClassroom.subject} - {selectedClassroom.grade} ({selectedClassroom.year})
             </h1>
             <p style={styles.rosterSubtitle}>
-              Integrate, validate, and manage credentials for your selected workspace.
+              {/* Integrate, validate, and manage credentials for your selected workspace. */}
             </p>
           </div>
 
@@ -965,8 +1012,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '0.8rem',
     boxSizing: 'border-box',
-    maxHeight: '410px',
-    height: '100%',
+    maxHeight: '480px',
   },
   previewHeaderRow: {
     display: 'flex',
@@ -999,7 +1045,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
-    maxHeight: '340px',
+    flex: 1,
     overflowY: 'auto',
     paddingRight: '0.25rem',
   },
