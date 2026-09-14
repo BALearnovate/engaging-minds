@@ -1,9 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { IsString } from 'class-validator';
 
 export class CreateClassroomDto {
+  @IsString()
   subject: string;
+  
+  @IsString()
   grade: string;
+  
+  @IsString()
   year: string;
 }
 

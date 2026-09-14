@@ -200,6 +200,26 @@ export const ClassroomSetupComponent: React.FC = () => {
     }
   };
 
+  const handleDeleteClassroom = async (e: React.MouseEvent, classroomId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this classroom profile and all its student rosters?')) {
+      return;
+    }
+
+    const updated = classrooms.filter((c) => c.id !== classroomId);
+    setClassrooms(updated);
+    if (selectedClassId === classroomId) {
+      setSelectedClassId(updated[0]?.id || '');
+    }
+
+    try {
+      await classroomsApi.deleteClassroom(classroomId, activeToken);
+    } catch (err) {
+      console.error('Failed to delete classroom from DB:', err);
+      loadClassroomsFromDb();
+    }
+  };
+
   const toggleSingleCodeReveal = (studentId: string) => {
     setRevealedCodes((prev) => ({
       ...prev,
@@ -255,7 +275,7 @@ export const ClassroomSetupComponent: React.FC = () => {
           <div style={styles.leftHeaderRow}>
             <div>
               <h2 style={styles.leftTitle}>ACTIVE CLASSROOMS</h2>
-              <p style={styles.leftSubtitle}>Choose a class profile to set up rosters</p>
+              <p style={styles.leftSubtitle}>Choose a class profile or create a new class using Create + button</p>
             </div>
             {!isCreatingClass && (
               <button
@@ -340,6 +360,9 @@ export const ClassroomSetupComponent: React.FC = () => {
                   style={{
                     ...styles.classCard,
                     ...(isSelected ? styles.classCardSelected : {}),
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                   }}
                 >
                   <div style={styles.classCardInfo}>
@@ -350,6 +373,27 @@ export const ClassroomSetupComponent: React.FC = () => {
                       {count} {count === 1 ? 'student' : 'students'}
                     </p>
                   </div>
+                  <button
+                    onClick={(e) => handleDeleteClassroom(e, cls.id)}
+                    title="Delete Classroom"
+                    style={styles.deleteClassBtn}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
                 </div>
               );
             })}
@@ -771,6 +815,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.78rem',
     color: '#64748b',
     margin: '0.3rem 0 0 0',
+  },
+  deleteClassBtn: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0.35rem',
+    borderRadius: '6px',
+    color: '#ef4444',
+    opacity: 0.75,
+    transition: 'all 0.15s ease',
   },
 
   /* Create Form */
