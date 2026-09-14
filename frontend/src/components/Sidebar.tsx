@@ -9,10 +9,17 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => {
   const { user } = useAuth();
 
-  const menuItems = [
-    { id: 'home', label: 'Home', icon: '🏠' },
-    { id: 'activity_creation', label: 'Activity Creation', icon: '✨' },
-  ];
+  const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  const menuItems = isTeacher
+    ? [
+        { id: 'activity_creation', label: 'Activity Creation', icon: '✨' },
+        { id: 'classroom_setup', label: 'Classroom Setup', icon: '🏫' },
+        { id: 'teacher_dashboard', label: 'Teacher Dashboard', icon: '📊' },
+      ]
+    : [
+        { id: 'student_home', label: 'Student Dashboard', icon: '🎓' },
+      ];
 
   return (
     <aside style={styles.sidebar}>

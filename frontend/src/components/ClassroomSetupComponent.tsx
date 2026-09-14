@@ -191,16 +191,18 @@ export const ClassroomSetupComponent: React.FC = () => {
         }
       `}</style>
 
-      {/* Top Banner Header like Activity Creation */}
-      <div style={styles.topBanner}>
-        <h1 style={styles.bannerTitle}>CLASSROOM SETUP</h1>
-        <p style={styles.bannerSubtitle}>
-          Configure classroom profiles, academic rosters, and student access credentials.
-        </p>
-      </div>
+      {/* Main Studio Card Enclosing Whole Page (Header + Content) */}
+      <div style={styles.mainStudioCard}>
+        {/* Header */}
+        <div style={styles.headerBox}>
+          <h1 style={styles.bannerTitle}>CLASSROOM SETUP</h1>
+          <p style={styles.bannerSubtitle}>
+            Configure classroom profiles, academic rosters, and student access credentials.
+          </p>
+        </div>
 
-      {/* Split Layout: Left Classrooms Column & Right Roster Assignment Column */}
-      <div style={styles.splitGrid}>
+        {/* Split Layout: Left Classrooms Column & Right Roster Assignment Column */}
+        <div style={styles.splitGrid}>
         {/* LEFT COLUMN: Instantiate Form & Active Classrooms List */}
         <div style={styles.leftColumn}>
           <div style={styles.leftHeaderRow}>
@@ -485,6 +487,7 @@ export const ClassroomSetupComponent: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
 
       {/* PRINTABLE PASS SLIPS MODAL OVERLAY */}
       {showPrintModal && (
@@ -609,26 +612,36 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1.25rem',
   },
 
-  /* Top Banner Header like Activity Creation */
-  topBanner: {
+  /* Main Studio Card Enclosing Whole Page (Matches Activity Creation Studio) */
+  mainStudioCard: {
     backgroundColor: '#ffffff',
-    border: '1.5px solid #0284c7',
     borderRadius: '12px',
-    padding: '1.25rem 1.75rem',
-    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.06)',
+    border: '2px solid #7dd3fc',
+    padding: '1.75rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+    boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
+  },
+  headerBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.2rem',
+    borderBottom: '1px solid #e2e8f0',
+    paddingBottom: '0.85rem',
   },
   bannerTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '900',
-    color: '#0369a1',
+    fontSize: '1.15rem',
+    fontWeight: '800',
+    color: '#0055a5',
     margin: 0,
-    letterSpacing: '0.04em',
+    letterSpacing: '0.03em',
     textTransform: 'uppercase',
   },
   bannerSubtitle: {
-    fontSize: '0.88rem',
+    fontSize: '0.82rem',
     color: '#64748b',
-    margin: '0.35rem 0 0 0',
+    margin: 0,
   },
 
   splitGrid: {
@@ -820,6 +833,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'grid',
     gridTemplateColumns: '1fr 280px',
     gap: '1.5rem',
+    alignItems: 'stretch',
   },
 
   /* Entry Section */
@@ -950,6 +964,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.8rem',
+    boxSizing: 'border-box',
+    maxHeight: '410px',
+    height: '100%',
   },
   previewHeaderRow: {
     display: 'flex',
@@ -982,6 +999,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
+    maxHeight: '340px',
+    overflowY: 'auto',
+    paddingRight: '0.25rem',
   },
   studentCard: {
     backgroundColor: '#ffffff',
