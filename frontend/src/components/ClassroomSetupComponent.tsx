@@ -708,11 +708,14 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#ffffff',
     borderRadius: '12px',
     border: '2px solid #7dd3fc',
-    padding: '1.75rem 2rem',
+    padding: '1.5rem 1.75rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
     boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
+    boxSizing: 'border-box',
+    width: '100%',
+    maxWidth: '100%',
   },
   headerBox: {
     display: 'flex',
@@ -737,8 +740,10 @@ const styles: Record<string, React.CSSProperties> = {
 
   splitGrid: {
     display: 'grid',
-    gridTemplateColumns: '320px 1fr',
-    gap: '1.5rem',
+    gridTemplateColumns: '270px minmax(0, 1fr)',
+    gap: '1.25rem',
+    boxSizing: 'border-box',
+    width: '100%',
   },
 
   /* Left Column */
@@ -750,6 +755,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1rem',
     border: '1px solid #bae6fd',
+    boxSizing: 'border-box',
+    minWidth: 0,
   },
   leftHeaderRow: {
     display: 'flex',
@@ -881,6 +888,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #cbd5e1',
     fontSize: '0.88rem',
     color: '#0f172a',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   select: {
     padding: '0.5rem 0.75rem',
@@ -889,10 +898,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.88rem',
     color: '#0f172a',
     backgroundColor: '#ffffff',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   twoColRow: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: '0.75rem',
   },
   submitCreateBtn: {
@@ -911,11 +922,13 @@ const styles: Record<string, React.CSSProperties> = {
   rightColumn: {
     backgroundColor: '#ffffff',
     borderRadius: '12px',
-    padding: '1.5rem',
+    padding: '1.25rem',
     border: '1px solid #e2e8f0',
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+    boxSizing: 'border-box',
+    minWidth: 0,
   },
   rosterHeader: {
     borderBottom: '1px solid #e2e8f0',
@@ -935,9 +948,11 @@ const styles: Record<string, React.CSSProperties> = {
 
   rosterBodyGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 280px',
-    gap: '1.5rem',
+    gridTemplateColumns: 'minmax(0, 1fr) 240px',
+    gap: '1rem',
     alignItems: 'stretch',
+    boxSizing: 'border-box',
+    width: '100%',
   },
 
   /* Entry Section */
@@ -945,6 +960,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+    boxSizing: 'border-box',
+    minWidth: 0,
   },
   tabRow: {
     display: 'flex',
@@ -1070,6 +1087,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.8rem',
     boxSizing: 'border-box',
     maxHeight: '480px',
+    minWidth: 0,
   },
   previewHeaderRow: {
     display: 'flex',
