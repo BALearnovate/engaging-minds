@@ -129,7 +129,6 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     logXApiEvent({
       studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
       studentName: studentName || 'Student Learner',
-      verb: XAPI_VERBS.ANSWERED,
       activityId: definition.id || shareCode || 'preview_activity',
       activityTitle: definition.title || 'Interactive Activity',
       blockId: currentBlock.id,
@@ -276,8 +275,6 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             studentState: currentBlockState,
             studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
             studentName: studentName || 'Student Learner',
-            onAnswerSubmit: handleAnswerSubmit,
-            onHelpRequest: handleHelpRequest,
           })}
         </div>
       ) : (

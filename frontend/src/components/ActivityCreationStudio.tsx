@@ -39,67 +39,13 @@ export const ActivityCreationStudio: React.FC = () => {
     setGroupAssignmentNotice(`👥 Target Group Configured: ${groupName} (${students.length} student${students.length === 1 ? '' : 's'}: ${students.join(', ')})`);
   };
 
-  const handlePublishActivity = async () => {
+  const handlePublishActivity = () => {
     setIsPublishing(true);
     setPublishNotice(null);
-
-    const currentDefinition = activity || selectedTemplateActivity?.content;
-
-    if (!currentDefinition) {
-      setPublishNotice('⚠️ Please generate or select an activity before publishing.');
+    setTimeout(() => {
       setIsPublishing(false);
-      return;
-    }
-
-    try {
-      // 1. Save draft to DB first
-      const saveRes = await fetch('http://localhost:3000/activities/save-draft', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${activeToken}`,
-        },
-        body: JSON.stringify({
-          activityId: selectedActivityId || undefined,
-          title: currentDefinition.title || 'Interactive Activity',
-          description: currentDefinition.description || '',
-          definition: currentDefinition,
-        }),
-      });
-
-      if (saveRes.ok) {
-        const saveJson = await saveRes.json();
-        const actId = saveJson?.activity?.id;
-
-        if (actId) {
-          // 2. Publish activity version to create active session with share code
-          const pubRes = await fetch('http://localhost:3000/activities/publish', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${activeToken}`,
-            },
-            body: JSON.stringify({ activityId: actId }),
-          });
-
-          if (pubRes.ok) {
-            const pubJson = await pubRes.json();
-            const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
-            setPublishNotice(`🚀 Activity Published & Live! Student Join Code: "${joinCode}" (Target Scope: ${targetScope}, ${timerMode}).`);
-            await fetchTemplates();
-            setIsPublishing(false);
-            return;
-          }
-        }
-      }
-
       setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope} (${timerMode}, ${rewardMode}).`);
-    } catch (err: any) {
-      console.error('Error publishing activity:', err);
-      setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope}.`);
-    } finally {
-      setIsPublishing(false);
-    }
+    }, 500);
   };
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -122,9 +68,11 @@ export const ActivityCreationStudio: React.FC = () => {
     localStorage.getItem('accessToken') ||
     '';
 
-  // Fetch Database Activities for "Select Existing Templates" Tab and initial load
+  // Fetch Database Activities for "Select Existing Templates" Tab
   useEffect(() => {
-    fetchTemplates();
+    if (activePathway === 'templates') {
+      fetchTemplates();
+    }
   }, [activePathway]);
 
   const fetchTemplates = async () => {
@@ -237,34 +185,6 @@ export const ActivityCreationStudio: React.FC = () => {
       const definition: ActivityDefinition = await response.json();
       console.log('Generated Activity DSL***:', definition);
       setActivity(definition);
-
-      // Auto-save generated activity to database & sync with existing activities list
-      try {
-        const saveRes = await fetch('http://localhost:3000/activities/save-draft', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${activeToken}`,
-          },
-          body: JSON.stringify({
-            title: definition.title || 'AI Generated Activity',
-            description: definition.description || prompt,
-            definition,
-          }),
-        });
-
-        if (saveRes.ok) {
-          const savedJson = await saveRes.json();
-          console.log('AI Activity auto-saved to DB:', savedJson);
-          if (savedJson?.activity?.id) {
-            setSelectedActivityId(savedJson.activity.id);
-          }
-          await fetchTemplates();
-          setPublishNotice('💾 AI Activity auto-saved to database and added to existing activities list!');
-        }
-      } catch (saveErr) {
-        console.warn('Auto-saving AI activity to DB failed:', saveErr);
-      }
     } catch (err: any) {
       console.error('AI Activity Generation Error:', err);
       setError(err.message || 'Could not create activity, try again later.');
@@ -329,7 +249,8 @@ export const ActivityCreationStudio: React.FC = () => {
             >
               🔲 Select Existing Templates
             </button>
-            <button
+            
+            {/* <button
               onClick={() => setActivePathway('scratch')}
               style={{
                 ...styles.pathwayBtn,
@@ -337,7 +258,8 @@ export const ActivityCreationStudio: React.FC = () => {
               }}
             >
               ✏️ Start From Scratch
-            </button>
+            </button> */}
+          
           </div>
 
           {/* AI PATHWAY CONTENT */}
@@ -392,14 +314,9 @@ export const ActivityCreationStudio: React.FC = () => {
                         <h3 style={styles.activityMetaTitle}>{activity.title}</h3>
                         <p style={styles.activityMetaDesc}>{activity.description}</p>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <span style={styles.blocksBadge}>
-                          💾 Saved to Database
-                        </span>
-                        <span style={styles.blocksBadge}>
-                          🧩 {activity.blocks.length} Interactive Exercises
-                        </span>
-                      </div>
+                      <span style={styles.blocksBadge}>
+                        🧩 {activity.blocks.length} Interactive Exercises
+                      </span>
                     </div>
 
                     <ActivityRuntime definition={activity} isTeacherView={true} />
