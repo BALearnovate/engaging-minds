@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from './ActivityRuntime';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
+import { classroomsApi } from '../api/classrooms';
+import type { ClassroomProfile } from '../api/classrooms';
 import type { ActivityDefinition } from '../types/activityDsl';
 
 interface DatabaseActivity {
@@ -18,6 +20,9 @@ export const ActivityCreationStudio: React.FC = () => {
   const { token: authContextToken } = useAuth();
 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
+  const [classrooms, setClassrooms] = useState<ClassroomProfile[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [isLoadingClassrooms, setIsLoadingClassrooms] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string>(
     'Create a Grade 6 Science activity on Photosynthesis with core concept flashcards, a 24-hour radial clock schedule, hotspot diagram, and multiple choice quiz.',
   );
@@ -85,7 +90,9 @@ export const ActivityCreationStudio: React.FC = () => {
           if (pubRes.ok) {
             const pubJson = await pubRes.json();
             const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
-            setPublishNotice(`🚀 Activity Published & Live! Student Join Code: "${joinCode}" (Target Scope: ${targetScope}, ${timerMode}).`);
+            const selectedClass = classrooms.find((c) => c.id === selectedClassId);
+            const classLabel = selectedClass ? `Class: ${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
+            setPublishNotice(`🚀 Activity Published & Live for ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
             await fetchTemplates();
             setIsPublishing(false);
             return;
@@ -122,10 +129,29 @@ export const ActivityCreationStudio: React.FC = () => {
     localStorage.getItem('accessToken') ||
     '';
 
-  // Fetch Database Activities for "Select Existing Templates" Tab and initial load
+  // Fetch Classrooms and Database Activities on mount
   useEffect(() => {
     fetchTemplates();
-  }, [activePathway]);
+    if (activeToken) {
+      fetchClassrooms();
+    }
+  }, [activePathway, activeToken]);
+
+  const fetchClassrooms = async () => {
+    if (!activeToken) return;
+    setIsLoadingClassrooms(true);
+    try {
+      const data = await classroomsApi.getClassrooms(activeToken);
+      setClassrooms(data);
+      if (data.length > 0 && !selectedClassId) {
+        setSelectedClassId(data[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to fetch classrooms for teacher:', err);
+    } finally {
+      setIsLoadingClassrooms(false);
+    }
+  };
 
   const fetchTemplates = async () => {
     setIsLoadingTemplates(true);
@@ -568,6 +594,29 @@ export const ActivityCreationStudio: React.FC = () => {
         {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
         <div style={styles.sidebarCard}>
           <h2 style={styles.sidebarTitle}>DEPLOYMENT PARAMETERS</h2>
+
+          {/* SELECT CLASS (Teacher-Created Classes Only) */}
+          <div style={styles.sidebarSection}>
+            <label style={styles.paramLabel}>SELECT CLASS</label>
+            <select
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              style={styles.paramSelect}
+            >
+              <option value="">
+                {isLoadingClassrooms
+                  ? 'Loading your created classes...'
+                  : classrooms.length === 0
+                  ? '-- No Classes Created Yet --'
+                  : '-- Choose a Class --'}
+              </option>
+              {classrooms.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.subject} - {cls.grade} ({cls.year}) [{cls.students?.length || 0} Students]
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div style={styles.sidebarSection}>
             <label style={styles.paramLabel}>SET TIMER</label>
