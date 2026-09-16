@@ -51,15 +51,38 @@ export class ActivitiesController {
     );
   }
 
-  // Publish Activity Version Endpoint
+  // Publish Activity Version Endpoint (Stores Class Assignment & Deployment Params)
   @Post('publish')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
   async publishActivity(
     @CurrentUser('id') teacherId: string,
-    @Body() body: { activityId: string },
+    @Body()
+    body: {
+      activityId: string;
+      classroomId?: string;
+      timerMode?: string;
+      rewardMode?: string;
+      targetScope?: string;
+      targetGroupStudents?: any;
+      dueAt?: string;
+    },
   ) {
-    return this.activitiesService.publishActivity(teacherId, body.activityId);
+    return this.activitiesService.publishActivity(teacherId, body);
+  }
+
+  // Get Assignments by Classroom ID
+  @Get('assignments/classroom/:classroomId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async getAssignmentsByClassroom(@Param('classroomId') classroomId: string) {
+    return this.activitiesService.getAssignmentsByClassroom(classroomId);
+  }
+
+  // Get Assigned Activities for Student Login Code
+  @Get('assignments/student/:loginCode')
+  async getAssignmentsForStudent(@Param('loginCode') loginCode: string) {
+    return this.activitiesService.getAssignmentsForStudent(loginCode);
   }
 
   // Public Session Lookup for Students (No Auth required to load session)

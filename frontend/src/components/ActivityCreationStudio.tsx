@@ -77,14 +77,21 @@ export const ActivityCreationStudio: React.FC = () => {
         const actId = saveJson?.activity?.id;
 
         if (actId) {
-          // 2. Publish activity version to create active session with share code
+          // 2. Publish activity version to create active session with share code & class assignment
           const pubRes = await fetch('http://localhost:3000/activities/publish', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${activeToken}`,
             },
-            body: JSON.stringify({ activityId: actId }),
+            body: JSON.stringify({
+              activityId: actId,
+              classroomId: selectedClassId || undefined,
+              timerMode,
+              rewardMode,
+              targetScope,
+              targetGroupStudents: configuredStudents,
+            }),
           });
 
           if (pubRes.ok) {
@@ -660,16 +667,18 @@ export const ActivityCreationStudio: React.FC = () => {
               style={styles.paramSelect}
             >
               <option value="Full Classroom Scope">Full Classroom Scope</option>
-              <option value="Individual Students">Individual Students</option>
-              <option value="Small Focus Groups">Small Focus Groups</option>
+              {/* Remove individual students and small focus groups now */}
+              {/* <option value="Individual Students">Individual Students</option>
+              <option value="Small Focus Groups">Small Focus Groups</option> */}
             </select>
 
-            <button
+            {/* Hide this specific group button for now */}
+            {/* <button
               onClick={() => setIsGroupModalOpen(true)}
               style={styles.configureGroupBtn}
             >
               👥 Configure Specific Group
-            </button>
+            </button> */}
 
             {groupAssignmentNotice && (
               <div style={styles.groupNoticeBox}>

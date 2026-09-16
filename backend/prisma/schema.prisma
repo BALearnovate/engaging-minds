@@ -25,6 +25,7 @@ model User {
 
   teacherActivities Activity[]   @relation("TeacherActivities")
   teacherClassrooms Classroom[]  @relation("TeacherClassrooms")
+  teacherAssignments ActivityAssignment[] @relation("TeacherAssignments")
   studentSubmissions Submission[] @relation("StudentSubmissions")
 
   @@map("users")
@@ -43,6 +44,7 @@ model Activity {
 
   submissions Submission[]
   versions    ActivityVersion[]
+  assignments ActivityAssignment[]
 
   @@map("activities")
 }
@@ -131,6 +133,7 @@ model Classroom {
   teacherId String
   teacher   User      @relation("TeacherClassrooms", fields: [teacherId], references: [id], onDelete: Cascade)
   students  Student[]
+  assignments ActivityAssignment[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
@@ -148,4 +151,26 @@ model Student {
   updatedAt   DateTime  @updatedAt
 
   @@map("students")
+}
+
+model ActivityAssignment {
+  id                  String    @id @default(uuid())
+  activityId          String
+  activity            Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  assignedByTeacherId String
+  assignedByTeacher   User      @relation("TeacherAssignments", fields: [assignedByTeacherId], references: [id], onDelete: Cascade)
+  classroomId         String
+  classroom           Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  // Deployment Parameters
+  timerMode           String    @default("Untimed Practice Session")
+  rewardMode          String    @default("Engagement Points + Stickers")
+  targetScope         String    @default("Full Classroom Scope")
+  targetGroupStudents Json?
+
+  assignedAt          DateTime  @default(now())
+  dueAt               DateTime?
+  status              String    @default("ACTIVE") // 'ACTIVE' | 'ARCHIVED' | 'COMPLETED'
+
+  @@map("activity_assignments")
 }

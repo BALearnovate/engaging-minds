@@ -91,7 +91,26 @@ export class ActivitiesService {
     };
   }
 
-  async publishActivity(teacherId: string, activityId: string) {
+  async publishActivity(
+    teacherId: string,
+    params: {
+      activityId: string;
+      classroomId?: string;
+      timerMode?: string;
+      rewardMode?: string;
+      targetScope?: string;
+      targetGroupStudents?: any;
+      dueAt?: string;
+    } | string,
+  ) {
+    const activityId = typeof params === 'string' ? params : params.activityId;
+    const classroomId = typeof params === 'object' ? params.classroomId : undefined;
+    const timerMode = typeof params === 'object' ? params.timerMode : undefined;
+    const rewardMode = typeof params === 'object' ? params.rewardMode : undefined;
+    const targetScope = typeof params === 'object' ? params.targetScope : undefined;
+    const targetGroupStudents = typeof params === 'object' ? params.targetGroupStudents : undefined;
+    const dueAt = typeof params === 'object' && params.dueAt ? new Date(params.dueAt) : undefined;
+
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
       include: { versions: { orderBy: { version: 'desc' } } },
@@ -129,11 +148,106 @@ export class ActivitiesService {
       },
     });
 
+    let assignment: any = null;
+    let provisionedStudentSessionsCount = 0;
+
+    if (classroomId) {
+      assignment = await this.prisma.activityAssignment.create({
+        data: {
+          activityId: activity.id,
+          assignedByTeacherId: teacherId,
+          classroomId: classroomId,
+          timerMode: timerMode || 'Untimed Practice Session',
+          rewardMode: rewardMode || 'Engagement Points + Stickers',
+          targetScope: targetScope || 'Full Classroom Scope',
+          targetGroupStudents: targetGroupStudents || null,
+          dueAt: dueAt || null,
+          status: 'ACTIVE',
+        },
+        include: {
+          classroom: {
+            include: {
+              students: true,
+            },
+          },
+        },
+      });
+
+      // Auto-provision StudentSession for all students in the assigned class
+      const students = assignment.classroom?.students || [];
+      for (const student of students) {
+        await this.prisma.studentSession.create({
+          data: {
+            activitySessionId: session.id,
+            studentId: student.id,
+            studentName: `${student.firstName} ${student.lastName}`.trim(),
+            status: 'NOT_STARTED',
+            progress: 0,
+            score: 0,
+          },
+        });
+        provisionedStudentSessionsCount++;
+      }
+    }
+
     return {
       activity,
       publishedVersion,
       session,
       shareCode,
+      assignment,
+      provisionedStudentSessionsCount,
+    };
+  }
+
+  async getAssignmentsByClassroom(classroomId: string) {
+    return this.prisma.activityAssignment.findMany({
+      where: { classroomId },
+      include: {
+        activity: true,
+        assignedByTeacher: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        classroom: {
+          include: { students: true },
+        },
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+  }
+
+  async getAssignmentsForStudent(loginCode: string) {
+    const student = await this.prisma.student.findFirst({
+      where: { loginCode: loginCode.trim() },
+      include: { classroom: true },
+    });
+
+    if (!student) {
+      throw new NotFoundException(`Student with login code "${loginCode}" not found.`);
+    }
+
+    const assignments = await this.prisma.activityAssignment.findMany({
+      where: { classroomId: student.classroomId, status: 'ACTIVE' },
+      include: {
+        activity: {
+          include: {
+            versions: {
+              where: { status: 'PUBLISHED' },
+              orderBy: { version: 'desc' },
+              take: 1,
+            },
+          },
+        },
+        assignedByTeacher: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+      orderBy: { assignedAt: 'desc' },
+    });
+
+    return {
+      student,
+      assignments,
     };
   }
 
