@@ -110,6 +110,35 @@ export class ActivitiesService {
     const targetScope = typeof params === 'object' ? params.targetScope : undefined;
     const targetGroupStudents = typeof params === 'object' ? params.targetGroupStudents : undefined;
     const dueAt = typeof params === 'object' && params.dueAt ? new Date(params.dueAt) : undefined;
+    const forceRepublish = typeof params === 'object' && (params as any).forceRepublish === true;
+
+    // 1. Check if selected class already has an active activity assignment
+    if (classroomId && !forceRepublish) {
+      const activeClassAssignment = await this.prisma.activityAssignment.findFirst({
+        where: {
+          classroomId,
+          status: 'ACTIVE',
+        },
+        include: {
+          activity: true,
+          classroom: true,
+        },
+      });
+
+      if (activeClassAssignment) {
+        const isSameActivity = activeClassAssignment.activityId === activityId;
+        return {
+          classHasActiveAssignment: true,
+          message: isSameActivity
+            ? `Class "${activeClassAssignment.classroom.subject} (${activeClassAssignment.classroom.grade})" already has this activity ("${activeClassAssignment.activity.title}") assigned and in progress. You cannot assign it again while a session is active.`
+            : `Class "${activeClassAssignment.classroom.subject} (${activeClassAssignment.classroom.grade})" already has an activity in progress ("${activeClassAssignment.activity.title}"). You cannot assign another activity while a session is active.`,
+          existingActivityTitle: activeClassAssignment.activity.title,
+          className: `${activeClassAssignment.classroom.subject} - ${activeClassAssignment.classroom.grade}`,
+          existingActivityId: activeClassAssignment.activityId,
+          isSameActivity,
+        };
+      }
+    }
 
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
@@ -197,6 +226,24 @@ export class ActivitiesService {
       shareCode,
       assignment,
       provisionedStudentSessionsCount,
+    };
+  }
+
+  async checkClassActiveAssignment(classroomId: string) {
+    const activeAssignment = await this.prisma.activityAssignment.findFirst({
+      where: {
+        classroomId,
+        status: 'ACTIVE',
+      },
+      include: {
+        activity: true,
+        classroom: true,
+      },
+    });
+
+    return {
+      hasActiveAssignment: !!activeAssignment,
+      assignment: activeAssignment,
     };
   }
 

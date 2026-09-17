@@ -71,6 +71,14 @@ export class ActivitiesController {
     return this.activitiesService.publishActivity(teacherId, body);
   }
 
+  // Check Active Assignment for a Classroom
+  @Get('assignments/check-class/:classroomId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async checkClassActiveAssignment(@Param('classroomId') classroomId: string) {
+    return this.activitiesService.checkClassActiveAssignment(classroomId);
+  }
+
   // Get Assignments by Classroom ID
   @Get('assignments/classroom/:classroomId')
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -37,6 +37,21 @@ export const ActivityCreationStudio: React.FC = () => {
   const [groupAssignmentNotice, setGroupAssignmentNotice] = useState<string | null>(null);
   const [publishNotice, setPublishNotice] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [alreadyPublishedDialog, setAlreadyPublishedDialog] = useState<{
+    isOpen: boolean;
+    activityTitle: string;
+    shareCode: string;
+    classLabel: string;
+    publishedAt: string;
+    timerMode?: string;
+    targetScope?: string;
+    actId: string;
+  } | null>(null);
+  const [classAssignmentDialog, setClassAssignmentDialog] = useState<{
+    isOpen: boolean;
+    className: string;
+    existingActivityTitle: string;
+  } | null>(null);
 
   const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
     setConfiguredGroupName(groupName);
@@ -96,6 +111,40 @@ export const ActivityCreationStudio: React.FC = () => {
 
           if (pubRes.ok) {
             const pubJson = await pubRes.json();
+
+            // Check if selected class already has an activity in progress
+            if (pubJson.classHasActiveAssignment) {
+              setClassAssignmentDialog({
+                isOpen: true,
+                className: pubJson.className || 'Selected Class',
+                existingActivityTitle: pubJson.existingActivityTitle || 'Active Activity',
+                isSameActivity: pubJson.isSameActivity,
+              });
+              setIsPublishing(false);
+              return;
+            }
+
+            // Check if activity is already published in database
+            if (pubJson.alreadyPublished) {
+              const assignedClass = pubJson.assignment?.classroom;
+              const classLabel = assignedClass
+                ? `${assignedClass.subject} - ${assignedClass.grade}`
+                : 'All Students / Classroom';
+
+              setAlreadyPublishedDialog({
+                isOpen: true,
+                activityTitle: currentDefinition.title || 'Interactive Activity',
+                shareCode: pubJson.shareCode || 'LIVE',
+                classLabel,
+                publishedAt: pubJson.publishedAt ? new Date(pubJson.publishedAt).toLocaleString() : 'Active',
+                timerMode: pubJson.assignment?.timerMode || timerMode,
+                targetScope: pubJson.assignment?.targetScope || targetScope,
+                actId,
+              });
+              setIsPublishing(false);
+              return;
+            }
+
             const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
             const selectedClass = classrooms.find((c) => c.id === selectedClassId);
             const classLabel = selectedClass ? `Class: ${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
@@ -717,6 +766,46 @@ export const ActivityCreationStudio: React.FC = () => {
         initialGroupName={configuredGroupName}
         initialStudents={configuredStudents}
       />
+
+      {/* CLASS ACTIVITY ALREADY IN PROGRESS DIALOG */}
+      {classAssignmentDialog?.isOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.publishedDialogCard}>
+            <div style={styles.publishedDialogHeader}>
+              <span style={{ fontSize: '2rem' }}>⚠️</span>
+              <div>
+                <h3 style={styles.publishedDialogTitle}>Activity Already in Progress</h3>
+                <p style={styles.publishedDialogSub}>
+                  Cannot assign another activity to this class.
+                </p>
+              </div>
+            </div>
+
+            <div style={styles.publishedDetailsBox}>
+              <p style={{ margin: 0, fontSize: '0.92rem', color: '#0f172a' }}>
+                Class <strong>"{classAssignmentDialog.className}"</strong> currently has an active activity in progress:
+              </p>
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '0.75rem', borderRadius: '8px', fontWeight: '700', color: '#0369a1' }}>
+                📖 {classAssignmentDialog.existingActivityTitle}
+              </div>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b', lineHeight: '1.4' }}>
+                {classAssignmentDialog.isSameActivity
+                  ? 'This exact activity is already assigned and in progress for this class. You cannot assign it a second time while a session is active.'
+                  : 'You cannot assign another activity while a session is active for this class.'}
+              </p>
+            </div>
+
+            <div style={styles.publishedDialogActions}>
+              <button
+                onClick={() => setClassAssignmentDialog(null)}
+                style={styles.closeDialogBtn}
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
