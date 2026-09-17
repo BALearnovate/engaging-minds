@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import bgImage from '../assets/teacher-reg-bg.png';
 import logoImage from '../assets/logo.png';
 import greenBubbleBg from '../assets/green-bubble.png';
+import { EuFooter } from '../components/EuFooter';
 
 interface RegisterProps {
   onSuccess: (role: string) => void;
@@ -51,20 +52,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   };
 
   return (
-    <div style={styles.pageContainer}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      <div style={styles.pageContainer}>
       {/* Left Section - Hero Image with Green Organic Bubble */}
       <div style={styles.leftSection}>
-        <div style={styles.bubbleWrapper}>
-          <svg
-            viewBox="0 0 420 520"
-            style={styles.bubbleSvg}
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M 0,0 L 260,0 C 350,0 400,30 380,130 C 365,185 340,215 355,245 C 375,275 435,310 425,400 C 415,475 340,510 230,515 C 160,520 110,430 70,430 C 35,430 0,465 0,520 Z"
-              fill="#0f9f4d"
-            />
-          </svg>
         <div style={styles.bubbleContainer}>
           <img
             src={greenBubbleBg}
@@ -200,14 +191,19 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         </div>
       </div>
     </div>
+
+      {/* European Union Co-Funded Footer Banner */}
+      <EuFooter />
+    </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
   pageContainer: {
     display: 'flex',
+    flex: '1',
     width: '100%',
-    minHeight: '100vh',
+    minHeight: 'calc(100vh - 60px)',
     overflowX: 'hidden',
     backgroundColor: '#059669',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
@@ -221,22 +217,15 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     minHeight: '400px',
   },
-  bubbleWrapper: {
   bubbleContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '420px',
-    height: '520px',
-    maxWidth: '90%',
-    filter: 'drop-shadow(0 12px 28px rgba(0, 0, 0, 0.22))',
     width: '427px',
     height: '494px',
     maxWidth: '92%',
     zIndex: 5,
-    pointerEvents: 'none',
   },
-  bubbleSvg: {
   bubbleImg: {
     position: 'absolute',
     top: 0,
@@ -250,44 +239,35 @@ const styles: Record<string, React.CSSProperties> = {
   bubbleContent: {
     position: 'relative',
     zIndex: 2,
-    padding: '2.5rem 3.2rem 2.2rem 2.2rem',
     padding: '2.5rem 3.5rem 2.2rem 2.2rem',
     maxWidth: '350px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.1rem',
     gap: '1rem',
     color: '#ffffff',
-    pointerEvents: 'auto',
   },
   portalPill: {
     display: 'inline-block',
     alignSelf: 'flex-start',
     border: '1.5px solid #86efac',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     backgroundColor: 'transparent',
     color: '#86efac',
-    padding: '0.45rem 1.35rem',
     padding: '0.45rem 1.4rem',
     borderRadius: '22px',
-    fontSize: '1.12rem',
     fontSize: '1.15rem',
     fontWeight: '700',
     letterSpacing: '-0.01em',
   },
   bubbleSubtitle: {
-    fontSize: '1.25rem',
     fontSize: '1.2rem',
     fontWeight: '800',
     color: '#ffffff',
-    margin: 0,
     margin: '0.2rem 0 0 0',
     letterSpacing: '-0.01em',
   },
   bubbleText: {
     fontSize: '0.98rem',
     fontWeight: '500',
-    lineHeight: '1.58',
     lineHeight: '1.55',
     color: '#ffffff',
     margin: 0,
