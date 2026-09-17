@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import bgImage from '../assets/registration-bg.jpg';
+import bgImage from '../assets/teacher-reg-bg.png';
 import logoImage from '../assets/logo.png';
+import greenBubbleBg from '../assets/green-bubble.png';
 
 interface RegisterProps {
   onSuccess: (role: string) => void;
@@ -51,9 +52,34 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
   return (
     <div style={styles.pageContainer}>
-      {/* Left Section - Hero Image with Teacher Portal Badge */}
+      {/* Left Section - Hero Image with Green Organic Bubble */}
       <div style={styles.leftSection}>
-        <div style={styles.portalBadge}>Teacher Portal</div>
+        <div style={styles.bubbleWrapper}>
+          <svg
+            viewBox="0 0 420 520"
+            style={styles.bubbleSvg}
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M 0,0 L 260,0 C 350,0 400,30 380,130 C 365,185 340,215 355,245 C 375,275 435,310 425,400 C 415,475 340,510 230,515 C 160,520 110,430 70,430 C 35,430 0,465 0,520 Z"
+              fill="#0f9f4d"
+            />
+          </svg>
+        <div style={styles.bubbleContainer}>
+          <img
+            src={greenBubbleBg}
+            alt="Teacher Portal Green Bubble"
+            style={styles.bubbleImg}
+          />
+
+          <div style={styles.bubbleContent}>
+            <div style={styles.portalPill}>Teacher Portal</div>
+            <h3 style={styles.bubbleSubtitle}>Engaging Minds</h3>
+            <p style={styles.bubbleText}>
+              Improving Student Retention through Best Practices. A two-year Erasmus+ collaboration developing evidence-based strategies to help students stay motivated, engaged, and connected to their learning journey.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Right Section - Double Curved White Top Header + Gradient Form */}
@@ -195,19 +221,77 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'relative',
     minHeight: '400px',
   },
-  portalBadge: {
+  bubbleWrapper: {
+  bubbleContainer: {
     position: 'absolute',
-    top: '2.5rem',
-    left: '2.5rem',
-    backgroundColor: '#00a852',
+    top: 0,
+    left: 0,
+    width: '420px',
+    height: '520px',
+    maxWidth: '90%',
+    filter: 'drop-shadow(0 12px 28px rgba(0, 0, 0, 0.22))',
+    width: '427px',
+    height: '494px',
+    maxWidth: '92%',
+    zIndex: 5,
+    pointerEvents: 'none',
+  },
+  bubbleSvg: {
+  bubbleImg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'fill',
+    zIndex: 1,
+    filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2))',
+  },
+  bubbleContent: {
+    position: 'relative',
+    zIndex: 2,
+    padding: '2.5rem 3.2rem 2.2rem 2.2rem',
+    padding: '2.5rem 3.5rem 2.2rem 2.2rem',
+    maxWidth: '350px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.1rem',
+    gap: '1rem',
     color: '#ffffff',
-    padding: '0.6rem 1.8rem',
-    borderRadius: '25px',
+    pointerEvents: 'auto',
+  },
+  portalPill: {
+    display: 'inline-block',
+    alignSelf: 'flex-start',
+    border: '1.5px solid #86efac',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'transparent',
+    color: '#86efac',
+    padding: '0.45rem 1.35rem',
+    padding: '0.45rem 1.4rem',
+    borderRadius: '22px',
+    fontSize: '1.12rem',
     fontSize: '1.15rem',
     fontWeight: '700',
     letterSpacing: '-0.01em',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-    userSelect: 'none',
+  },
+  bubbleSubtitle: {
+    fontSize: '1.25rem',
+    fontSize: '1.2rem',
+    fontWeight: '800',
+    color: '#ffffff',
+    margin: 0,
+    margin: '0.2rem 0 0 0',
+    letterSpacing: '-0.01em',
+  },
+  bubbleText: {
+    fontSize: '0.98rem',
+    fontWeight: '500',
+    lineHeight: '1.58',
+    lineHeight: '1.55',
+    color: '#ffffff',
+    margin: 0,
+    opacity: 0.98,
   },
   rightSection: {
     flex: '1',
