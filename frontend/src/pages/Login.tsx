@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import bgImage from '../assets/teacher-reg-bg.png';
+import logoImage from '../assets/logo.png';
+import { EuFooter } from '../components/EuFooter';
 
 interface LoginProps {
   onSuccess: (role: string) => void;
@@ -28,205 +31,424 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
     }
   };
 
-  const fillQuickAccount = (role: 'ADMIN' | 'TEACHER' | 'STUDENT') => {
+  const fillQuickAccount = (role: 'TEACHER_ILSE' | 'STUDENT_ILSE' | 'TEACHER_JANE' | 'STUDENT_JANE' | 'ADMIN') => {
     switch (role) {
+      case 'TEACHER_ILSE':
+        setEmail('ilse.teacher@em.com');
+        setPassword('password123@');
+        break;
+      case 'STUDENT_ILSE':
+        setEmail('ilse.student@em.com');
+        setPassword('password123@');
+        break;
+      case 'TEACHER_JANE':
+        setEmail('jane.teacher@em.com');
+        setPassword('password123@');
+        break;
+      case 'STUDENT_JANE':
+        setEmail('jane.student@em.com');
+        setPassword('password123@');
+        break;
       case 'ADMIN':
         setEmail('admin@example.com');
         setPassword('Admin123!');
-        break;
-      case 'TEACHER':
-        setEmail('teacher@example.com');
-        setPassword('Teacher123!');
-        break;
-      case 'STUDENT':
-        setEmail('student@example.com');
-        setPassword('Student123!');
         break;
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Welcome Back</h2>
-        <p style={styles.subtitle}>Sign in to access your dashboard</p>
+    <div style={styles.pageContainer}>
+      <div style={styles.pageWrapper}>
+        <div style={styles.mainContent}>
+          {/* Left Section - Form & Branding */}
+          <div style={styles.leftSection}>
+            {/* Logo Header with Wave Transition */}
+            <div style={styles.headerWrapper}>
+              <div style={styles.topHeader}>
+                <img
+                  src={logoImage}
+                  alt="Engaging Minds Logo"
+                  style={styles.logoImg}
+                />
+              </div>
 
-        {error && <div style={styles.errorBox}>{error}</div>}
+              {/* Wave transition */}
+              <div style={styles.waveContainer}>
+                <svg
+                  viewBox="0 0 500 120"
+                  preserveAspectRatio="none"
+                  style={styles.waveSvg}
+                >
+                  <path
+                    d="M 0,0 L 500,0 L 500,45 C 480,85 455,115 415,115 C 375,115 345,55 320,30 C 250,10 190,68 120,68 C 60,68 25,48 0,40 Z"
+                    fill="#ffffff"
+                  />
+                </svg>
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>Email Address</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="user@example.com"
-              style={styles.input}
-            />
+            {/* Form Body */}
+            <div style={styles.formSection}>
+              <h2 style={styles.formTitle}>Login</h2>
+
+              {error && <div style={styles.errorBox}>{error}</div>}
+
+              <form onSubmit={handleSubmit} style={styles.form}>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Email:</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your log in email"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Password:</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    style={styles.input}
+                  />
+                </div>
+
+                <div style={styles.forgotPasswordRow}>
+                  <a
+                    href="#forgot"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert('Please contact your school administrator or teacher to reset your password.');
+                    }}
+                    style={styles.forgotPasswordLink}
+                  >
+                    Forget your password?
+                  </a>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    ...styles.submitBtn,
+                    opacity: isSubmitting ? 0.8 : 1,
+                  }}
+                >
+                  {isSubmitting ? 'Logging in...' : 'Login'}
+                </button>
+              </form>
+
+              <div style={styles.registerRedirect}>
+                Don't have an account?{' '}
+                <span onClick={onNavigateToRegister} style={styles.registerLink}>
+                  Register here
+                </span>
+              </div>
+
+              {/* Quick Account Switcher Chips */}
+              <div style={styles.quickAccountsSection}>
+                <div style={styles.quickAccountsTitle}>⚡ Quick Demo Login:</div>
+                <div style={styles.quickChipsGrid}>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickAccount('TEACHER_ILSE')}
+                    style={styles.quickChip}
+                  >
+                    Ilse (Teacher)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickAccount('STUDENT_ILSE')}
+                    style={styles.quickChip}
+                  >
+                    Ilse (Student)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickAccount('TEACHER_JANE')}
+                    style={styles.quickChip}
+                  >
+                    Jane (Teacher)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickAccount('STUDENT_JANE')}
+                    style={styles.quickChip}
+                  >
+                    Jane (Student)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Links */}
+            <div style={styles.footer}>
+              <a
+                href="#privacy"
+                style={styles.footerLink}
+                onClick={(e) => e.preventDefault()}
+              >
+                Privacy
+              </a>
+
+              <a
+                href="#terms"
+                style={styles.footerLink}
+                onClick={(e) => e.preventDefault()}
+              >
+                Terms & condition
+              </a>
+
+              <span style={styles.copyright}>© Engaging Minds 2026</span>
+            </div>
           </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={styles.input}
-            />
-          </div>
-
-          <button type="submit" disabled={isSubmitting} style={styles.submitBtn}>
-            {isSubmitting ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div style={styles.quickAccountsSection}>
-          <p style={styles.quickText}>⚡ Quick Test Accounts (Seeded Demo Data):</p>
-          <div style={styles.quickButtonsGroup}>
-            <button
-              type="button"
-              style={{ ...styles.quickBtn, borderColor: '#ef4444', color: '#ef4444' }}
-              onClick={() => fillQuickAccount('ADMIN')}
-            >
-              👑 Admin
-            </button>
-            <button
-              type="button"
-              style={{ ...styles.quickBtn, borderColor: '#3b82f6', color: '#3b82f6' }}
-              onClick={() => fillQuickAccount('TEACHER')}
-            >
-              👩‍🏫 Teacher
-            </button>
-            <button
-              type="button"
-              style={{ ...styles.quickBtn, borderColor: '#10b981', color: '#10b981' }}
-              onClick={() => fillQuickAccount('STUDENT')}
-            >
-              🎓 Student
-            </button>
+          {/* Right Section - Hero Image with Teacher Portal Badge */}
+          <div style={styles.rightSection}>
+            <div style={styles.portalPillBadge}>Teacher Portal</div>
           </div>
         </div>
 
-        <div style={styles.footer}>
-          <span>Don't have an account? </span>
-          <button style={styles.linkBtn} onClick={onNavigateToRegister}>
-            Register here
-          </button>
-        </div>
+        {/* European Union Co-Funded Footer Banner */}
+        <EuFooter />
       </div>
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  pageContainer: {
     display: 'flex',
-    justifyContent: 'center',
-    padding: '3rem 1rem',
-  },
-  card: {
+    flex: '1',
     width: '100%',
-    maxWidth: '440px',
-    padding: '2.5rem',
+    minHeight: 'calc(100vh - 60px)',
+    overflowX: 'hidden',
+    backgroundColor: '#059669',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  },
+  pageWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    width: '100%',
+  },
+  mainContent: {
+    display: 'flex',
+    flex: 1,
+    width: '100%',
+    minHeight: 'calc(100vh - 60px)',
+  },
+  leftSection: {
+    flex: '1',
+    minWidth: '360px',
+    maxWidth: '460px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    background: 'linear-gradient(180deg, #059669 0%, #0d9488 45%, #0284c7 100%)',
+    position: 'relative',
+    zIndex: 10,
+    boxShadow: '4px 0 24px rgba(0, 0, 0, 0.15)',
+  },
+  headerWrapper: {
+    width: '100%',
+    position: 'relative',
+    filter: 'drop-shadow(0 6px 12px rgba(0, 0, 0, 0.18))',
+    zIndex: 2,
+  },
+  topHeader: {
     backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
-    border: '1px solid #e5e7eb',
+    paddingTop: '2.2rem',
+    paddingLeft: '1.5rem',
+    paddingRight: '1.5rem',
+    textAlign: 'center',
   },
-  title: {
-    margin: 0,
-    fontSize: '1.6rem',
+  logoImg: {
+    maxWidth: '220px',
+    maxHeight: '110px',
+    width: 'auto',
+    height: 'auto',
+    display: 'block',
+    margin: '0 auto',
+    objectFit: 'contain',
+  },
+  waveContainer: {
+    width: '100%',
+    overflow: 'hidden',
+    lineHeight: 0,
+    marginTop: '-1px',
+  },
+  waveSvg: {
+    display: 'block',
+    width: '100%',
+    height: '65px',
+  },
+  formSection: {
+    flex: '1',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    padding: '1rem 2.5rem 1.5rem 2.5rem',
+    zIndex: 1,
+  },
+  formTitle: {
+    margin: '0 0 1.35rem 0',
+    fontSize: '2rem',
     fontWeight: '700',
-    color: '#111827',
-  },
-  subtitle: {
-    marginTop: '0.4rem',
-    marginBottom: '1.5rem',
-    fontSize: '0.9rem',
-    color: '#6b7280',
+    color: '#ffffff',
+    textAlign: 'center',
+    letterSpacing: '-0.02em',
   },
   errorBox: {
-    backgroundColor: '#fef2f2',
-    color: '#dc2626',
-    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    color: '#ffffff',
+    padding: '0.65rem 0.9rem',
     borderRadius: '6px',
-    marginBottom: '1.25rem',
-    fontSize: '0.88rem',
-    border: '1px solid #fecaca',
+    marginBottom: '1rem',
+    fontSize: '0.85rem',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.2rem',
+    gap: '1rem',
   },
-  field: {
+  fieldGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.4rem',
+    gap: '0.35rem',
   },
   label: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    color: '#ffffff',
   },
   input: {
-    padding: '0.65rem 0.85rem',
+    padding: '0.72rem 0.95rem',
     borderRadius: '6px',
-    border: '1px solid #d1d5db',
-    fontSize: '0.95rem',
+    border: '1px solid rgba(255, 255, 255, 0.85)',
+    fontSize: '0.9rem',
     outline: 'none',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
+    boxSizing: 'border-box',
+    width: '100%',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+  },
+  forgotPasswordRow: {
+    textAlign: 'center',
+    marginTop: '-0.2rem',
+  },
+  forgotPasswordLink: {
+    color: '#bae6fd',
+    fontSize: '0.84rem',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    fontWeight: '500',
   },
   submitBtn: {
     marginTop: '0.5rem',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0284c7',
     color: '#ffffff',
-    border: 'none',
-    padding: '0.75rem',
-    borderRadius: '6px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
+    border: '1px solid rgba(255, 255, 255, 0.5)',
+    padding: '0.8rem 1rem',
+    borderRadius: '10px',
+    fontSize: '1.05rem',
+    fontWeight: '700',
     cursor: 'pointer',
+    width: '100%',
+    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+    transition: 'all 0.2s ease',
   },
-  quickAccountsSection: {
-    marginTop: '1.75rem',
-    paddingTop: '1.25rem',
-    borderTop: '1px dashed #e5e7eb',
-  },
-  quickText: {
-    fontSize: '0.82rem',
-    color: '#6b7280',
-    margin: '0 0 0.6rem 0',
-    fontWeight: '600',
-  },
-  quickButtonsGroup: {
-    display: 'flex',
-    gap: '0.5rem',
-  },
-  quickBtn: {
-    flex: 1,
-    padding: '0.4rem 0.2rem',
-    backgroundColor: '#ffffff',
-    border: '1px solid',
-    borderRadius: '6px',
-    fontSize: '0.8rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  footer: {
-    marginTop: '1.5rem',
+  registerRedirect: {
+    marginTop: '1.25rem',
     textAlign: 'center',
     fontSize: '0.88rem',
-    color: '#6b7280',
+    color: '#ffffff',
   },
-  linkBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#3b82f6',
+  registerLink: {
+    color: '#ffffff',
+    fontWeight: '700',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    marginLeft: '0.2rem',
+  },
+  quickAccountsSection: {
+    marginTop: '1.25rem',
+    padding: '0.65rem 0.75rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: '8px',
+    backdropFilter: 'blur(4px)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  quickAccountsTitle: {
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.95)',
+    marginBottom: '0.45rem',
+    textAlign: 'center',
+  },
+  quickChipsGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.4rem',
+    justifyContent: 'center',
+  },
+  quickChip: {
+    padding: '0.28rem 0.55rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    border: '1px solid rgba(255, 255, 255, 0.4)',
+    color: '#ffffff',
+    borderRadius: '14px',
+    fontSize: '0.73rem',
     fontWeight: '600',
     cursor: 'pointer',
-    padding: 0,
+    transition: 'background-color 0.15s ease',
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem 2rem 1.25rem 2rem',
+    fontSize: '0.73rem',
+    color: 'rgba(255, 255, 255, 0.9)',
+    zIndex: 1,
+  },
+  footerLink: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    textDecoration: 'none',
+    cursor: 'pointer',
+  },
+  copyright: {
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  rightSection: {
+    flex: '1.6',
+    backgroundImage: `url(${bgImage})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center center',
+    backgroundRepeat: 'no-repeat',
+    position: 'relative',
+    minHeight: '400px',
+  },
+  portalPillBadge: {
+    position: 'absolute',
+    top: '2.2rem',
+    right: '2.5rem',
+    backgroundColor: '#16a34a',
+    color: '#ffffff',
+    padding: '0.55rem 1.6rem',
+    borderRadius: '24px',
+    fontSize: '1.15rem',
+    fontWeight: '700',
+    letterSpacing: '-0.01em',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    zIndex: 5,
   },
 };
