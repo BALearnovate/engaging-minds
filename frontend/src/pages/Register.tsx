@@ -52,157 +52,215 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-      <div style={styles.pageContainer}>
-      {/* Left Section - Hero Image with Green Organic Bubble */}
-      <div style={styles.leftSection}>
-        <div style={styles.bubbleContainer}>
-          <img
-            src={greenBubbleBg}
-            alt="Teacher Portal Green Bubble"
-            style={styles.bubbleImg}
-          />
-
-          <div style={styles.bubbleContent}>
-            <div style={styles.portalPill}>Teacher Portal</div>
-            <h3 style={styles.bubbleSubtitle}>Engaging Minds</h3>
-            <p style={styles.bubbleText}>
-              Improving Student Retention through Best Practices. A two-year Erasmus+ collaboration developing evidence-based strategies to help students stay motivated, engaged, and connected to their learning journey.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Section - Double Curved White Top Header + Gradient Form */}
-      <div style={styles.rightSection}>
-        {/* Logo Header Container with double curved bottom */}
-        <div style={styles.headerWrapper}>
-          <div style={styles.topHeader}>
+  <div style={styles.pageContainer}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        width: '100%',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          flex: 1,
+          width: '100%',
+          minHeight: 'calc(100vh - 60px)',
+        }}
+      >
+        {/* Left Section - Hero Image with Green Organic Bubble */}
+        <div style={styles.leftSection}>
+          <div style={styles.bubbleContainer}>
             <img
-              src={logoImage}
-              alt="Engaging Minds Logo"
-              style={styles.logoImg}
+              src={greenBubbleBg}
+              alt="Teacher Portal Green Bubble"
+              style={styles.bubbleImg}
             />
-          </div>
-          {/* Double-curve wave transition SVG */}
-          <div style={styles.waveContainer}>
-            <svg
-              viewBox="0 0 500 120"
-              preserveAspectRatio="none"
-              style={styles.waveSvg}
-            >
-              <path
-                d="M 0,0 L 500,0 L 500,45 C 480,85 455,115 415,115 C 375,115 345,55 320,30 C 250,10 190,68 120,68 C 60,68 25,48 0,40 Z"
-                fill="#ffffff"
-              />
-            </svg>
+
+            <div style={styles.bubbleContent}>
+              <div style={styles.portalPill}>Teacher Portal</div>
+
+              <h3 style={styles.bubbleSubtitle}>
+                Engaging Minds
+              </h3>
+
+              <p style={styles.bubbleText}>
+                Improving Student Retention through Best Practices.
+                A two-year Erasmus+ collaboration developing
+                evidence-based strategies to help students stay
+                motivated, engaged, and connected to their learning
+                journey.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Form Body Container */}
-        <div style={styles.formSection}>
-          <h2 style={styles.formTitle}>Registration</h2>
-
-          {error && <div style={styles.errorBox}>{error}</div>}
-
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Email:</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your log in email"
-                style={styles.input}
+        {/* Right Section */}
+        <div style={styles.rightSection}>
+          {/* Logo Header */}
+          <div style={styles.headerWrapper}>
+            <div style={styles.topHeader}>
+              <img
+                src={logoImage}
+                alt="Engaging Minds Logo"
+                style={styles.logoImg}
               />
             </div>
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Password:</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                style={styles.input}
-              />
+            {/* Wave transition */}
+            <div style={styles.waveContainer}>
+              <svg
+                viewBox="0 0 500 120"
+                preserveAspectRatio="none"
+                style={styles.waveSvg}
+              >
+                <path
+                  d="M 0,0 L 500,0 L 500,45 C 480,85 455,115 415,115 C 375,115 345,55 320,30 C 250,10 190,68 120,68 C 60,68 25,48 0,40 Z"
+                  fill="#ffffff"
+                />
+              </svg>
             </div>
+          </div>
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Confirm Password:</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm password"
-                style={styles.input}
-              />
+          {/* Form Body */}
+          <div style={styles.formSection}>
+            <h2 style={styles.formTitle}>Registration</h2>
+
+            {error && (
+              <div style={styles.errorBox}>
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={styles.form}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>
+                  Email:
+                </label>
+
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your log in email"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>
+                  Password:
+                </label>
+
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>
+                  Confirm Password:
+                </label>
+
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) =>
+                    setConfirmPassword(e.target.value)
+                  }
+                  placeholder="Confirm password"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>
+                  School:
+                </label>
+
+                <input
+                  type="text"
+                  required
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  placeholder="Enter school name"
+                  style={styles.input}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                style={{
+                  ...styles.submitBtn,
+                  opacity: isSubmitting ? 0.8 : 1,
+                }}
+              >
+                {isSubmitting
+                  ? 'Registering...'
+                  : 'Register Now'}
+              </button>
+            </form>
+
+            <div style={styles.loginRedirect}>
+              Already have an account?{' '}
+              <span
+                onClick={onNavigateToLogin}
+                style={styles.loginLink}
+              >
+                Login now
+              </span>
             </div>
+          </div>
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>School:</label>
-              <input
-                type="text"
-                required
-                value={school}
-                onChange={(e) => setSchool(e.target.value)}
-                placeholder="Enter school name"
-                style={styles.input}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                ...styles.submitBtn,
-                opacity: isSubmitting ? 0.8 : 1,
-              }}
+          {/* Footer Links */}
+          <div style={styles.footer}>
+            <a
+              href="#privacy"
+              style={styles.footerLink}
+              onClick={(e) => e.preventDefault()}
             >
-              {isSubmitting ? 'Registering...' : 'Register Now'}
-            </button>
-          </form>
+              Privacy
+            </a>
 
-          <div style={styles.loginRedirect}>
-            Already have an account?{' '}
-            <span
-              onClick={onNavigateToLogin}
-              style={styles.loginLink}
+            <a
+              href="#terms"
+              style={styles.footerLink}
+              onClick={(e) => e.preventDefault()}
             >
-              Login now
+              Terms & condition
+            </a>
+
+            <span style={styles.copyright}>
+              © Engaging Minds 2026
             </span>
           </div>
         </div>
-
-        {/* Footer Links */}
-        <div style={styles.footer}>
-          <a href="#privacy" style={styles.footerLink} onClick={(e) => e.preventDefault()}>
-            Privacy
-          </a>
-          <a href="#terms" style={styles.footerLink} onClick={(e) => e.preventDefault()}>
-            Terms & condition
-          </a>
-          <span style={styles.copyright}>© Engaging Minds 2026</span>
-        </div>
       </div>
-    </div>
 
       {/* European Union Co-Funded Footer Banner */}
       <EuFooter />
     </div>
-  );
-};
+  </div>
+)};
+
 
 const styles: Record<string, React.CSSProperties> = {
   pageContainer: {
     display: 'flex',
     flex: '1',
     width: '100%',
+    minHeight: '100vh',
     minHeight: 'calc(100vh - 60px)',
     overflowX: 'hidden',
     backgroundColor: '#059669',

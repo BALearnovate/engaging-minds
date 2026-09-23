@@ -82,3 +82,4 @@ const styles: Record<string, React.CSSProperties> = {
     opacity: 0.95,
   },
 };
+
