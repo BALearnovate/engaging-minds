@@ -1,5 +1,7 @@
+// Look for the variable first, then fall back to production URL
 export const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 'http://localhost:3000';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 
+  'https://engagingmindstoolkit.learnovatecentre.org';
 
 export function getStoredToken(): string {
   if (typeof window === 'undefined') return '';
