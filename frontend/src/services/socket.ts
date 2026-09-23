@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from '../api/client';
 
-const SOCKET_URL = 'http://localhost:3000';
+export const SOCKET_URL = API_BASE_URL;
 
 let socket: Socket | null = null;
 

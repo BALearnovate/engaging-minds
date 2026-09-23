@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ActivityDefinition } from '../types/activityDsl';
 import { ActivityRuntime } from './ActivityRuntime';
+import { activitiesApi } from '../api/activities';
 
 interface StudentJoinViewProps {
   initialShareCode?: string;
@@ -29,29 +30,16 @@ export const StudentJoinView: React.FC<StudentJoinViewProps> = ({ initialShareCo
     setError(null);
 
     try {
+      const formattedCode = shareCode.trim().toUpperCase();
+
       // 1. Fetch published session details & immutable DSL definition
-      const sessionRes = await fetch(
-        `http://localhost:3000/activities/session/${shareCode.trim().toUpperCase()}`,
-      );
-
-      if (!sessionRes.ok) {
-        throw new Error(`Invalid share join code "${shareCode}". Please check code and retry.`);
-      }
-
-      const sessionInfo = await sessionRes.json();
+      const sessionInfo = await activitiesApi.getSession(formattedCode);
 
       // 2. Join student session
-      const joinRes = await fetch('http://localhost:3000/activities/student-session/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shareCode: shareCode.trim().toUpperCase(),
-          studentName: studentName.trim(),
-        }),
+      const studentSession = await activitiesApi.joinStudentSession({
+        shareCode: formattedCode,
+        studentName: studentName.trim(),
       });
-
-      if (!joinRes.ok) throw new Error('Failed to create student session');
-      const studentSession = await joinRes.json();
 
       setSessionData({
         studentSessionId: studentSession.id,

@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3000';
+import { apiFetch, API_BASE_URL } from './client';
+
+export { API_BASE_URL };
 
 export interface StudentRecord {
   id: string;
@@ -30,78 +32,45 @@ export interface StudentInputPayload {
 
 export const classroomsApi = {
   // Get all classrooms for teacher
-  async getClassrooms(token: string): Promise<ClassroomProfile[]> {
-    const res = await fetch(`${API_BASE_URL}/classrooms`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || 'Failed to fetch classrooms');
-    return result;
+  async getClassrooms(token?: string): Promise<ClassroomProfile[]> {
+    return apiFetch<ClassroomProfile[]>('/classrooms', { token });
   },
 
   // Create a classroom profile
-  async createClassroom(data: CreateClassroomPayload, token: string): Promise<ClassroomProfile> {
-    const res = await fetch(`${API_BASE_URL}/classrooms`, {
+  async createClassroom(data: CreateClassroomPayload, token?: string): Promise<ClassroomProfile> {
+    return apiFetch<ClassroomProfile>('/classrooms', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(data),
+      token,
     });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || 'Failed to create classroom');
-    return result;
   },
 
   // Add students to a classroom (manual or bulk array)
   async addStudents(
     classroomId: string,
     students: StudentInputPayload[],
-    token: string,
+    token?: string,
   ): Promise<StudentRecord[]> {
-    const res = await fetch(`${API_BASE_URL}/classrooms/${classroomId}/students`, {
+    return apiFetch<StudentRecord[]>(`/classrooms/${classroomId}/students`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify({ students }),
+      token,
     });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || 'Failed to add students');
-    return result;
   },
 
   // Delete a student from a classroom
-  async deleteStudent(classroomId: string, studentId: string, token: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/classrooms/${classroomId}/students/${studentId}`, {
+  async deleteStudent(classroomId: string, studentId: string, token?: string): Promise<void> {
+    return apiFetch<void>(`/classrooms/${classroomId}/students/${studentId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      token,
     });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || 'Failed to delete student');
   },
 
   // Delete a classroom
-  async deleteClassroom(classroomId: string, token: string): Promise<void> {
-    const res = await fetch(`${API_BASE_URL}/classrooms/${classroomId}`, {
+  async deleteClassroom(classroomId: string, token?: string): Promise<void> {
+    return apiFetch<void>(`/classrooms/${classroomId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      token,
     });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || 'Failed to delete classroom');
   },
 };
-

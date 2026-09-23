@@ -1,3 +1,5 @@
+import { activitiesApi } from '../api/activities';
+
 /**
  * xAPI Telemetry Utility (Experience API Spec v1.0.3)
  * Formats and logs standardized xAPI statements whenever a student interacts with an activity.
@@ -141,20 +143,16 @@ export const logXApiEvent = (params: {
   const effectiveSessionId = params.studentSessionId || 'guest_session_preview';
   const verbType = params.verb.display['en-US']?.toUpperCase() || 'INTERACTED';
 
-  fetch('http://localhost:3000/activities/event', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  activitiesApi
+    .recordEvent({
       studentSessionId: effectiveSessionId,
       type: verbType,
       blockId: params.blockId,
       payload: statement,
-    }),
-  }).catch((err) => {
-    console.warn('⚠️ Failed to persist xAPI event to backend database:', err);
-  });
+    })
+    .catch((err) => {
+      console.warn('⚠️ Failed to persist xAPI event to backend database:', err);
+    });
 
   return statement;
 };

@@ -260,7 +260,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flex: '1',
     width: '100%',
-    minHeight: '100vh',
     minHeight: 'calc(100vh - 60px)',
     overflowX: 'hidden',
     backgroundColor: '#059669',

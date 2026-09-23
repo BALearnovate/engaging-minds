@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { activitiesApi, API_BASE_URL } from '../api';
 
 interface LiveClassroomDashboardProps {
   shareCode: string;
@@ -25,18 +26,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:3000/activities/session/${shareCode}/dashboard`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token') || localStorage.getItem('token') || ''}`,
-          },
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setStudents(data.students || []);
-      }
+      const data = await activitiesApi.getSessionDashboard(shareCode);
+      setStudents(data.students || []);
     } catch (err) {
       console.error('Failed to fetch dashboard state:', err);
     } finally {
@@ -48,7 +39,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     fetchDashboardState();
 
     // Connect WebSocket for real-time live events
-    const newSocket = io('http://localhost:3000', { transports: ['websocket'] });
+    const newSocket = io(API_BASE_URL, { transports: ['websocket'] });
     setSocket(newSocket);
 
     newSocket.emit('join_room', {
@@ -94,16 +85,16 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     });
 
     // Record intervention event in database
-    fetch('http://localhost:3000/activities/event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    activitiesApi
+      .recordEvent({
         studentSessionId: hintModalStudent.id,
         type: 'TEACHER_INTERVENTION',
         blockId: hintModalStudent.currentBlockId,
         payload: { action: 'SHOW_HINT', hint: hintText },
-      }),
-    });
+      })
+      .catch((err) => {
+        console.warn('Failed to record hint event:', err);
+      });
 
     setHintModalStudent(null);
     setHintText('');
@@ -120,16 +111,16 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       blockId: student.currentBlockId,
     });
 
-    fetch('http://localhost:3000/activities/event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    activitiesApi
+      .recordEvent({
         studentSessionId: student.id,
         type: 'TEACHER_INTERVENTION',
         blockId: student.currentBlockId,
         payload: { action: 'RESET_BLOCK' },
-      }),
-    });
+      })
+      .catch((err) => {
+        console.warn('Failed to record reset block event:', err);
+      });
 
     alert(`🔄 Question reset for ${student.studentName}!`);
     fetchDashboardState();

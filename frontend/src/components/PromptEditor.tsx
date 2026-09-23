@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { ActivityDefinition } from '../types/activityDsl';
 import { useAuth } from '../context/AuthContext';
+import { activitiesApi } from '../api/activities';
 
 interface PromptEditorProps {
   onGenerated: (definition: ActivityDefinition) => void;
@@ -28,28 +29,15 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({ onGenerated }) => {
       '';
 
     try {
-      const response = await fetch('http://localhost:3000/activities/generate-dsl', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      const definition = await activitiesApi.generateDsl(
+        {
           prompt,
           subject,
           gradeLevel,
-        }),
-      });
+        },
+        token,
+      );
 
-      if (response.status === 401) {
-        throw new Error('401 Unauthorized: Please log in as a teacher or admin to generate activities.');
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to generate activity (${response.status} ${response.statusText}). Check server logs.`);
-      }
-
-      const definition: ActivityDefinition = await response.json();
       onGenerated(definition);
     } catch (err: any) {
       console.error('AI Generation Error:', err);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from '../components/ActivityRuntime';
+import { activitiesApi } from '../api/activities';
 import type { ActivityDefinition } from '../types/activityDsl';
 
 interface DatabaseActivity {
@@ -57,16 +58,8 @@ export const StudentDashboard: React.FC = () => {
   const fetchAssignedActivities = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/activities', {
-        headers: {
-          Authorization: `Bearer ${activeToken}`,
-        },
-      });
-
-      if (response.ok) {
-        const data: DatabaseActivity[] = await response.json();
-        setDbActivities(data);
-      }
+      const data: any = await activitiesApi.getActivities(activeToken);
+      setDbActivities(data);
     } catch (err) {
       console.error('Failed to fetch assigned activities from DB:', err);
     } finally {

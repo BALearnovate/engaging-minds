@@ -4,6 +4,7 @@ import { ActivityRuntime } from './ActivityRuntime';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
 import { classroomsApi } from '../api/classrooms';
 import type { ClassroomProfile } from '../api/classrooms';
+import { activitiesApi } from '../api/activities';
 import type { ActivityDefinition } from '../types/activityDsl';
 
 interface DatabaseActivity {
@@ -51,6 +52,7 @@ export const ActivityCreationStudio: React.FC = () => {
     isOpen: boolean;
     className: string;
     existingActivityTitle: string;
+    isSameActivity?: boolean;
   } | null>(null);
 
   const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
@@ -73,87 +75,72 @@ export const ActivityCreationStudio: React.FC = () => {
 
     try {
       // 1. Save draft to DB first
-      const saveRes = await fetch('http://localhost:3000/activities/save-draft', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${activeToken}`,
-        },
-        body: JSON.stringify({
+      const saveJson = await activitiesApi.saveDraft(
+        {
           activityId: selectedActivityId || undefined,
           title: currentDefinition.title || 'Interactive Activity',
           description: currentDefinition.description || '',
           definition: currentDefinition,
-        }),
-      });
+        },
+        activeToken,
+      );
 
-      if (saveRes.ok) {
-        const saveJson = await saveRes.json();
-        const actId = saveJson?.activity?.id;
+      const actId = saveJson?.activity?.id;
 
-        if (actId) {
-          // 2. Publish activity version to create active session with share code & class assignment
-          const pubRes = await fetch('http://localhost:3000/activities/publish', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${activeToken}`,
-            },
-            body: JSON.stringify({
-              activityId: actId,
-              classroomId: selectedClassId || undefined,
-              timerMode,
-              rewardMode,
-              targetScope,
-              targetGroupStudents: configuredStudents,
-            }),
+      if (actId) {
+        // 2. Publish activity version to create active session with share code & class assignment
+        const pubJson = await activitiesApi.publishActivity(
+          {
+            activityId: actId,
+            classroomId: selectedClassId || undefined,
+            timerMode,
+            rewardMode,
+            targetScope,
+            targetGroupStudents: configuredStudents,
+          },
+          activeToken,
+        );
+
+        // Check if selected class already has an activity in progress
+        if (pubJson.classHasActiveAssignment) {
+          setClassAssignmentDialog({
+            isOpen: true,
+            className: pubJson.className || 'Selected Class',
+            existingActivityTitle: pubJson.existingActivityTitle || 'Active Activity',
+            isSameActivity: pubJson.isSameActivity,
           });
-
-          if (pubRes.ok) {
-            const pubJson = await pubRes.json();
-
-            // Check if selected class already has an activity in progress
-            if (pubJson.classHasActiveAssignment) {
-              setClassAssignmentDialog({
-                isOpen: true,
-                className: pubJson.className || 'Selected Class',
-                existingActivityTitle: pubJson.existingActivityTitle || 'Active Activity',
-                isSameActivity: pubJson.isSameActivity,
-              });
-              setIsPublishing(false);
-              return;
-            }
-
-            // Check if activity is already published in database
-            if (pubJson.alreadyPublished) {
-              const assignedClass = pubJson.assignment?.classroom;
-              const classLabel = assignedClass
-                ? `${assignedClass.subject} - ${assignedClass.grade}`
-                : 'All Students / Classroom';
-
-              setAlreadyPublishedDialog({
-                isOpen: true,
-                activityTitle: currentDefinition.title || 'Interactive Activity',
-                shareCode: pubJson.shareCode || 'LIVE',
-                classLabel,
-                publishedAt: pubJson.publishedAt ? new Date(pubJson.publishedAt).toLocaleString() : 'Active',
-                timerMode: pubJson.assignment?.timerMode || timerMode,
-                targetScope: pubJson.assignment?.targetScope || targetScope,
-                actId,
-              });
-              setIsPublishing(false);
-              return;
-            }
-
-            const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
-            const selectedClass = classrooms.find((c) => c.id === selectedClassId);
-            const classLabel = selectedClass ? `Class: ${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
-            setPublishNotice(`🚀 Activity Published & Live for ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
-            await fetchTemplates();
-            setIsPublishing(false);
-            return;
-          }
+          setIsPublishing(false);
+          return;
         }
+
+        // Check if activity is already published in database
+        if (pubJson.alreadyPublished) {
+          const assignedClass = pubJson.assignment?.classroom;
+          const classLabel = assignedClass
+            ? `${assignedClass.subject} - ${assignedClass.grade}`
+            : 'All Students / Classroom';
+
+          setAlreadyPublishedDialog({
+            isOpen: true,
+            activityTitle: currentDefinition.title || 'Interactive Activity',
+            shareCode: pubJson.shareCode || 'LIVE',
+            classLabel,
+            publishedAt: pubJson.publishedAt ? new Date(pubJson.publishedAt).toLocaleString() : 'Active',
+            timerMode: pubJson.assignment?.timerMode || timerMode,
+            targetScope: pubJson.assignment?.targetScope || targetScope,
+            actId,
+          });
+          setIsPublishing(false);
+          return;
+        }
+
+        const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
+        const selectedClass = classrooms.find((c) => c.id === selectedClassId);
+        const classLabel = selectedClass ? `Class: ${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
+        setPublishNotice(`🚀 Activity Published & Live for ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
+        await fetchTemplates();
+        setIsPublishing(false);
+        return;
       }
 
       setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope} (${timerMode}, ${rewardMode}).`);
@@ -212,18 +199,10 @@ export const ActivityCreationStudio: React.FC = () => {
   const fetchTemplates = async () => {
     setIsLoadingTemplates(true);
     try {
-      const response = await fetch('http://localhost:3000/activities', {
-        headers: {
-          Authorization: `Bearer ${activeToken}`,
-        },
-      });
-
-      if (response.ok) {
-        const data: DatabaseActivity[] = await response.json();
-        setDbActivities(data);
-        if (data.length > 0 && !selectedActivityId) {
-          setSelectedActivityId(data[0].id);
-        }
+      const data: any = await activitiesApi.getActivities(activeToken);
+      setDbActivities(data);
+      if (data.length > 0 && !selectedActivityId) {
+        setSelectedActivityId(data[0].id);
       }
     } catch (err) {
       console.error('Failed to fetch existing activities:', err);
@@ -287,63 +266,35 @@ export const ActivityCreationStudio: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/activities/generate-dsl', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${activeToken}`,
-        },
-        body: JSON.stringify({
+      const definition = await activitiesApi.generateDsl(
+        {
           prompt,
           subject,
           gradeLevel,
-        }),
-      });
+        },
+        activeToken,
+      );
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('401 Unauthorized: Please log in as a Teacher or Admin to generate activities.');
-      }
-
-      if (!response.ok) {
-        const resText = await response.text();
-        let jsonMsg: any;
-        try {
-          jsonMsg = JSON.parse(resText);
-        } catch {}
-        const serverMsg = Array.isArray(jsonMsg?.message)
-          ? jsonMsg.message.join(', ')
-          : jsonMsg?.message;
-        throw new Error(serverMsg || 'Could not create activity, try again later.');
-      }
-
-      const definition: ActivityDefinition = await response.json();
       console.log('Generated Activity DSL***:', definition);
       setActivity(definition);
 
       // Auto-save generated activity to database & sync with existing activities list
       try {
-        const saveRes = await fetch('http://localhost:3000/activities/save-draft', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${activeToken}`,
-          },
-          body: JSON.stringify({
+        const savedJson = await activitiesApi.saveDraft(
+          {
             title: definition.title || 'AI Generated Activity',
             description: definition.description || prompt,
             definition,
-          }),
-        });
+          },
+          activeToken,
+        );
 
-        if (saveRes.ok) {
-          const savedJson = await saveRes.json();
-          console.log('AI Activity auto-saved to DB:', savedJson);
-          if (savedJson?.activity?.id) {
-            setSelectedActivityId(savedJson.activity.id);
-          }
-          await fetchTemplates();
-          setPublishNotice('💾 AI Activity auto-saved to database and added to existing activities list!');
+        console.log('AI Activity auto-saved to DB:', savedJson);
+        if (savedJson?.activity?.id) {
+          setSelectedActivityId(savedJson.activity.id);
         }
+        await fetchTemplates();
+        setPublishNotice('💾 AI Activity auto-saved to database and added to existing activities list!');
       } catch (saveErr) {
         console.warn('Auto-saving AI activity to DB failed:', saveErr);
       }
@@ -801,6 +752,54 @@ export const ActivityCreationStudio: React.FC = () => {
                 style={styles.closeDialogBtn}
               >
                 Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ACTIVITY ALREADY PUBLISHED DIALOG */}
+      {alreadyPublishedDialog?.isOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.publishedDialogCard}>
+            <div style={styles.publishedDialogHeader}>
+              <span style={{ fontSize: '2rem' }}>ℹ️</span>
+              <div>
+                <h3 style={styles.publishedDialogTitle}>Activity Already Published</h3>
+                <p style={styles.publishedDialogSub}>
+                  This activity already has an active published version in the database.
+                </p>
+              </div>
+            </div>
+
+            <div style={styles.publishedDetailsBox}>
+              <p style={{ margin: 0, fontSize: '0.92rem', color: '#0f172a' }}>
+                Join Code: <strong>{alreadyPublishedDialog.shareCode}</strong>
+              </p>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>
+                Assigned to: <strong>{alreadyPublishedDialog.classLabel}</strong>
+              </p>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
+                Published: {alreadyPublishedDialog.publishedAt}
+              </p>
+            </div>
+
+            <div style={styles.publishedDialogActions}>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(alreadyPublishedDialog.shareCode);
+                  setPublishNotice(`📋 Copied share code "${alreadyPublishedDialog.shareCode}" to clipboard!`);
+                  setAlreadyPublishedDialog(null);
+                }}
+                style={styles.closeDialogBtn}
+              >
+                Copy Join Code
+              </button>
+              <button
+                onClick={() => setAlreadyPublishedDialog(null)}
+                style={{ ...styles.closeDialogBtn, backgroundColor: '#64748b' }}
+              >
+                Dismiss
               </button>
             </div>
           </div>

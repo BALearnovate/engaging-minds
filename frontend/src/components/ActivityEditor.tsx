@@ -6,6 +6,7 @@ import type {
 } from '../types/activityDsl';
 import { ComponentRegistry } from '../registry';
 import { ActivityRuntime } from './ActivityRuntime';
+import { activitiesApi } from '../api/activities';
 
 interface ActivityEditorProps {
   initialDefinition: ActivityDefinition;
@@ -147,17 +148,7 @@ export const ActivityEditor: React.FC<ActivityEditorProps> = ({
   // Block-level Improve with AI
   const handleImproveBlockWithAi = async (block: ActivityBlock, prompt: string) => {
     try {
-      const response = await fetch('http://localhost:3000/activities/improve-block', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token') || localStorage.getItem('token') || ''}`,
-        },
-        body: JSON.stringify({ block, prompt }),
-      });
-
-      if (!response.ok) throw new Error('Failed to improve block with AI');
-      const updatedBlock: ActivityBlock = await response.json();
+      const updatedBlock = await activitiesApi.improveBlock({ block, prompt });
 
       setDefinition((prev) => ({
         ...prev,
@@ -173,38 +164,19 @@ export const ActivityEditor: React.FC<ActivityEditorProps> = ({
     setIsGenerating(true);
     try {
       // 1. Save draft
-      const draftRes = await fetch('http://localhost:3000/activities/save-draft', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token') || localStorage.getItem('token') || ''}`,
-        },
-        body: JSON.stringify({
-          activityId,
-          title: definition.title,
-          description: definition.description,
-          definition,
-        }),
+      const draftData = await activitiesApi.saveDraft({
+        activityId,
+        title: definition.title,
+        description: definition.description,
+        definition,
       });
 
-      if (!draftRes.ok) throw new Error('Failed to save draft');
-      const draftData = await draftRes.json();
       const currentActId = draftData.activity.id;
       setActivityId(currentActId);
 
       // 2. Publish version
-      const pubRes = await fetch('http://localhost:3000/activities/publish', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token') || localStorage.getItem('token') || ''}`,
-        },
-        body: JSON.stringify({ activityId: currentActId }),
-      });
-
-      if (!pubRes.ok) throw new Error('Failed to publish activity version');
-      const pubData = await pubRes.json();
-      const shareCode = pubData.shareCode;
+      const pubData = await activitiesApi.publishActivity({ activityId: currentActId });
+      const shareCode = pubData.shareCode || '';
 
       setShareCode(shareCode);
       if (onPublished) onPublished(shareCode);

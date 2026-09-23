@@ -9,6 +9,7 @@ import type {
 import { ComponentRegistry } from '../registry';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
 import { logXApiEvent, XAPI_VERBS } from '../utils/xapiTelemetry';
+import { activitiesApi, API_BASE_URL } from '../api';
 
 interface ActivityRuntimeProps {
   definition: ActivityDefinition;
@@ -98,7 +99,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   useEffect(() => {
     if (!shareCode || !studentSessionId) return;
 
-    const newSocket = io('http://localhost:3000', { transports: ['websocket'] });
+    const newSocket = io(API_BASE_URL, { transports: ['websocket'] });
     setSocket(newSocket);
 
     newSocket.emit('join_room', {
@@ -129,6 +130,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     logXApiEvent({
       studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
       studentName: studentName || 'Student Learner',
+      verb: isCorrect ? XAPI_VERBS.COMPLETED : XAPI_VERBS.ANSWERED,
       activityId: definition.id || shareCode || 'preview_activity',
       activityTitle: definition.title || 'Interactive Activity',
       blockId: currentBlock.id,
@@ -165,16 +167,16 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     }
 
     if (studentSessionId) {
-      fetch('http://localhost:3000/activities/event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      activitiesApi
+        .recordEvent({
           studentSessionId,
           type: 'ANSWER_SUBMITTED',
           blockId: currentBlock.id,
           payload: { response, isCorrect, score },
-        }),
-      });
+        })
+        .catch((err) => {
+          console.warn('Failed to record student answer event:', err);
+        });
     }
 
     if (currentBlockIndex === definition.blocks.length - 1 && onCompleted) {
@@ -275,6 +277,8 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             studentState: currentBlockState,
             studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
             studentName: studentName || 'Student Learner',
+            onAnswerSubmit: handleAnswerSubmit,
+            onHelpRequest: handleHelpRequest,
           })}
         </div>
       ) : (
