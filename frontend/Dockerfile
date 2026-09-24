@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy root and workspace package manifests
-COPY package.json ./
+COPY package.json package-lock.json* ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
@@ -12,6 +12,10 @@ RUN npm install
 
 # Copy frontend application code
 COPY frontend ./frontend
+
+# Build argument for production API URL if provided
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Build React Vite application for production
 RUN npm run build:frontend
