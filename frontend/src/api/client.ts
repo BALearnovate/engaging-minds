@@ -1,7 +1,16 @@
-// Look for the variable first, then fall back to production URL
-export const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || 
-  'https://engagingmindstoolkit.learnovatecentre.org';
+// API Base URL resolution:
+// 1. Explicit environment variable if provided (e.g., VITE_API_BASE_URL=http://localhost:3000 in dev)
+// 2. In browser: fall back to window.location.origin (e.g., http://<LIGHTSAIL_IP>) so Nginx port 80 handles routing without CORS
+// 3. Fallback to empty string for SSR/test environments
+export const API_BASE_URL = (() => {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return '';
+})();
 
 export function getStoredToken(): string {
   if (typeof window === 'undefined') return '';
