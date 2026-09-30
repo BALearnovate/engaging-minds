@@ -3,6 +3,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy root and workspace package manifests
+COPY package.json ./
 COPY package.json package-lock.json* ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
@@ -30,5 +31,5 @@ COPY --from=builder /app/frontend/package.json ./package.json
 
 EXPOSE 5173
 
-# Serve production SPA on port 5173
-CMD ["npx", "--yes", "serve", "-s", "dist", "-l", "5173"]
+# Serve production SPA on port 5173 listening on all interfaces (0.0.0.0)
+CMD ["npx", "--yes", "serve", "-s", "dist", "-l", "tcp://0.0.0.0:5173"]
