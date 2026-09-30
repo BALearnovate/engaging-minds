@@ -35,19 +35,19 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
     switch (role) {
       case 'TEACHER_ILSE':
         setEmail('ilse.teacher@em.com');
-        setPassword('password123@');
+        setPassword('password123');
         break;
       case 'STUDENT_ILSE':
         setEmail('ilse.student@em.com');
-        setPassword('password123@');
+        setPassword('password123');
         break;
       case 'TEACHER_JANE':
         setEmail('jane.teacher@em.com');
-        setPassword('password123@');
+        setPassword('password123');
         break;
       case 'STUDENT_JANE':
         setEmail('jane.student@em.com');
-        setPassword('password123@');
+        setPassword('password123');
         break;
       case 'ADMIN':
         setEmail('admin@example.com');
