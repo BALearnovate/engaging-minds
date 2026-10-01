@@ -60,6 +60,29 @@ async function main() {
     });
   }
 
+  // EM Domain Users
+  const emPassword = await bcrypt.hash('password123@', saltRounds);
+  const emUsers = [
+    { email: 'ilse.teacher@em.com', firstName: 'Ilse', lastName: 'Teacher', role: Role.TEACHER },
+    { email: 'ilse.student@em.com', firstName: 'Ilse', lastName: 'Student', role: Role.STUDENT },
+    { email: 'jane.teacher@em.com', firstName: 'Jane', lastName: 'Teacher', role: Role.TEACHER },
+    { email: 'jane.student@em.com', firstName: 'Jane', lastName: 'Student', role: Role.STUDENT },
+  ];
+
+  for (const u of emUsers) {
+    await prisma.user.upsert({
+      where: { email: u.email.toLowerCase() },
+      update: { password: emPassword, role: u.role, firstName: u.firstName, lastName: u.lastName },
+      create: {
+        email: u.email.toLowerCase(),
+        password: emPassword,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        role: u.role,
+      },
+    });
+  }
+
   console.log(`Validating and upserting ${SEED_ACTIVITIES.length} interactive activities...`);
 
   let seededCount = 0;

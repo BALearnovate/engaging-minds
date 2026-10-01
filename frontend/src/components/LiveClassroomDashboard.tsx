@@ -174,7 +174,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         ) : students.length === 0 ? (
           <div style={styles.emptyBox}>
             No students have joined session <strong>{shareCode}</strong> yet. Direct students to open{' '}
-            <code>http://localhost:5173/join/{shareCode}</code>
+            <code>{typeof window !== 'undefined' ? window.location.origin : ''}/join/{shareCode}</code>
           </div>
         ) : (
           <table style={styles.table}>

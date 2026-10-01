@@ -1,3 +1,4 @@
+
 // API Base URL resolution:
 // 1. Explicit environment variable if provided (e.g., VITE_API_BASE_URL=http://localhost:3000 in dev)
 // 2. In browser: fall back to window.location.origin (e.g., http://<LIGHTSAIL_IP>) so Nginx port 80 handles routing without CORS
