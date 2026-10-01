@@ -65,7 +65,23 @@ const MainApp: React.FC = () => {
       );
     }
 
-    if (currentTab === 'activity_creation' || currentTab === 'home') {
+    if (currentTab === 'home') {
+      return (
+        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
+          <TeacherDashboard />
+        </ProtectedRoute>
+      );
+    }
+
+    if (currentTab === 'student_support') {
+      return (
+        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
+          <StudentDashboard />
+        </ProtectedRoute>
+      );
+    }
+
+    if (currentTab === 'activity_creation') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
           <ActivityCreationStudio />

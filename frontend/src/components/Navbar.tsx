@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import logoImg from '../assets/logo.png';
 
 interface NavbarProps {
   currentTab: string;
@@ -9,202 +10,124 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
   const { user, logout } = useAuth();
 
-  const getBadgeStyle = (role?: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return { backgroundColor: '#ef4444', color: '#ffffff' };
-      case 'TEACHER':
-        return { backgroundColor: '#3b82f6', color: '#ffffff' };
-      case 'STUDENT':
-        return { backgroundColor: '#10b981', color: '#ffffff' };
+  const getPageTitle = (tab: string) => {
+    switch (tab) {
+      case 'classroom_setup':
+        return 'Classroom & Roster Setup';
+      case 'activity_creation':
+        return 'Activity Creation Studio';
+      case 'teacher_dashboard':
+      case 'dashboard':
+        return 'Teacher Dashboard';
+      case 'home':
+        return 'Home';
+      case 'student_support':
+        return 'Student Support';
+      case 'student_home':
+      case 'student':
+        return 'Student Portal';
       default:
-        return { backgroundColor: '#6b7280', color: '#ffffff' };
+        return 'Classroom & Roster Setup';
     }
   };
 
   return (
-    <nav style={styles.nav}>
-      <div style={styles.brandContainer} onClick={() => onSelectTab('home')}>
-        <span style={styles.logoIcon}>🎓</span>
-        <span style={styles.brandTitle}>Engaging Minds</span>
+    <header style={styles.header}>
+      {/* Left: Brand Logo */}
+      <div style={styles.logoContainer} onClick={() => onSelectTab('home')}>
+        <img src={logoImg} alt="Engaging Minds Logo" style={styles.logoImage} />
       </div>
 
-      {user ? (
-        <div style={styles.userSection}>
-          <div style={styles.tabGroup}>
-            {user.role === 'ADMIN' && (
-              <button
-                style={{
-                  ...styles.tabButton,
-                  ...(currentTab === 'admin' ? styles.activeTab : {}),
-                }}
-                onClick={() => onSelectTab('admin')}
-              >
-                Admin Panel
-              </button>
-            )}
-            {(user.role === 'TEACHER' || user.role === 'ADMIN') && (
-              <button
-                style={{
-                  ...styles.tabButton,
-                  ...(currentTab === 'teacher' ? styles.activeTab : {}),
-                }}
-                onClick={() => onSelectTab('teacher')}
-              >
-                Teacher Portal
-              </button>
-            )}
-            <button
-              style={{
-                ...styles.tabButton,
-                ...(currentTab === 'student' ? styles.activeTab : {}),
-              }}
-              onClick={() => onSelectTab('student')}
-            >
-              Student Portal
-            </button>
-          </div>
+      {/* Center: Page Title in Green */}
+      <div style={styles.titleContainer}>
+        <h1 style={styles.pageTitle}>{getPageTitle(currentTab)}</h1>
+      </div>
 
-          <div style={styles.userInfo}>
-            <span style={styles.userName}>
-              {user.firstName} {user.lastName}
-            </span>
-            <span style={{ ...styles.roleBadge, ...getBadgeStyle(user.role) }}>
-              {user.role}
-            </span>
-            <button style={styles.logoutBtn} onClick={logout}>
-              Logout
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div style={styles.authButtons}>
-          <button
-            style={{
-              ...styles.authBtn,
-              ...(currentTab === 'login' ? styles.activeAuthBtn : {}),
-            }}
-            onClick={() => onSelectTab('login')}
-          >
-            Log In
+      {/* Right: Capsule Logout Button */}
+      <div style={styles.rightContainer}>
+        {user && (
+          <button style={styles.logoutBtn} onClick={logout}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#20a75d"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Log-out</span>
           </button>
-          <button
-            style={{
-              ...styles.authBtnPrimary,
-              ...(currentTab === 'register' ? styles.activeAuthBtn : {}),
-            }}
-            onClick={() => onSelectTab('register')}
-          >
-            Register
-          </button>
-        </div>
-      )}
-    </nav>
+        )}
+      </div>
+    </header>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  nav: {
+  header: {
+    height: '76px',
     display: 'flex',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '0.85rem 1.75rem',
-    backgroundColor: '#1f2937',
-    color: '#ffffff',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    borderRadius: '0 0 12px 12px',
+    padding: '0 2.5rem',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+    position: 'relative',
+    zIndex: 10,
+    width: '100%',
+    boxSizing: 'border-box',
   },
-  brandContainer: {
+  logoContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.6rem',
     cursor: 'pointer',
+    zIndex: 2,
   },
-  logoIcon: {
-    fontSize: '1.6rem',
+  logoImage: {
+    height: '46px',
+    width: 'auto',
+    objectFit: 'contain',
   },
-  brandTitle: {
-    fontSize: '1.25rem',
+  titleContainer: {
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    textAlign: 'center',
+    zIndex: 1,
+  },
+  pageTitle: {
+    margin: 0,
+    fontSize: '1.4rem',
     fontWeight: '700',
-    letterSpacing: '-0.02rem',
+    color: '#20a75d',
+    letterSpacing: '-0.01em',
   },
-  userSection: {
+  rightContainer: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1.5rem',
-  },
-  tabGroup: {
-    display: 'flex',
-    gap: '0.5rem',
-  },
-  tabButton: {
-    background: 'none',
-    border: 'none',
-    color: '#9ca3af',
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    fontSize: '0.9rem',
-    transition: 'all 0.2s ease',
-  },
-  activeTab: {
-    color: '#ffffff',
-    backgroundColor: '#374151',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    borderLeft: '1px solid #374151',
-    paddingLeft: '1rem',
-  },
-  userName: {
-    fontSize: '0.92rem',
-    fontWeight: '600',
-  },
-  roleBadge: {
-    fontSize: '0.72rem',
-    fontWeight: '700',
-    padding: '0.2rem 0.6rem',
-    borderRadius: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
+    zIndex: 2,
   },
   logoutBtn: {
-    backgroundColor: '#374151',
-    color: '#f3f4f6',
-    border: '1px solid #4b5563',
-    padding: '0.35rem 0.8rem',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-  },
-  authButtons: {
     display: 'flex',
-    gap: '0.6rem',
-  },
-  authBtn: {
-    backgroundColor: 'transparent',
-    color: '#e5e7eb',
-    border: '1px solid #4b5563',
-    padding: '0.4rem 0.9rem',
-    borderRadius: '6px',
+    alignItems: 'center',
+    gap: '0.5rem',
+    backgroundColor: '#ffffff',
+    color: '#20a75d',
+    border: '1px solid #e5e7eb',
+    padding: '0.5rem 1.25rem',
+    borderRadius: '9999px',
     cursor: 'pointer',
-    fontSize: '0.88rem',
-  },
-  authBtnPrimary: {
-    backgroundColor: '#3b82f6',
-    color: '#ffffff',
-    border: 'none',
-    padding: '0.4rem 0.9rem',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '0.88rem',
+    fontSize: '0.92rem',
     fontWeight: '600',
-  },
-  activeAuthBtn: {
-    outline: '2px solid #60a5fa',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+    transition: 'all 0.15s ease',
   },
 };
+
