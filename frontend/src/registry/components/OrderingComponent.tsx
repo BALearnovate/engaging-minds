@@ -13,7 +13,7 @@ import type {
 
 export const OrderingStudent: React.FC<
   StudentBlockProps<OrderingConfig, string[]>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
   const [items, setItems] = useState<OrderingItem[]>(() => {
     if (Array.isArray(studentState.response)) {
       const respIds = studentState.response as string[];
@@ -101,23 +101,25 @@ export const OrderingStudent: React.FC<
         </div>
       )}
 
-      <div style={styles.actionRow}>
-        {!submitted ? (
-          <button onClick={handleSubmit} style={styles.primaryBtn}>
-            Check Sequence
-          </button>
-        ) : (
-          <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-            Try Again
-          </button>
-        )}
+      {(!isTeacherView || (onHelpRequest && !submitted)) && (
+        <div style={styles.actionRow}>
+          {!isTeacherView && (!submitted ? (
+            <button onClick={handleSubmit} style={styles.primaryBtn}>
+              Check Sequence
+            </button>
+          ) : (
+            <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
+              Try Again
+            </button>
+          ))}
 
-        {onHelpRequest && !submitted && (
-          <button onClick={() => onHelpRequest('I need help ordering these items')} style={styles.helpBtn}>
-            🙋 Request Help
-          </button>
-        )}
-      </div>
+          {onHelpRequest && !submitted && (
+            <button onClick={() => onHelpRequest('I need help ordering these items')} style={styles.helpBtn}>
+              🙋 Request Help
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

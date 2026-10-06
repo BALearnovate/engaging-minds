@@ -13,7 +13,7 @@ import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const MultipleChoiceStudent: React.FC<
   StudentBlockProps<MultipleChoiceConfig, string>
-> = ({ block, config, studentState, studentSessionId, studentName, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, studentSessionId, studentName, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
   const [selected, setSelected] = useState<string>(
     typeof studentState.response === 'string' ? studentState.response : '',
   );
@@ -95,23 +95,25 @@ export const MultipleChoiceStudent: React.FC<
         </div>
       )}
 
-      <div style={styles.actionRow}>
-        {!submitted ? (
-          <button disabled={!selected} onClick={handleSubmit} style={styles.primaryBtn}>
-            Submit Answer
-          </button>
-        ) : (
-          <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-            Try Again
-          </button>
-        )}
+      {(!isTeacherView || (onHelpRequest && !submitted)) && (
+        <div style={styles.actionRow}>
+          {!isTeacherView && (!submitted ? (
+            <button disabled={!selected} onClick={handleSubmit} style={styles.primaryBtn}>
+              Submit Answer
+            </button>
+          ) : (
+            <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
+              Try Again
+            </button>
+          ))}
 
-        {onHelpRequest && !submitted && (
-          <button onClick={() => onHelpRequest('I am stuck on this multiple choice question')} style={styles.helpBtn}>
-            🙋 Request Help
-          </button>
-        )}
-      </div>
+          {onHelpRequest && !submitted && (
+            <button onClick={() => onHelpRequest('I am stuck on this multiple choice question')} style={styles.helpBtn}>
+              🙋 Request Help
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

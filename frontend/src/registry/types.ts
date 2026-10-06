@@ -16,6 +16,7 @@ export interface StudentBlockProps<TConfig = any, TResponse = any> {
   studentName?: string;
   onAnswerSubmit: (response: TResponse, isCorrect: boolean, score: number) => void;
   onHelpRequest?: (message: string) => void;
+  isTeacherView?: boolean;
 }
 
 export interface TeacherEditorProps<TConfig = any> {

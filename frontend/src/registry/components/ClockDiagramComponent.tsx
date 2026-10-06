@@ -12,7 +12,7 @@ import type {
 
 export const ClockDiagramStudent: React.FC<
   StudentBlockProps<ClockDiagramConfig, Record<number, string>>
-> = ({ block, config, studentState, onAnswerSubmit }) => {
+> = ({ block, config, studentState, onAnswerSubmit, isTeacherView }) => {
   const [hourActivities, setHourActivities] = useState<Record<number, string>>(() => {
     return (studentState.response as Record<number, string>) || {};
   });
@@ -230,7 +230,7 @@ export const ClockDiagramStudent: React.FC<
 
         <div style={styles.clockFooterNote}>
           <span>Selected Hour Slot: <strong>{formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)</span>
-          {!submitted && (
+          {!isTeacherView && !submitted && (
             <button
               onClick={handleSubmit}
               style={{

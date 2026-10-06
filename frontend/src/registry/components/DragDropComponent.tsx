@@ -12,7 +12,7 @@ import type {
 
 export const DragDropStudent: React.FC<
   StudentBlockProps<DragDropConfig, Record<string, string[]>>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
   const [targetAssignments, setTargetAssignments] = useState<Record<string, string[]>>(() => {
     return (studentState.response as Record<string, string[]>) || {};
   });
@@ -141,23 +141,25 @@ export const DragDropStudent: React.FC<
         </div>
       )}
 
-      <div style={styles.actionRow}>
-        {!submitted ? (
-          <button onClick={handleSubmit} style={styles.primaryBtn}>
-            Check Categorization
-          </button>
-        ) : (
-          <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-            Try Again
-          </button>
-        )}
+      {(!isTeacherView || (onHelpRequest && !submitted)) && (
+        <div style={styles.actionRow}>
+          {!isTeacherView && (!submitted ? (
+            <button onClick={handleSubmit} style={styles.primaryBtn}>
+              Check Categorization
+            </button>
+          ) : (
+            <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
+              Try Again
+            </button>
+          ))}
 
-        {onHelpRequest && !submitted && (
-          <button onClick={() => onHelpRequest('I need help classifying these items')} style={styles.helpBtn}>
-            🙋 Request Help
-          </button>
-        )}
-      </div>
+          {onHelpRequest && !submitted && (
+            <button onClick={() => onHelpRequest('I need help classifying these items')} style={styles.helpBtn}>
+              🙋 Request Help
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

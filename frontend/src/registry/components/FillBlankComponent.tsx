@@ -13,7 +13,7 @@ import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const FillBlankStudent: React.FC<
   StudentBlockProps<FillBlankConfig, Record<string, string>>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>(() => {
     return (studentState.response as Record<string, string>) || {};
   });
@@ -106,23 +106,25 @@ export const FillBlankStudent: React.FC<
         </div>
       )}
 
-      <div style={styles.actionRow}>
-        {!submitted ? (
-          <button onClick={handleSubmit} style={styles.primaryBtn}>
-            Check Blanks
-          </button>
-        ) : (
-          <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-            Try Again
-          </button>
-        )}
+      {(!isTeacherView || (onHelpRequest && !submitted)) && (
+        <div style={styles.actionRow}>
+          {!isTeacherView && (!submitted ? (
+            <button onClick={handleSubmit} style={styles.primaryBtn}>
+              Check Blanks
+            </button>
+          ) : (
+            <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
+              Try Again
+            </button>
+          ))}
 
-        {onHelpRequest && !submitted && (
-          <button onClick={() => onHelpRequest('I need help with this fill-in-the-blank passage')} style={styles.helpBtn}>
-            🙋 Request Help
-          </button>
-        )}
-      </div>
+          {onHelpRequest && !submitted && (
+            <button onClick={() => onHelpRequest('I need help with this fill-in-the-blank passage')} style={styles.helpBtn}>
+              🙋 Request Help
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -13,7 +13,7 @@ import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const TrueFalseStudent: React.FC<
   StudentBlockProps<TrueFalseConfig, boolean>
-> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+> = ({ block, config, studentState, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
   const [selected, setSelected] = useState<boolean | null>(
     typeof studentState.response === 'boolean' ? studentState.response : null,
   );
@@ -87,23 +87,25 @@ export const TrueFalseStudent: React.FC<
         </div>
       )}
 
-      <div style={styles.actionRow}>
-        {!submitted ? (
-          <button disabled={selected === null} onClick={handleSubmit} style={styles.primaryBtn}>
-            Submit Answer
-          </button>
-        ) : (
-          <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-            Try Again
-          </button>
-        )}
+      {(!isTeacherView || (onHelpRequest && !submitted)) && (
+        <div style={styles.actionRow}>
+          {!isTeacherView && (!submitted ? (
+            <button disabled={selected === null} onClick={handleSubmit} style={styles.primaryBtn}>
+              Submit Answer
+            </button>
+          ) : (
+            <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
+              Try Again
+            </button>
+          ))}
 
-        {onHelpRequest && !submitted && (
-          <button onClick={() => onHelpRequest('I need help evaluating this True/False statement')} style={styles.helpBtn}>
-            🙋 Request Help
-          </button>
-        )}
-      </div>
+          {onHelpRequest && !submitted && (
+            <button onClick={() => onHelpRequest('I need help evaluating this True/False statement')} style={styles.helpBtn}>
+              🙋 Request Help
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

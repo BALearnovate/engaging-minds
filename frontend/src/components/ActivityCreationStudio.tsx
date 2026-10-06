@@ -306,13 +306,6 @@ export const ActivityCreationStudio: React.FC = () => {
     }
   };
 
-  const handleLoadTemplateIntoStudio = () => {
-    if (selectedTemplateActivity?.content) {
-      setActivity(selectedTemplateActivity.content);
-      setActivePathway('ai');
-    }
-  };
-
   return (
     <div style={styles.pageContainer}>
       {/* Dynamic Keyframe Animation Styles */}
@@ -435,7 +428,7 @@ export const ActivityCreationStudio: React.FC = () => {
                       </div>
                     </div>
 
-                    <ActivityRuntime definition={activity} isTeacherView={true} />
+                    <ActivityRuntime definition={activity} isTeacherView={true} hideTitle={true} />
                   </div>
                 ) : (
                   <div style={styles.emptyBlueprint}>
@@ -562,16 +555,15 @@ export const ActivityCreationStudio: React.FC = () => {
                     <div style={styles.activityMetaHeader}>
                       <div>
                         <h3 style={styles.activityMetaTitle}>{selectedTemplateActivity.title}</h3>
-                        <p style={styles.activityMetaDesc}>
-                          {selectedTemplateActivity.description || selectedTemplateActivity.content.description}
-                        </p>
+                        {(selectedTemplateActivity.description || selectedTemplateActivity.content.description) && (
+                          <p style={styles.activityMetaDesc}>
+                            {selectedTemplateActivity.description || selectedTemplateActivity.content.description}
+                          </p>
+                        )}
                       </div>
-                      <button onClick={handleLoadTemplateIntoStudio} style={styles.configureGroupBtn}>
-                        📥 Load Template into Studio
-                      </button>
                     </div>
 
-                    <ActivityRuntime definition={selectedTemplateActivity.content} isTeacherView={true} />
+                    <ActivityRuntime definition={selectedTemplateActivity.content} isTeacherView={true} hideTitle={true} />
                   </div>
                 ) : (
                   <div style={styles.emptyBlueprint}>

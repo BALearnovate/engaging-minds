@@ -17,6 +17,7 @@ interface ActivityRuntimeProps {
   studentSessionId?: string;
   studentName?: string;
   isTeacherView?: boolean;
+  hideTitle?: boolean;
   onCompleted?: (groupName?: string, selectedStudents?: string[]) => void;
 }
 
@@ -26,6 +27,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   studentSessionId,
   studentName,
   isTeacherView = false,
+  hideTitle = false,
   onCompleted,
 }) => {
   const [currentBlockIndex, setCurrentIndex] = useState(0);
@@ -243,9 +245,9 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
       {/* Top Session Header */}
       <div style={styles.topBar}>
         <div style={styles.titleInfo}>
-          <h2 style={styles.actTitle}>{definition.title}</h2>
+          {!hideTitle && <h2 style={styles.actTitle}>{definition.title}</h2>}
           <span style={styles.blockTracker}>
-            Exercise*********** {currentBlockIndex + 1} of {definition.blocks.length} ({progress.percent}% Completed)
+            Exercise {currentBlockIndex + 1} of {definition.blocks.length}
           </span>
         </div>
       </div>
@@ -278,7 +280,8 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
             studentName: studentName || 'Student Learner',
             onAnswerSubmit: handleAnswerSubmit,
-            onHelpRequest: handleHelpRequest,
+            onHelpRequest: isTeacherView ? undefined : handleHelpRequest,
+            isTeacherView,
           })}
         </div>
       ) : (
@@ -320,14 +323,14 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           >
             Next →
           </button>
-        ) : (
+        ) : !isTeacherView ? (
           <button
             onClick={handleCompleteActivity}
             style={styles.navBtnSuccess}
           >
             Complete Activity ✓
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Configure Group Roster Modal */}
