@@ -140,6 +140,29 @@ export class ActivitiesService {
       }
     }
 
+    if (classroomId && forceRepublish) {
+      // Complete existing active assignments and sessions for this class/teacher
+      await this.prisma.activityAssignment.updateMany({
+        where: {
+          classroomId,
+          status: 'ACTIVE',
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+
+      await this.prisma.activitySession.updateMany({
+        where: {
+          teacherId,
+          status: 'ACTIVE',
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+    }
+
     const activity = await this.prisma.activity.findUnique({
       where: { id: activityId },
       include: { versions: { orderBy: { version: 'desc' } } },
@@ -456,7 +479,11 @@ export class ActivitiesService {
     const session = await this.prisma.activitySession.findUnique({
       where: { shareCode: shareCode.toUpperCase() },
       include: {
-        activityVersion: true,
+        activityVersion: {
+          include: {
+            activity: true,
+          },
+        },
         studentSessions: {
           orderBy: { lastSeenAt: 'desc' },
           include: {
@@ -473,10 +500,86 @@ export class ActivitiesService {
       throw new NotFoundException(`Activity session with share code "${shareCode}" not found.`);
     }
 
+    const activityTitle =
+      session.activityVersion?.activity?.title ||
+      (session.activityVersion?.definition as any)?.title ||
+      'Interactive Activity';
+
     return {
       session,
+      activityTitle,
+      status: session.status,
       students: session.studentSessions,
     };
+  }
+
+  async stopActiveSession(shareCode: string, teacherId: string) {
+    const session = await this.prisma.activitySession.findUnique({
+      where: { shareCode: shareCode.toUpperCase() },
+      include: {
+        activityVersion: {
+          include: {
+            activity: {
+              include: {
+                assignments: {
+                  where: { status: 'ACTIVE' },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Activity session with share code "${shareCode}" not found.`);
+    }
+
+    const updatedSession = await this.prisma.activitySession.update({
+      where: { id: session.id },
+      data: { status: 'COMPLETED' },
+    });
+
+    // Update active assignments for this activity / teacher to COMPLETED
+    await this.prisma.activityAssignment.updateMany({
+      where: {
+        assignedByTeacherId: teacherId,
+        status: 'ACTIVE',
+      },
+      data: {
+        status: 'COMPLETED',
+      },
+    });
+
+    return {
+      message: `Session "${shareCode}" stopped successfully. Class is now free for new activity publishing.`,
+      session: updatedSession,
+    };
+  }
+
+  async getTeacherActiveSessions(teacherId: string) {
+    const sessions = await this.prisma.activitySession.findMany({
+      where: {
+        teacherId,
+        status: 'ACTIVE',
+      },
+      include: {
+        activityVersion: {
+          include: {
+            activity: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return sessions.map((s) => ({
+      id: s.id,
+      shareCode: s.shareCode,
+      status: s.status,
+      createdAt: s.createdAt,
+      activityTitle: s.activityVersion?.activity?.title || 'Interactive Activity',
+    }));
   }
 
   private generateShareCode(): string {

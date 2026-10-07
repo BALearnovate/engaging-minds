@@ -17,7 +17,11 @@ interface DatabaseActivity {
   createdAt: string;
 }
 
-export const ActivityCreationStudio: React.FC = () => {
+interface ActivityCreationStudioProps {
+  onNavigateToDashboard?: () => void;
+}
+
+export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ onNavigateToDashboard }) => {
   const { token: authContextToken } = useAuth();
 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
@@ -38,6 +42,7 @@ export const ActivityCreationStudio: React.FC = () => {
   const [groupAssignmentNotice, setGroupAssignmentNotice] = useState<string | null>(null);
   const [publishNotice, setPublishNotice] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [isConfirmPublishOpen, setIsConfirmPublishOpen] = useState<boolean>(false);
   const [alreadyPublishedDialog, setAlreadyPublishedDialog] = useState<{
     isOpen: boolean;
     activityTitle: string;
@@ -53,6 +58,7 @@ export const ActivityCreationStudio: React.FC = () => {
     className: string;
     existingActivityTitle: string;
     isSameActivity?: boolean;
+    actId?: string;
   } | null>(null);
 
   const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
@@ -61,7 +67,21 @@ export const ActivityCreationStudio: React.FC = () => {
     setGroupAssignmentNotice(`👥 Target Group Configured: ${groupName} (${students.length} student${students.length === 1 ? '' : 's'}: ${students.join(', ')})`);
   };
 
-  const handlePublishActivity = async () => {
+  const handleOpenPublishConfirm = () => {
+    setPublishNotice(null);
+
+    const currentDefinition = activity || selectedTemplateActivity?.content;
+
+    if (!currentDefinition) {
+      setPublishNotice('⚠️ Please generate or select an activity before publishing.');
+      return;
+    }
+
+    setIsConfirmPublishOpen(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    setIsConfirmPublishOpen(false);
     setIsPublishing(true);
     setPublishNotice(null);
 
@@ -108,6 +128,7 @@ export const ActivityCreationStudio: React.FC = () => {
             className: pubJson.className || 'Selected Class',
             existingActivityTitle: pubJson.existingActivityTitle || 'Active Activity',
             isSameActivity: pubJson.isSameActivity,
+            actId,
           });
           setIsPublishing(false);
           return;
@@ -136,17 +157,64 @@ export const ActivityCreationStudio: React.FC = () => {
 
         const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
         const selectedClass = classrooms.find((c) => c.id === selectedClassId);
-        const classLabel = selectedClass ? `Class: ${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
-        setPublishNotice(`🚀 Activity Published & Live for ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
+        const classLabel = selectedClass ? `${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
+        setPublishNotice(`🚀 Activity Published & Live for Class: ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
         await fetchTemplates();
         setIsPublishing(false);
+
+        // Navigate to Teacher Dashboard
+        if (onNavigateToDashboard) {
+          onNavigateToDashboard();
+        }
         return;
       }
 
       setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope} (${timerMode}, ${rewardMode}).`);
+      if (onNavigateToDashboard) {
+        onNavigateToDashboard();
+      }
     } catch (err: any) {
       console.error('Error publishing activity:', err);
       setPublishNotice(`🚀 Activity Published & Deployed! Target Scope: ${targetScope}.`);
+      if (onNavigateToDashboard) {
+        onNavigateToDashboard();
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleForceRepublish = async () => {
+    const currentActId = classAssignmentDialog?.actId || selectedActivityId;
+    setClassAssignmentDialog(null);
+    setIsPublishing(true);
+
+    try {
+      const pubJson = await activitiesApi.publishActivity(
+        {
+          activityId: currentActId || '',
+          classroomId: selectedClassId || undefined,
+          timerMode,
+          rewardMode,
+          targetScope,
+          targetGroupStudents: configuredStudents,
+          forceRepublish: true,
+        },
+        activeToken,
+      );
+
+      const joinCode = pubJson?.shareCode || 'LIVE-SESSION';
+      const selectedClass = classrooms.find((c) => c.id === selectedClassId);
+      const classLabel = selectedClass ? `${selectedClass.subject} - ${selectedClass.grade}` : 'Selected Class';
+      setPublishNotice(`🚀 Activity Published & Live for Class: ${classLabel}! Student Join Code: "${joinCode}" (${timerMode}, Scope: ${targetScope}).`);
+      await fetchTemplates();
+
+      if (onNavigateToDashboard) {
+        onNavigateToDashboard();
+      }
+    } catch (err: any) {
+      console.error('Error force publishing activity:', err);
+      setPublishNotice(`⚠️ Failed to force publish: ${err.message || 'Unknown error'}`);
     } finally {
       setIsPublishing(false);
     }
@@ -251,6 +319,10 @@ export const ActivityCreationStudio: React.FC = () => {
   const selectedTemplateActivity = useMemo(() => {
     return dbActivities.find((a) => a.id === selectedActivityId);
   }, [dbActivities, selectedActivityId]);
+
+  const selectedClassroom = useMemo(() => {
+    return classrooms.find((c) => c.id === selectedClassId);
+  }, [classrooms, selectedClassId]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -682,7 +754,7 @@ export const ActivityCreationStudio: React.FC = () => {
           {/* Publish Activity Action */}
           <div style={styles.publishSection}>
             <button
-              onClick={handlePublishActivity}
+              onClick={handleOpenPublishConfirm}
               disabled={isPublishing}
               style={{
                 ...styles.publishBtn,
@@ -709,6 +781,52 @@ export const ActivityCreationStudio: React.FC = () => {
         initialGroupName={configuredGroupName}
         initialStudents={configuredStudents}
       />
+
+      {/* PUBLISH CONFIRMATION DIALOG */}
+      {isConfirmPublishOpen && (
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.confirmModalCard}>
+            {/* Top Icon Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.confirmFireCircle}>
+                🔥
+              </div>
+              <div style={styles.confirmPillBadge}>
+                LIVE ACTIVITY DETECTED!
+              </div>
+            </div>
+
+            {/* Title of Activity in Bold */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {activity?.title || selectedTemplateActivity?.title || 'Interactive Activity'}
+              </h2>
+            </div>
+
+            {/* Subtitle */}
+            <p style={styles.confirmSubTitle}>
+              You are going to share this activity with {selectedClassroom ? `${selectedClassroom.subject} - ${selectedClassroom.grade}` : 'Selected Class'}
+            </p>
+
+            {/* Action Buttons */}
+            <div style={styles.confirmActionsRow}>
+              <button
+                onClick={() => setIsConfirmPublishOpen(false)}
+                style={styles.confirmCancelBtn}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmPublish}
+                disabled={isPublishing}
+                style={styles.confirmContinueBtn}
+              >
+                {isPublishing ? 'Publishing...' : 'Continue ➔'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CLASS ACTIVITY ALREADY IN PROGRESS DIALOG */}
       {classAssignmentDialog?.isOpen && (
@@ -740,10 +858,46 @@ export const ActivityCreationStudio: React.FC = () => {
 
             <div style={styles.publishedDialogActions}>
               <button
+                onClick={handleForceRepublish}
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0.65rem 1.25rem',
+                  borderRadius: '8px',
+                  fontSize: '0.88rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 10px rgba(220, 38, 38, 0.25)',
+                }}
+              >
+                🛑 End Existing & Publish New Activity
+              </button>
+              {onNavigateToDashboard && (
+                <button
+                  onClick={() => {
+                    setClassAssignmentDialog(null);
+                    onNavigateToDashboard();
+                  }}
+                  style={{
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '0.65rem 1.25rem',
+                    borderRadius: '8px',
+                    fontSize: '0.88rem',
+                    fontWeight: '800',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🏫 Go to Dashboard to Manage Live Session ➔
+                </button>
+              )}
+              <button
                 onClick={() => setClassAssignmentDialog(null)}
                 style={styles.closeDialogBtn}
               >
-                Understood
+                Dismiss
               </button>
             </div>
           </div>
@@ -1192,5 +1346,112 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.82rem',
     fontWeight: '700',
     textAlign: 'center',
+  },
+  confirmModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backdropFilter: 'blur(6px)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    padding: '1rem',
+  },
+  confirmModalCard: {
+    background: 'linear-gradient(135deg, #10b981 0%, #0d9488 40%, #0284c7 100%)',
+    borderRadius: '24px',
+    border: '2px solid #84cc16',
+    padding: '2.5rem 2rem',
+    maxWidth: '520px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(34, 197, 94, 0.3)',
+    color: '#ffffff',
+  },
+  confirmBadgeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    marginBottom: '1.25rem',
+  },
+  confirmFireCircle: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    border: '1.5px solid rgba(255, 255, 255, 0.4)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+  confirmPillBadge: {
+    padding: '0.4rem 1rem',
+    borderRadius: '20px',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  confirmTitleSection: {
+    marginBottom: '0.75rem',
+  },
+  confirmActivityTitle: {
+    fontSize: '1.75rem',
+    fontWeight: '900',
+    color: '#ffffff',
+    margin: 0,
+    lineHeight: '1.25',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
+  },
+  confirmSubTitle: {
+    fontSize: '1.05rem',
+    color: 'rgba(255, 255, 255, 0.95)',
+    margin: '0 0 2rem 0',
+    lineHeight: '1.5',
+    fontWeight: '500',
+  },
+  confirmActionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+    width: '100%',
+  },
+  confirmCancelBtn: {
+    backgroundColor: '#dc2626',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.85rem 1.75rem',
+    borderRadius: '24px',
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.35)',
+    transition: 'all 0.2s ease',
+  },
+  confirmContinueBtn: {
+    backgroundColor: '#ffffff',
+    color: '#16a34a',
+    border: '2px solid #22c55e',
+    padding: '0.85rem 2.2rem',
+    borderRadius: '24px',
+    fontSize: '0.98rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+    transition: 'all 0.2s ease',
   },
 };

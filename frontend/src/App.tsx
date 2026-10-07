@@ -84,7 +84,7 @@ const MainApp: React.FC = () => {
     if (currentTab === 'activity_creation') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <ActivityCreationStudio />
+          <ActivityCreationStudio onNavigateToDashboard={() => setCurrentTab('teacher_dashboard')} />
         </ProtectedRoute>
       );
     }

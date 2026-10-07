@@ -138,6 +138,25 @@ export class ActivitiesController {
     return this.activitiesService.getTeacherDashboardState(shareCode);
   }
 
+  // Stop Active Activity Session Endpoint
+  @Post('session/:shareCode/stop')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async stopActiveSession(
+    @Param('shareCode') shareCode: string,
+    @CurrentUser('id') teacherId: string,
+  ) {
+    return this.activitiesService.stopActiveSession(shareCode, teacherId);
+  }
+
+  // Get active sessions for current teacher
+  @Get('teacher/active-sessions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async getTeacherActiveSessions(@CurrentUser('id') teacherId: string) {
+    return this.activitiesService.getTeacherActiveSessions(teacherId);
+  }
+
   // Existing Endpoints
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

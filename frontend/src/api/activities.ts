@@ -203,8 +203,21 @@ export const activitiesApi = {
   },
 
   // Get live classroom dashboard state
-  async getSessionDashboard(shareCode: string, token?: string): Promise<{ session: any; students: any[] }> {
-    return apiFetch<{ session: any; students: any[] }>(`/activities/session/${shareCode}/dashboard`, { token });
+  async getSessionDashboard(shareCode: string, token?: string): Promise<{ session: any; activityTitle?: string; status?: string; students: any[] }> {
+    return apiFetch<{ session: any; activityTitle?: string; status?: string; students: any[] }>(`/activities/session/${shareCode}/dashboard`, { token });
+  },
+
+  // Stop active activity session
+  async stopSession(shareCode: string, token?: string): Promise<{ message: string; session: any }> {
+    return apiFetch<{ message: string; session: any }>(`/activities/session/${shareCode}/stop`, {
+      method: 'POST',
+      token,
+    });
+  },
+
+  // Get active sessions for teacher
+  async getTeacherActiveSessions(token?: string): Promise<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>> {
+    return apiFetch<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>>('/activities/teacher/active-sessions', { token });
   },
 
   // Record an activity event / telemetry

@@ -18,6 +18,9 @@ interface StudentRow {
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode }) => {
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
+  const [sessionStatus, setSessionStatus] = useState<string>('ACTIVE');
+  const [isStopping, setIsStopping] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [hintModalStudent, setHintModalStudent] = useState<StudentRow | null>(null);
@@ -26,12 +29,39 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {
     try {
-      const data = await activitiesApi.getSessionDashboard(shareCode);
+      const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      const data = await activitiesApi.getSessionDashboard(shareCode, activeToken);
       setStudents(data.students || []);
+      if (data.activityTitle) {
+        setActivityTitle(data.activityTitle);
+      }
+      if (data.status) {
+        setSessionStatus(data.status);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard state:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStopActivity = async () => {
+    if (!shareCode) return;
+    if (!confirm(`Are you sure you want to stop active lesson "${activityTitle}"? This will allow new activities to be published for this class.`)) {
+      return;
+    }
+
+    setIsStopping(true);
+    try {
+      const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      await activitiesApi.stopSession(shareCode, activeToken);
+      setSessionStatus('COMPLETED');
+      alert(`🛑 Activity session "${shareCode}" stopped successfully! You can now publish new activities for this classroom.`);
+    } catch (err: any) {
+      console.error('Failed to stop activity session:', err);
+      alert(`⚠️ Could not stop session: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsStopping(false);
     }
   };
 
@@ -136,6 +166,36 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   return (
     <div style={styles.container}>
+      {/* Active Activity Header Card */}
+      <div style={styles.activeCard}>
+        <div style={styles.activeInfo}>
+          <div style={styles.badgeRow}>
+            <span style={{
+              ...styles.statusBadge,
+              backgroundColor: sessionStatus === 'ACTIVE' ? '#dcfce7' : '#f1f5f9',
+              color: sessionStatus === 'ACTIVE' ? '#15803d' : '#64748b',
+              borderColor: sessionStatus === 'ACTIVE' ? '#86efac' : '#cbd5e1',
+            }}>
+              {sessionStatus === 'ACTIVE' ? '🔴 ACTIVE' : '🏁 COMPLETED'}
+            </span>
+            <span style={styles.codeTag}>Join Code: {shareCode}</span>
+          </div>
+          <h2 style={styles.activeTitle}>
+            📖 {activityTitle || 'Active Interactive Activity'}
+          </h2>
+        </div>
+
+        {sessionStatus === 'ACTIVE' && (
+          <button
+            onClick={handleStopActivity}
+            disabled={isStopping}
+            style={styles.stopBtn}
+          >
+            {isStopping ? 'Stopping...' : '🛑 Stop Activity'}
+          </button>
+        )}
+      </div>
+
       {/* Session Metrics Bar */}
       <div style={styles.metricsBar}>
         <div style={styles.metricCard}>
@@ -263,6 +323,40 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
 const styles: Record<string, React.CSSProperties> = {
   container: { maxWidth: '1000px', margin: '0 auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' },
+  activeCard: {
+    backgroundColor: '#ffffff',
+    border: '2px solid #3b82f6',
+    borderRadius: '12px',
+    padding: '1.25rem 1.5rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)',
+  },
+  activeInfo: { display: 'flex', flexDirection: 'column', gap: '0.4rem' },
+  badgeRow: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  statusBadge: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: '20px',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    border: '1px solid',
+    letterSpacing: '0.04em',
+  },
+  codeTag: { fontSize: '0.82rem', fontWeight: '800', color: '#1e40af', backgroundColor: '#dbeafe', padding: '0.2rem 0.6rem', borderRadius: '6px' },
+  activeTitle: { fontSize: '1.35rem', fontWeight: '800', color: '#0f172a', margin: 0 },
+  stopBtn: {
+    backgroundColor: '#dc2626',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '10px',
+    fontSize: '0.92rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    boxShadow: '0 4px 10px rgba(220, 38, 38, 0.25)',
+    transition: 'all 0.2s ease',
+  },
   metricsBar: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' },
   metricCard: { backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
   metricLabel: { fontSize: '0.8rem', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' },

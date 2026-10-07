@@ -1,15 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PromptEditor } from '../components/PromptEditor';
 import { ActivityEditor } from '../components/ActivityEditor';
 import { LiveClassroomDashboard } from '../components/LiveClassroomDashboard';
+import { activitiesApi } from '../api/activities';
 import type { ActivityDefinition } from '../types/activityDsl';
+
+interface ActiveSessionItem {
+  id: string;
+  shareCode: string;
+  status: string;
+  createdAt: string;
+  activityTitle: string;
+}
 
 export const TeacherDashboard: React.FC = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'ai_authoring' | 'live_classroom'>('ai_authoring');
   const [generatedDefinition, setGeneratedDefinition] = useState<ActivityDefinition | null>(null);
   const [activeShareCode, setActiveShareCode] = useState<string>('ABC-742');
+  const [activeSessions, setActiveSessions] = useState<ActiveSessionItem[]>([]);
+
+  const fetchActiveSessions = async () => {
+    try {
+      const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      const sessions = await activitiesApi.getTeacherActiveSessions(activeToken);
+      setActiveSessions(sessions || []);
+      if (sessions && sessions.length > 0) {
+        if (!activeShareCode || activeShareCode === 'ABC-742') {
+          setActiveShareCode(sessions[0].shareCode);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch active sessions:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveSessions();
+  }, [activeTab]);
 
   const handleGenerated = (def: ActivityDefinition) => {
     setGeneratedDefinition(def);
@@ -18,6 +47,7 @@ export const TeacherDashboard: React.FC = () => {
   const handlePublished = (shareCode: string) => {
     setActiveShareCode(shareCode);
     setActiveTab('live_classroom');
+    fetchActiveSessions();
   };
 
   return (
@@ -81,12 +111,29 @@ export const TeacherDashboard: React.FC = () => {
         <div style={styles.tabContent}>
           <div style={styles.codeSelectorBar}>
             <label style={styles.codeLabel}>Active Session Share Join Code:</label>
+            {activeSessions.length > 0 && (
+              <select
+                value={activeShareCode}
+                onChange={(e) => setActiveShareCode(e.target.value)}
+                style={styles.codeSelectDropdown}
+              >
+                {activeSessions.map((s) => (
+                  <option key={s.id} value={s.shareCode}>
+                    📖 {s.activityTitle} ({s.shareCode})
+                  </option>
+                ))}
+              </select>
+            )}
             <input
               type="text"
               value={activeShareCode}
               onChange={(e) => setActiveShareCode(e.target.value.toUpperCase())}
               style={styles.codeInput}
+              placeholder="e.g. ABC-742"
             />
+            <button onClick={fetchActiveSessions} style={styles.refreshSessionsBtn}>
+              🔄 Refresh Sessions
+            </button>
           </div>
           <LiveClassroomDashboard shareCode={activeShareCode} />
         </div>
@@ -108,7 +155,9 @@ const styles: Record<string, React.CSSProperties> = {
   editorWrapper: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   bannerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f3e8ff', color: '#6b21a8', padding: '0.85rem 1.25rem', borderRadius: '10px', border: '1px solid #d8b4fe', fontWeight: '700', fontSize: '0.92rem' },
   resetPromptBtn: { backgroundColor: '#ffffff', color: '#6b21a8', border: '1px solid #c084fc', padding: '0.4rem 0.85rem', borderRadius: '6px', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem' },
-  codeSelectorBar: { display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#ffffff', padding: '1rem 1.5rem', borderRadius: '10px', border: '1px solid #e5e7eb' },
+  codeSelectorBar: { display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#ffffff', padding: '1rem 1.5rem', borderRadius: '10px', border: '1px solid #e5e7eb', flexWrap: 'wrap' },
   codeLabel: { fontSize: '0.9rem', fontWeight: '700', color: '#374151' },
+  codeSelectDropdown: { padding: '0.45rem 0.85rem', borderRadius: '6px', border: '2px solid #0284c7', fontSize: '0.92rem', fontWeight: '700', color: '#0369a1', backgroundColor: '#f0f9ff', outline: 'none' },
   codeInput: { padding: '0.45rem 0.85rem', borderRadius: '6px', border: '2px solid #2563eb', fontSize: '1rem', fontWeight: '800', color: '#1d4ed8', fontFamily: 'monospace', textTransform: 'uppercase' },
+  refreshSessionsBtn: { padding: '0.45rem 0.85rem', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#f8fafc', color: '#334155', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' },
 };
