@@ -52,14 +52,14 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   // Interactive UI state with sample data
   const [activeScope, setActiveScope] = useState<string>('Individual Student');
-  const [selectedStudentId, setSelectedStudentId] = useState<string>('2'); // Tommy Miller default
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null); // Default null
   const [selectedIntervention, setSelectedIntervention] = useState<string>('desk_checkin');
   const [awardCategory, setAwardCategory] = useState<'Academic Effort' | 'Behavioral'>('Academic Effort');
   const [selectedAward, setSelectedAward] = useState<string>('+ 50 Pts');
   const [deliveryMode, setDeliveryMode] = useState<string>('Instant Pop-Up');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const selectedStudent = sampleStudents.find((s) => s.id === selectedStudentId) || sampleStudents[1];
+  const selectedStudent = sampleStudents.find((s) => s.id === selectedStudentId) || null;
 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {
@@ -88,7 +88,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
       await activitiesApi.stopSession(shareCode, activeToken);
       setSessionStatus('COMPLETED');
-      alert(`🛑 Activity session "${shareCode}" stopped successfully! You can now publish new activities for this classroom.`);
+      alert(`⚠️ Activity session "${shareCode}" stopped successfully! You can now publish new activities for this classroom.`);
     } catch (err: any) {
       console.error('Failed to stop activity session:', err);
       alert(`⚠️ Could not stop session: ${err?.message || 'Unknown error'}`);
@@ -98,6 +98,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   };
 
   const handleExecuteIntervention = () => {
+    if (!selectedStudent) return;
     const actionText = selectedIntervention === 'desk_checkin' 
       ? 'In-person desk check-in flagged' 
       : 'Discreet reminder notification deployed';
@@ -106,8 +107,17 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   };
 
   const handleIssueAward = () => {
+    if (!selectedStudent) return;
     setFeedbackMessage(`🎉 Award "${selectedAward}" (${awardCategory}) issued to ${selectedStudent.name} via ${deliveryMode}!`);
     setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  const handleToggleSelectStudent = (id: string) => {
+    if (selectedStudentId === id) {
+      setSelectedStudentId(null);
+    } else {
+      setSelectedStudentId(id);
+    }
   };
 
   useEffect(() => {
@@ -122,7 +132,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         </div>
       )}
 
-      {/* 1. Existing Active Activity & Stop Button Banner */}
+      {/* 1. Existing Active Activity & Red Stop Button Banner */}
       <div style={styles.activeCard}>
         <div style={styles.activeInfo}>
           <div style={styles.badgeRow}>
@@ -147,24 +157,21 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           <button
             onClick={handleStopActivity}
             disabled={isStopping}
-            style={styles.stopBtn}
+            style={styles.redStopBtn}
           >
-            {isStopping ? 'Stopping...' : '🛑 Stop Activity'}
+            {isStopping ? 'Stopping...' : '⚠️ Stop Activity'}
           </button>
         )}
       </div>
 
-      {/* 2. Main Dashboard Container matching the uploaded design */}
+      {/* 2. Main Dashboard Grid */}
       <div style={styles.dashboardGrid}>
-        {/* TOP ROW */}
-        <div style={styles.topRow}>
+        {/* LEFT COLUMN (Scope Selector + Status Monitor) */}
+        <div style={styles.leftMainColumn}>
           {/* METRICS SCOPE SELECTOR */}
-          <div style={styles.cardScopeSelector}>
-            <div style={styles.cardHeaderRow}>
-              <h3 style={styles.sectionHeaderTitle}>METRICS SCOPE SELECTOR</h3>
-              <span style={styles.syncedBadge}>ACTIVE STATUS: SYNCED</span>
-            </div>
-            <div style={styles.scopeButtonsRow}>
+          <div style={styles.cardScopeSelectorLeft}>
+            <h3 style={styles.sectionHeaderTitle}>METRICS SCOPE SELECTOR</h3>
+            <div style={styles.scopeButtonsRowLeft}>
               {['Class Level', 'Group Level', 'Individual Student', 'Student Help Request (5)'].map((scope) => {
                 const isActive = activeScope === scope;
                 return (
@@ -184,33 +191,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             </div>
           </div>
 
-          {/* WORKSPACE COMPLETION PROGRESS */}
-          <div style={styles.cardProgress}>
-            <h3 style={styles.sectionHeaderTitle}>WORKSPACE COMPLETION PROGRESS</h3>
-            <div style={styles.progressInnerCard}>
-              <div style={styles.studentProgressName}>{selectedStudent.name}</div>
-              <div style={{ ...styles.progressPercentage, color: selectedStudent.progressColor }}>
-                {selectedStudent.progress}%
-              </div>
-              <div style={styles.progressBarTrack}>
-                <div
-                  style={{
-                    ...styles.progressBarFill,
-                    width: `${selectedStudent.progress}%`,
-                    backgroundColor: selectedStudent.progressColor,
-                  }}
-                />
-              </div>
-              <div style={styles.progressMilestoneText}>
-                ▲ {selectedStudent.milestone}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM ROW (2 COLUMNS) */}
-        <div style={styles.bottomRow}>
-          {/* LEFT COLUMN: INDIVIDUAL STATUS MONITOR */}
+          {/* INDIVIDUAL STATUS MONITOR */}
           <div style={styles.cardStatusMonitor}>
             <div style={styles.cardHeaderRow}>
               <h3 style={styles.sectionHeaderTitle}>INDIVIDUAL STATUS MONITOR</h3>
@@ -220,6 +201,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 <span style={styles.legendItem}><span style={{ color: '#dc2626' }}>🔴</span> RED: ALERT FLAG</span>
               </div>
             </div>
+
+            {/* Horizontal line BEFORE student names/cards */}
+            <hr style={styles.fullHrLineTop} />
 
             <div style={styles.studentCardsContainer}>
               {sampleStudents.map((student) => {
@@ -234,16 +218,24 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 return (
                   <div
                     key={student.id}
-                    onClick={() => setSelectedStudentId(student.id)}
+                    onClick={() => handleToggleSelectStudent(student.id)}
                     style={{
                       ...styles.studentCard,
-                      borderColor: isSelected ? '#78be20' : '#cbd5e1',
-                      borderWidth: isSelected ? '2px' : '1px',
-                      boxShadow: isSelected ? '0 0 0 2px rgba(120, 190, 32, 0.2)' : 'none',
+                      border: isSelected ? '2px solid #78be20' : '2px solid #3b82f6',
+                      backgroundColor: isSelected ? '#f8fdf6' : '#ffffff',
+                      opacity: isSelected ? 1 : 0.6,
+                      boxShadow: isSelected ? '0 0 0 3px #dcfce7' : 'none',
                     }}
                   >
                     <div style={styles.studentCardTop}>
-                      <span style={styles.studentCardName}>{student.name}</span>
+                      <span
+                        style={{
+                          ...styles.studentCardName,
+                          color: isSelected ? '#1e3a8a' : '#2563eb',
+                        }}
+                      >
+                        {student.name}
+                      </span>
                       <span
                         style={{
                           ...styles.studentStatusBadge,
@@ -255,135 +247,178 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                         {student.status}
                       </span>
                     </div>
-                    <div style={styles.studentCardSubtext}>{student.subtext}</div>
+                    <div
+                      style={{
+                        ...styles.studentCardSubtext,
+                        color: isSelected ? '#334155' : '#64748b',
+                        fontWeight: isSelected ? '600' : '500',
+                      }}
+                    >
+                      {student.subtext}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
+        </div>
 
-          {/* RIGHT COLUMN: ACTION PORTALS */}
-          <div style={styles.rightActionsColumn}>
-            {/* INTERVENTION ACTION PORTAL */}
-            <div style={styles.cardActionPortal}>
-              <h3 style={styles.sectionHeaderTitle}>INTERVENTION ACTION PORTAL</h3>
-              <div style={styles.targetLabel}>
-                Target Selected: <span style={{ fontWeight: '800' }}>{selectedStudent.name}</span>
-              </div>
-
-              <div style={styles.interventionOptionsGroup}>
-                <div
-                  onClick={() => setSelectedIntervention('desk_checkin')}
-                  style={{
-                    ...styles.optionCard,
-                    borderColor: selectedIntervention === 'desk_checkin' ? '#2563eb' : '#cbd5e1',
-                    backgroundColor: selectedIntervention === 'desk_checkin' ? '#eff6ff' : '#ffffff',
-                  }}
-                >
-                  📍 Flag for in-person desk check-in
-                </div>
-                <div
-                  onClick={() => setSelectedIntervention('discreet_reminder')}
-                  style={{
-                    ...styles.optionCard,
-                    borderColor: selectedIntervention === 'discreet_reminder' ? '#2563eb' : '#cbd5e1',
-                    backgroundColor: selectedIntervention === 'discreet_reminder' ? '#eff6ff' : '#ffffff',
-                  }}
-                >
-                  💬 Deploy discreet reminder notification
-                </div>
-              </div>
-
-              <button onClick={handleExecuteIntervention} style={styles.executeInterventionBtn}>
-                CONFIRM & EXECUTE INTERVENTION
-              </button>
-            </div>
-
-            {/* AWARD RECOGNITION FLOW */}
-            <div style={styles.cardAwardFlow}>
-              <div style={styles.cardHeaderRow}>
-                <h3 style={styles.sectionHeaderTitle}>AWARD RECOGNITION FLOW</h3>
-                <span style={styles.targetLabelRight}>Target: {selectedStudent.name}</span>
-              </div>
-
-              {/* Effort vs Behavioral Segment */}
-              <div style={styles.segmentRow}>
-                <button
-                  onClick={() => setAwardCategory('Academic Effort')}
-                  style={{
-                    ...styles.segmentBtn,
-                    backgroundColor: awardCategory === 'Academic Effort' ? '#ffffff' : '#e2e8f0',
-                    fontWeight: awardCategory === 'Academic Effort' ? '700' : '500',
-                  }}
-                >
-                  Academic Effort
-                </button>
-                <button
-                  onClick={() => setAwardCategory('Behavioral')}
-                  style={{
-                    ...styles.segmentBtn,
-                    backgroundColor: awardCategory === 'Behavioral' ? '#ffffff' : '#e2e8f0',
-                    fontWeight: awardCategory === 'Behavioral' ? '700' : '500',
-                  }}
-                >
-                  Behavioral
-                </button>
-              </div>
-
-              {/* Reward Stars / Points Selection */}
-              <div style={styles.rewardsRow}>
-                {['⭐ 1 Star', '⭐ 3 Stars', '+ 50 Pts'].map((reward) => {
-                  const isSelected = selectedAward === reward;
-                  return (
-                    <button
-                      key={reward}
-                      onClick={() => setSelectedAward(reward)}
+        {/* RIGHT COLUMN */}
+        <div style={styles.rightActionsColumn}>
+          {selectedStudent ? (
+            <>
+              {/* COMPLETION PROGRESS */}
+              <div style={styles.cardProgress}>
+                <h3 style={styles.sectionHeaderTitle}>COMPLETION PROGRESS</h3>
+                <div style={styles.progressInnerCard}>
+                  <div style={styles.studentProgressName}>{selectedStudent.name}</div>
+                  <div style={{ ...styles.progressPercentage, color: selectedStudent.progressColor }}>
+                    {selectedStudent.progress}%
+                  </div>
+                  <div style={styles.progressBarTrack}>
+                    <div
                       style={{
-                        ...styles.rewardBtn,
-                        borderColor: isSelected ? '#78be20' : '#cbd5e1',
-                        borderWidth: isSelected ? '2px' : '1px',
-                        color: isSelected ? '#15803d' : '#334155',
-                        fontWeight: isSelected ? '800' : '600',
+                        ...styles.progressBarFill,
+                        width: `${selectedStudent.progress}%`,
+                        backgroundColor: selectedStudent.progressColor,
+                      }}
+                    />
+                  </div>
+                  <div style={styles.progressMilestoneText}>
+                    ▲ {selectedStudent.milestone}
+                  </div>
+                </div>
+              </div>
+
+              {/* STUDENT SUPPORT & ACTIONS */}
+              <div style={styles.cardActionPortal}>
+                <h3 style={styles.sectionHeaderTitle}>Student Support & Actions</h3>
+                <div style={styles.targetLabel}>
+                  Student Selected: <span style={{ fontWeight: '800' }}>{selectedStudent.name}</span>
+                </div>
+
+                <div style={styles.interventionOptionsGroup}>
+                  <div
+                    onClick={() => setSelectedIntervention('desk_checkin')}
+                    style={{
+                      ...styles.optionCard,
+                      borderColor: selectedIntervention === 'desk_checkin' ? '#2563eb' : '#cbd5e1',
+                      backgroundColor: selectedIntervention === 'desk_checkin' ? '#eff6ff' : '#ffffff',
+                    }}
+                  >
+                    📍 Flag for in-person desk check-in
+                  </div>
+                  <div
+                    onClick={() => setSelectedIntervention('discreet_reminder')}
+                    style={{
+                      ...styles.optionCard,
+                      borderColor: selectedIntervention === 'discreet_reminder' ? '#2563eb' : '#cbd5e1',
+                      backgroundColor: selectedIntervention === 'discreet_reminder' ? '#eff6ff' : '#ffffff',
+                    }}
+                  >
+                    💬 Deploy discreet reminder notification
+                  </div>
+                </div>
+
+                <button onClick={handleExecuteIntervention} style={styles.actionPrimaryBtn}>
+                  CONFIRM & EXECUTE INTERVENTION
+                </button>
+              </div>
+
+              {/* AWARDS & RECOGNITION */}
+              <div style={styles.cardAwardFlow}>
+                <div style={styles.cardHeaderRow}>
+                  <h3 style={styles.sectionHeaderTitle}>Awards & Recognition</h3>
+                  <span style={styles.targetLabelRight}>Student: {selectedStudent.name}</span>
+                </div>
+
+                {/* Effort vs Behavioral Segment */}
+                <div style={styles.segmentRow}>
+                  <button
+                    onClick={() => setAwardCategory('Academic Effort')}
+                    style={{
+                      ...styles.segmentBtn,
+                      backgroundColor: awardCategory === 'Academic Effort' ? '#ffffff' : '#e2e8f0',
+                      fontWeight: awardCategory === 'Academic Effort' ? '700' : '500',
+                    }}
+                  >
+                    Academic Effort
+                  </button>
+                  <button
+                    onClick={() => setAwardCategory('Behavioral')}
+                    style={{
+                      ...styles.segmentBtn,
+                      backgroundColor: awardCategory === 'Behavioral' ? '#ffffff' : '#e2e8f0',
+                      fontWeight: awardCategory === 'Behavioral' ? '700' : '500',
+                    }}
+                  >
+                    Behavioral
+                  </button>
+                </div>
+
+                {/* Reward Stars / Points Selection */}
+                <div style={styles.rewardsRow}>
+                  {['⭐ 1 Star', '⭐ 3 Stars', '+ 50 Pts'].map((reward) => {
+                    const isSelected = selectedAward === reward;
+                    return (
+                      <button
+                        key={reward}
+                        onClick={() => setSelectedAward(reward)}
+                        style={{
+                          ...styles.rewardBtn,
+                          borderColor: isSelected ? '#78be20' : '#cbd5e1',
+                          borderWidth: isSelected ? '2px' : '1px',
+                          color: isSelected ? '#15803d' : '#334155',
+                          fontWeight: isSelected ? '800' : '600',
+                        }}
+                      >
+                        {reward}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Delivery Mode Section */}
+                <div style={styles.deliveryModeSection}>
+                  <div style={styles.deliveryModeLabel}>DELIVERY MODE</div>
+                  <div style={styles.deliveryModeRow}>
+                    <button
+                      onClick={() => setDeliveryMode('Instant Pop-Up')}
+                      style={{
+                        ...styles.deliveryBtn,
+                        borderColor: deliveryMode === 'Instant Pop-Up' ? '#78be20' : '#cbd5e1',
+                        borderWidth: deliveryMode === 'Instant Pop-Up' ? '2px' : '1px',
                       }}
                     >
-                      {reward}
+                      🔥 Instant Pop-Up
                     </button>
-                  );
-                })}
-              </div>
-
-              {/* Delivery Mode Section */}
-              <div style={styles.deliveryModeSection}>
-                <div style={styles.deliveryModeLabel}>DELIVERY MODE</div>
-                <div style={styles.deliveryModeRow}>
-                  <button
-                    onClick={() => setDeliveryMode('Instant Pop-Up')}
-                    style={{
-                      ...styles.deliveryBtn,
-                      borderColor: deliveryMode === 'Instant Pop-Up' ? '#78be20' : '#cbd5e1',
-                      borderWidth: deliveryMode === 'Instant Pop-Up' ? '2px' : '1px',
-                    }}
-                  >
-                    🔥 Instant Pop-Up
-                  </button>
-                  <button
-                    onClick={() => setDeliveryMode('Silent Archive')}
-                    style={{
-                      ...styles.deliveryBtn,
-                      borderColor: deliveryMode === 'Silent Archive' ? '#78be20' : '#cbd5e1',
-                      borderWidth: deliveryMode === 'Silent Archive' ? '2px' : '1px',
-                    }}
-                  >
-                    Silent Archive
-                  </button>
+                    <button
+                      onClick={() => setDeliveryMode('Silent Archive')}
+                      style={{
+                        ...styles.deliveryBtn,
+                        borderColor: deliveryMode === 'Silent Archive' ? '#78be20' : '#cbd5e1',
+                        borderWidth: deliveryMode === 'Silent Archive' ? '2px' : '1px',
+                      }}
+                    >
+                      Silent Archive
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <button onClick={handleIssueAward} style={styles.issueAwardBtn}>
-                CONFIRM & ISSUE AWARD
-              </button>
+                <button onClick={handleIssueAward} style={styles.actionPrimaryBtn}>
+                  CONFIRM & ISSUE AWARD
+                </button>
+              </div>
+            </>
+          ) : (
+            /* DEFAULT 1 SINGLE LONG SECTION WHEN NO STUDENT IS SELECTED */
+            <div style={styles.singleLongRightPlaceholder}>
+              <div style={styles.placeholderHandIcon}>👈</div>
+              <p style={styles.placeholderTextLong}>
+                Select a student to view progress, support and award.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -436,8 +471,15 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.25rem 0.65rem',
     borderRadius: '6px',
   },
-  activeTitle: { fontSize: '1.35rem', fontWeight: '800', color: '#0f172a', margin: 0 },
-  stopBtn: {
+  activeTitle: {
+    fontSize: '1.1rem',
+    fontWeight: '900',
+    color: '#1e3a8a',
+    letterSpacing: '0.03em',
+    margin: 0,
+    textTransform: 'uppercase',
+  },
+  redStopBtn: {
     backgroundColor: '#dc2626',
     color: '#ffffff',
     border: 'none',
@@ -453,29 +495,41 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#cde5e3',
     borderRadius: '16px',
     padding: '1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
+    display: 'grid',
+    gridTemplateColumns: '2fr 1fr',
     gap: '1.25rem',
     border: '1px solid #b4d5d2',
   },
-  topRow: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
+  leftMainColumn: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '1.25rem',
   },
-  bottomRow: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
-    gap: '1.25rem',
-  },
-  cardScopeSelector: {
+  cardScopeSelectorLeft: {
     backgroundColor: '#ffffff',
     borderRadius: '12px',
     padding: '1.25rem',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '0.75rem',
     border: '1px solid #cbd5e1',
+  },
+  scopeButtonsRowLeft: {
+    display: 'flex',
+    gap: '0.6rem',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  scopeBtn: {
+    border: 'none',
+    borderRadius: '8px',
+    padding: '0.55rem 1rem',
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
   },
   cardProgress: {
     backgroundColor: '#ffffff',
@@ -494,34 +548,10 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     textTransform: 'uppercase',
   },
-  syncedBadge: {
-    backgroundColor: '#dcfce7',
-    color: '#166534',
-    fontSize: '0.72rem',
-    fontWeight: '800',
-    padding: '0.2rem 0.6rem',
-    borderRadius: '12px',
-    border: '1px solid #86efac',
-  },
   cardHeaderRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '0.75rem',
-  },
-  scopeButtonsRow: {
-    display: 'flex',
-    gap: '0.6rem',
-    flexWrap: 'wrap',
-  },
-  scopeBtn: {
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.55rem 1rem',
-    fontSize: '0.82rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
   },
   progressInnerCard: {
     border: '1px solid #e2e8f0',
@@ -568,7 +598,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1rem',
     border: '1px solid #cbd5e1',
-    minHeight: '320px',
+    flex: 1,
   },
   legendRow: {
     display: 'flex',
@@ -619,10 +649,41 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#64748b',
     fontWeight: '500',
   },
+  fullHrLineTop: {
+    border: 'none',
+    borderTop: '1px solid #cbd5e1',
+    margin: '0.25rem 0 0.5rem 0',
+    width: '100%',
+  },
   rightActionsColumn: {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+  },
+  singleLongRightPlaceholder: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    border: '2px dashed #cbd5e1',
+    padding: '3rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    gap: '1rem',
+    height: '100%',
+    boxSizing: 'border-box',
+  },
+  placeholderHandIcon: {
+    fontSize: '3rem',
+  },
+  placeholderTextLong: {
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    color: '#475569',
+    margin: 0,
+    lineHeight: '1.4',
+    maxWidth: '220px',
   },
   cardActionPortal: {
     backgroundColor: '#ffffff',
@@ -657,19 +718,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#1e293b',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
-  },
-  executeInterventionBtn: {
-    backgroundColor: '#e2e8f0',
-    color: '#475569',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0.65rem',
-    fontSize: '0.8rem',
-    fontWeight: '800',
-    cursor: 'pointer',
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
-    marginTop: '0.25rem',
   },
   cardAwardFlow: {
     backgroundColor: '#ffffff',
@@ -734,7 +782,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#1e293b',
     cursor: 'pointer',
   },
-  issueAwardBtn: {
+  actionPrimaryBtn: {
     backgroundColor: '#0284c7',
     color: '#ffffff',
     border: 'none',
@@ -748,3 +796,4 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 4px 10px rgba(2, 132, 199, 0.25)',
   },
 };
+
