@@ -15,7 +15,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
   const menuItems = isTeacher
     ? [
         { id: 'home', label: 'Home', icon: 'home' },
-        { id: 'teacher_dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'teacher_dashboard', label: 'Activity Review', icon: 'dashboard' },
         { id: 'classroom_setup', label: 'Classroom Setup', icon: 'classroom' },
         { id: 'activity_creation', label: 'Activity Creation', icon: 'activity' },
         { id: 'student_support', label: 'Student Support', icon: 'support' },

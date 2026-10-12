@@ -18,7 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
         return 'Activity Creation Studio';
       case 'teacher_dashboard':
       case 'dashboard':
-        return 'Dashboard - Monitoring and Intervention';
+        return 'Activity Review';
       case 'home':
         return 'Home';
       case 'student_support':
