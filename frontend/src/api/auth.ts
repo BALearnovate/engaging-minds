@@ -45,4 +45,25 @@ export const authApi = {
   async getProtectedRoleData(endpoint: 'admin' | 'teacher' | 'student', token?: string) {
     return apiFetch<any>(`/users/${endpoint}`, { token });
   },
+
+  async verifyJoinCode(code: string): Promise<any> {
+    return apiFetch<any>('/auth/verify-join-code', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  async studentOnboarding(data: {
+    studentId?: string;
+    loginCode?: string;
+    displayName?: string;
+    email?: string;
+    pin: string;
+    avatar?: string;
+  }): Promise<AuthResponse> {
+    return apiFetch<AuthResponse>('/auth/student-onboarding', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

@@ -20,6 +20,28 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-join-code')
+  async verifyJoinCode(@Body('code') code: string) {
+    return this.authService.verifyJoinCode(code);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('student-onboarding')
+  async studentOnboarding(
+    @Body()
+    dto: {
+      studentId?: string;
+      loginCode?: string;
+      displayName?: string;
+      email?: string;
+      pin: string;
+      avatar?: string;
+    },
+  ) {
+    return this.authService.completeStudentOnboarding(dto);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@CurrentUser('id') userId: string) {

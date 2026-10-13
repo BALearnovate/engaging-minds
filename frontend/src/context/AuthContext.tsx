@@ -13,6 +13,7 @@ interface AuthContextType {
     lastName: string;
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   }) => Promise<UserProfile>;
+  setSession: (user: UserProfile, accessToken: string) => void;
   logout: () => void;
 }
 
@@ -43,11 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
+  const setSession = (userObj: UserProfile, accessToken: string) => {
+    localStorage.setItem('access_token', accessToken);
+    setToken(accessToken);
+    setUser(userObj);
+  };
+
   const login = async (credentials: { email: string; password: string }) => {
     const res = await authApi.login(credentials);
-    localStorage.setItem('access_token', res.accessToken);
-    setToken(res.accessToken);
-    setUser(res.user);
+    setSession(res.user, res.accessToken);
     return res.user;
   };
 
@@ -59,9 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   }) => {
     const res = await authApi.register(data);
-    localStorage.setItem('access_token', res.accessToken);
-    setToken(res.accessToken);
-    setUser(res.user);
+    setSession(res.user, res.accessToken);
     return res.user;
   };
 
@@ -72,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, setSession, logout }}>
       {children}
     </AuthContext.Provider>
   );

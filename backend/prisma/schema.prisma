@@ -88,6 +88,10 @@ model StudentSession {
   status            String          @default("NOT_STARTED") // 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED'
   progress          Float           @default(0)
   score             Float           @default(0)
+  academicStars     Int             @default(0)
+  academicPoints    Int             @default(0)
+  behavioralStars   Int             @default(0)
+  behavioralPoints  Int             @default(0)
   currentBlockId    String?
   lastSeenAt        DateTime        @default(now())
 
@@ -145,6 +149,8 @@ model Student {
   firstName   String
   lastName    String
   loginCode   String
+  email       String?
+  pin         String?
   classroomId String
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
