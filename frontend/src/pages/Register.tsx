@@ -328,79 +328,91 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   return (
     <div style={{ ...styles.pageContainer, backgroundImage: `url(${studentBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div style={styles.studentOverlay}>
-        {/* Top Navigation Bar */}
-        <header style={styles.studentHeader}>
-          {/* Logo Cloud Backdrop */}
-          <div style={styles.studentLogoCloud}>
-            <img src={logoImage} alt="Engaging Minds" style={styles.studentLogoImg} />
+        {/* Top Navigation Header with Green Top Bar & Blue Stepper Bar */}
+        <header style={{ position: 'relative', width: '100%' }}>
+          {/* Top Green Bar */}
+          <div style={styles.greenHeaderBar}>
+            <h1 style={styles.onboardingTitleHeader}>Onboarding</h1>
+            <div style={styles.headerRightGroup}>
+              <button
+                type="button"
+                onClick={() => setPortal('TEACHER')}
+                style={styles.teacherSwitchBtn}
+              >
+                Teacher Portal
+              </button>
+              <div style={styles.studentBadgePill}>Student Portal</div>
+            </div>
           </div>
 
-          {/* Stepper Center Wizard */}
-          <div style={styles.stepperContainer}>
-            <h1 style={styles.onboardingTitle}>Onboarding</h1>
-
-            <div style={styles.stepperWizard}>
-              {/* Step 1 Indicator */}
-              <div style={styles.stepItem}>
+          {/* Bottom Blue Stepper Bar */}
+          <div style={styles.blueStepperBar}>
+            <div style={styles.stepperWizardNew}>
+              {/* Step 1 Node */}
+              <div style={styles.stepNode}>
                 <div style={{
-                  ...styles.stepCircle,
-                  backgroundColor: step >= 1 ? '#84cc16' : '#ffffff',
-                  color: step >= 1 ? '#ffffff' : '#94a3b8',
+                  ...styles.stepCircleNew,
+                  backgroundColor: step >= 1 ? '#16a34a' : '#ffffff',
+                  color: step >= 1 ? '#ffffff' : '#0284c7',
+                  border: step >= 1 ? '2px solid #16a34a' : '2px solid #ffffff',
                 }}>
                   {step > 1 ? '✓' : '1'}
                 </div>
-                <div style={styles.stepLabelGroup}>
-                  <span style={styles.stepNumber}>Step 1</span>
-                  <span style={styles.stepTitle}>Linking School</span>
+                <div style={styles.stepLabelCol}>
+                  <span style={styles.stepNumberLabel}>Step 1</span>
+                  <span style={styles.stepTitleLabel}>Linking School</span>
                 </div>
               </div>
 
-              <div style={{ ...styles.stepLine, backgroundColor: step >= 2 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
+              <div style={{ ...styles.stepLineNew, backgroundColor: step >= 2 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
 
-              {/* Step 2 Indicator */}
-              <div style={styles.stepItem}>
+              {/* Step 2 Node */}
+              <div style={styles.stepNode}>
                 <div style={{
-                  ...styles.stepCircle,
-                  backgroundColor: step >= 2 ? '#84cc16' : '#ffffff',
-                  color: step >= 2 ? '#ffffff' : '#94a3b8',
+                  ...styles.stepCircleNew,
+                  backgroundColor: step >= 2 ? (step > 2 ? '#16a34a' : '#84cc16') : '#ffffff',
+                  color: step >= 2 ? '#ffffff' : '#0284c7',
+                  border: step >= 2 ? 'none' : '2px solid #ffffff',
                 }}>
                   {step > 2 ? '✓' : '2'}
                 </div>
-                <div style={styles.stepLabelGroup}>
-                  <span style={styles.stepNumber}>Step 2</span>
-                  <span style={styles.stepTitle}>Choose Avatar</span>
+                <div style={styles.stepLabelCol}>
+                  <span style={styles.stepNumberLabel}>Step 2</span>
+                  <span style={styles.stepTitleLabel}>Choose Avatar</span>
                 </div>
               </div>
 
-              <div style={{ ...styles.stepLine, backgroundColor: step >= 3 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
+              <div style={{ ...styles.stepLineNew, backgroundColor: step >= 3 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
 
-              {/* Step 3 Indicator */}
-              <div style={styles.stepItem}>
+              {/* Step 3 Node */}
+              <div style={styles.stepNode}>
                 <div style={{
-                  ...styles.stepCircle,
-                  backgroundColor: step === 3 ? '#84cc16' : '#ffffff',
-                  color: step === 3 ? '#ffffff' : '#94a3b8',
+                  ...styles.stepCircleNew,
+                  backgroundColor: step === 3 ? '#16a34a' : '#ffffff',
+                  color: step === 3 ? '#ffffff' : '#0284c7',
+                  border: step === 3 ? 'none' : '2px solid #ffffff',
                 }}>
                   3
                 </div>
-                <div style={styles.stepLabelGroup}>
-                  <span style={styles.stepNumber}>Step 3</span>
-                  <span style={styles.stepTitle}>Set Quick Pin</span>
+                <div style={styles.stepLabelCol}>
+                  <span style={styles.stepNumberLabel}>Step 3</span>
+                  <span style={styles.stepTitleLabel}>Set Quick Pin</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Header Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={() => setPortal('TEACHER')}
-              style={styles.teacherSwitchBtn}
-            >
-              Teacher Portal
-            </button>
-            <div style={styles.studentBadgePill}>Student Portal</div>
+          {/* Absolute Left White Organic Cloud Bubble Container */}
+          <div style={styles.cloudWrapper}>
+            <svg viewBox="0 0 280 135" preserveAspectRatio="none" style={styles.cloudSvg}>
+              <path
+                d="M 0,0 L 210,0 C 235,0 260,18 260,38 C 260,52 278,60 275,78 C 272,98 245,115 210,118 C 180,121 140,135 80,135 L 0,135 Z"
+                fill="#ffffff"
+              />
+            </svg>
+            <div style={styles.cloudContent}>
+              <img src={logoImage} alt="Engaging Minds Logo" style={styles.cloudLogoImg} />
+            </div>
           </div>
         </header>
 
@@ -1048,79 +1060,111 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
-  studentHeader: {
+  greenHeaderBar: {
+    backgroundColor: '#16a34a',
+    height: '56px',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '1rem 2.5rem',
-    width: '100%',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: '0 2rem',
     boxSizing: 'border-box',
   },
-  studentLogoCloud: {
-    backgroundColor: '#ffffff',
-    borderRadius: '0 0 45px 0',
-    padding: '0.8rem 1.8rem 0.8rem 1.2rem',
-    boxShadow: '0 6px 18px rgba(0, 0, 0, 0.12)',
+  onboardingTitleHeader: {
+    color: '#ffffff',
+    fontSize: '1.4rem',
+    fontWeight: '800',
+    margin: 0,
+    letterSpacing: '-0.01em',
+    textAlign: 'center',
+  },
+  headerRightGroup: {
+    position: 'absolute',
+    right: '2rem',
     display: 'flex',
     alignItems: 'center',
+    gap: '0.75rem',
   },
-  studentLogoImg: {
-    height: '55px',
-    width: 'auto',
-    objectFit: 'contain',
+  blueStepperBar: {
+    backgroundColor: 'rgba(2, 132, 199, 0.92)',
+    height: '100px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 2rem',
+    boxSizing: 'border-box',
   },
-  stepperContainer: {
+  stepperWizardNew: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  stepNode: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '0.4rem',
+    gap: '0.2rem',
+    minWidth: '100px',
   },
-  onboardingTitle: {
-    color: '#ffffff',
-    fontSize: '1.8rem',
-    fontWeight: '800',
-    margin: 0,
-    letterSpacing: '-0.02em',
-  },
-  stepperWizard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-  },
-  stepItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.55rem',
-  },
-  stepCircle: {
-    width: '32px',
-    height: '32px',
+  stepCircleNew: {
+    width: '30px',
+    height: '30px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: '800',
-    fontSize: '0.9rem',
+    fontSize: '0.88rem',
     boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
   },
-  stepLabelGroup: {
+  stepLabelCol: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
   },
-  stepNumber: {
+  stepNumberLabel: {
     color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: '0.7rem',
-    fontWeight: '600',
+    fontSize: '0.68rem',
+    fontWeight: '500',
   },
-  stepTitle: {
+  stepTitleLabel: {
     color: '#ffffff',
-    fontSize: '0.85rem',
+    fontSize: '0.82rem',
     fontWeight: '700',
   },
-  stepLine: {
-    width: '60px',
-    height: '3px',
-    borderRadius: '2px',
+  stepLineNew: {
+    width: '80px',
+    height: '2px',
+    marginBottom: '1.2rem',
+  },
+  cloudWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '260px',
+    height: '126px',
+    zIndex: 10,
+  },
+  cloudSvg: {
+    width: '100%',
+    height: '100%',
+    filter: 'drop-shadow(4px 4px 10px rgba(0,0,0,0.15))',
+  },
+  cloudContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '220px',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: '1rem',
+  },
+  cloudLogoImg: {
+    height: '60px',
+    width: 'auto',
+    objectFit: 'contain',
   },
   teacherSwitchBtn: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
