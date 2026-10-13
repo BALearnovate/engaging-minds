@@ -130,6 +130,17 @@ export class ActivitiesController {
     );
   }
 
+  // Issue Award Endpoint (Academic / Behavioral)
+  @Post('student-session/:id/award')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async issueAward(
+    @Param('id') studentSessionId: string,
+    @Body() body: { category: string; reward: string },
+  ) {
+    return this.activitiesService.issueAward(studentSessionId, body.category, body.reward);
+  }
+
   // Teacher Live Dashboard State Endpoint
   @Get('session/:shareCode/dashboard')
   @UseGuards(JwtAuthGuard, RolesGuard)

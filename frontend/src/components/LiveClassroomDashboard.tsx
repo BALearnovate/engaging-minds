@@ -13,9 +13,13 @@ interface StudentStatus {
   progress: number;
   milestone: string;
   progressColor: string;
+  academicStars: number;
+  academicPoints: number;
+  behavioralStars: number;
+  behavioralPoints: number;
+  totalStars: number;
+  totalPoints: number;
 }
-
-
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode }) => {
   const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
@@ -25,6 +29,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   // Dynamic students state fetched from backend API
   const [students, setStudents] = useState<StudentStatus[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(true);
+
+  // Award celebration overlay state
+  const [awardOverlay, setAwardOverlay] = useState<{
+    studentName: string;
+    category: string;
+    reward: string;
+  } | null>(null);
 
   // Interactive UI state with sample data
   const [activeScope, setActiveScope] = useState<string>('Individual Student');
@@ -82,6 +93,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
           const name = st.studentName || (st.student?.firstName ? `${st.student?.firstName || ''} ${st.student?.lastName || ''}`.trim() : 'Student');
 
+          const academicStars = typeof st.academicStars === 'number' ? st.academicStars : 0;
+          const academicPoints = typeof st.academicPoints === 'number' ? st.academicPoints : 0;
+          const behavioralStars = typeof st.behavioralStars === 'number' ? st.behavioralStars : 0;
+          const behavioralPoints = typeof st.behavioralPoints === 'number' ? st.behavioralPoints : 0;
+          const totalStars = academicStars + behavioralStars;
+          const totalPoints = academicPoints + behavioralPoints;
+
           return {
             id: st.id,
             name,
@@ -90,6 +108,12 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             progress,
             milestone,
             progressColor,
+            academicStars,
+            academicPoints,
+            behavioralStars,
+            behavioralPoints,
+            totalStars,
+            totalPoints,
           };
         });
         setStudents(mappedStudents);
@@ -132,10 +156,33 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     setTimeout(() => setFeedbackMessage(null), 4000);
   };
 
-  const handleIssueAward = () => {
+  const handleIssueAward = async () => {
     if (!selectedStudent) return;
-    setFeedbackMessage(`🎉 Award "${selectedAward}" (${awardCategory}) issued to ${selectedStudent.name} via ${deliveryMode}!`);
-    setTimeout(() => setFeedbackMessage(null), 4000);
+    try {
+      const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      await activitiesApi.issueAward(selectedStudent.id, awardCategory, selectedAward, activeToken);
+
+      // Trigger Asana-style 2.5 second animation overlay
+      setAwardOverlay({
+        studentName: selectedStudent.name,
+        category: awardCategory,
+        reward: selectedAward,
+      });
+
+      setFeedbackMessage(`🎉 Award "${selectedAward}" (${awardCategory}) issued to ${selectedStudent.name}!`);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+
+      // Auto dismiss overlay after 2.5 seconds
+      setTimeout(() => {
+        setAwardOverlay(null);
+      }, 2500);
+
+      // Refresh student awards state from backend
+      fetchDashboardState();
+    } catch (err: any) {
+      console.error('Failed to issue award:', err);
+      alert(`⚠️ Could not issue award: ${err?.message || 'Unknown error'}`);
+    }
   };
 
   const handleToggleSelectStudent = (id: string) => {
@@ -152,6 +199,73 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   return (
     <div style={styles.outerWrapper}>
+      {awardOverlay && (
+        <div style={styles.celebrationBackdrop}>
+          <style>{`
+            @keyframes popScaleGlow {
+              0% { transform: scale(0.1) rotate(-15deg); opacity: 0; }
+              50% { transform: scale(1.3) rotate(8deg); opacity: 1; filter: drop-shadow(0 0 35px #f59e0b); }
+              100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 20px #f59e0b); }
+            }
+            @keyframes floatParticle1 {
+              0% { transform: translate(0, 0) scale(1); opacity: 1; }
+              100% { transform: translate(-90px, -130px) scale(1.5); opacity: 0; }
+            }
+            @keyframes floatParticle2 {
+              0% { transform: translate(0, 0) scale(1); opacity: 1; }
+              100% { transform: translate(100px, -150px) scale(1.6); opacity: 0; }
+            }
+            @keyframes floatParticle3 {
+              0% { transform: translate(0, 0) scale(1); opacity: 1; }
+              100% { transform: translate(20px, -170px) scale(1.8); opacity: 0; }
+            }
+            @keyframes spinCoin {
+              0% { transform: rotateY(0deg) scale(0.2); opacity: 0; }
+              50% { transform: rotateY(540deg) scale(1.3); opacity: 1; }
+              100% { transform: rotateY(720deg) scale(1); opacity: 1; }
+            }
+          `}</style>
+          <div style={styles.celebrationCard}>
+            <div style={{ ...styles.sparkleParticle, top: '20px', left: '30px', animation: 'floatParticle1 2s ease-out infinite' }}>✨</div>
+            <div style={{ ...styles.sparkleParticle, top: '15px', right: '40px', animation: 'floatParticle2 2.2s ease-out infinite' }}>🌟</div>
+            <div style={{ ...styles.sparkleParticle, bottom: '25px', left: '50px', animation: 'floatParticle3 1.8s ease-out infinite' }}>🎉</div>
+
+            {awardOverlay.reward.includes('1 Star') && (
+              <div style={{ ...styles.singleStarGraphic, animation: 'popScaleGlow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                ⭐
+              </div>
+            )}
+            {awardOverlay.reward.includes('3 Stars') && (
+              <div style={{ ...styles.tripleStarGraphic, animation: 'popScaleGlow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
+                <span style={{ fontSize: '4.5rem' }}>⭐</span>
+                <span style={{ fontSize: '6rem', margin: '0 -0.5rem' }}>⭐</span>
+                <span style={{ fontSize: '4.5rem' }}>⭐</span>
+              </div>
+            )}
+            {awardOverlay.reward.includes('50 Pts') && (
+              <div style={{ ...styles.pointsBadgeGraphic, animation: 'spinCoin 1s ease-out forwards' }}>
+                🏆
+                <div style={styles.pointsTextPlus}>+50 PTS</div>
+              </div>
+            )}
+
+            <h2 style={styles.celebrationTitle}>
+              {awardOverlay.reward.includes('1 Star')
+                ? '⭐ 1 STAR AWARDED!'
+                : awardOverlay.reward.includes('3 Stars')
+                ? '🌟 3 STARS AWARDED!'
+                : '🏆 +50 POINTS AWARDED!'}
+            </h2>
+            <div style={styles.celebrationStudentName}>
+              Student: <strong>{awardOverlay.studentName}</strong>
+            </div>
+            <div style={styles.celebrationCategoryTag}>
+              {awardOverlay.category} Category
+            </div>
+          </div>
+        </div>
+      )}
+
       {feedbackMessage && (
         <div style={styles.toastNotification}>
           {feedbackMessage}
@@ -287,6 +401,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       >
                         {student.subtext}
                       </div>
+                      <div style={styles.cardAwardPill}>
+                        ⭐ {student.totalStars} Stars &nbsp;|&nbsp; 🏆 {student.totalPoints} Pts
+                      </div>
                     </div>
                   );
                 })}
@@ -386,6 +503,15 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                   >
                     Behavioral
                   </button>
+                </div>
+
+                {/* Saved Category Breakdown Pill */}
+                <div style={styles.categoryTotalsPill}>
+                  {awardCategory === 'Academic Effort' ? (
+                    <>Academic Record: <strong>⭐ {selectedStudent.academicStars} Stars</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.academicPoints} Pts</strong></>
+                  ) : (
+                    <>Behavioral Record: <strong>⭐ {selectedStudent.behavioralStars} Stars</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.behavioralPoints} Pts</strong></>
+                  )}
                 </div>
 
                 {/* Reward Stars / Points Selection */}
@@ -837,6 +963,108 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
     boxShadow: '0 4px 10px rgba(2, 132, 199, 0.25)',
+  },
+  cardAwardPill: {
+    backgroundColor: '#fef9c3',
+    color: '#a16207',
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '6px',
+    border: '1px solid #fef08a',
+    marginTop: '0.25rem',
+  },
+  categoryTotalsPill: {
+    backgroundColor: '#f8fafc',
+    color: '#334155',
+    fontSize: '0.78rem',
+    fontWeight: '600',
+    padding: '0.4rem 0.75rem',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    textAlign: 'center',
+  },
+  celebrationBackdrop: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  celebrationCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '24px',
+    padding: '2.5rem 3.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(245, 158, 11, 0.35)',
+    border: '3px solid #f59e0b',
+    position: 'relative',
+    maxWidth: '480px',
+    width: '90%',
+    textAlign: 'center',
+  },
+  singleStarGraphic: {
+    fontSize: '6.5rem',
+    lineHeight: 1,
+    margin: '0.5rem 0',
+  },
+  tripleStarGraphic: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+    margin: '0.5rem 0',
+  },
+  pointsBadgeGraphic: {
+    fontSize: '5.5rem',
+    lineHeight: 1,
+    margin: '0.5rem 0',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  pointsTextPlus: {
+    fontSize: '1.8rem',
+    fontWeight: '900',
+    color: '#0284c7',
+    marginTop: '0.25rem',
+  },
+  celebrationTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '900',
+    color: '#1e3a8a',
+    margin: '0.5rem 0 0.25rem 0',
+    letterSpacing: '0.04em',
+  },
+  celebrationStudentName: {
+    fontSize: '1.15rem',
+    color: '#334155',
+    margin: '0.25rem 0',
+  },
+  celebrationCategoryTag: {
+    backgroundColor: '#fef3c7',
+    color: '#b45309',
+    fontSize: '0.82rem',
+    fontWeight: '800',
+    padding: '0.35rem 1rem',
+    borderRadius: '20px',
+    marginTop: '0.75rem',
+    border: '1px solid #fde68a',
+  },
+  sparkleParticle: {
+    position: 'absolute',
+    fontSize: '2rem',
+    pointerEvents: 'none',
   },
 };
 

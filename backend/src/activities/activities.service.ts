@@ -475,6 +475,67 @@ export class ActivitiesService {
     };
   }
 
+  async issueAward(
+    studentSessionId: string,
+    category: string,
+    reward: string,
+  ) {
+    const studentSession = await this.prisma.studentSession.findUnique({
+      where: { id: studentSessionId },
+    });
+
+    if (!studentSession) {
+      throw new NotFoundException(`Student session with ID "${studentSessionId}" not found.`);
+    }
+
+    let addStars = 0;
+    let addPoints = 0;
+
+    if (reward.includes('1 Star')) {
+      addStars = 1;
+    } else if (reward.includes('3 Stars')) {
+      addStars = 3;
+    } else if (reward.includes('50 Pts') || reward.includes('50')) {
+      addPoints = 50;
+    }
+
+    const isAcademic = category === 'Academic Effort';
+
+    const updatedSession = await this.prisma.studentSession.update({
+      where: { id: studentSessionId },
+      data: {
+        academicStars: isAcademic ? { increment: addStars } : undefined,
+        academicPoints: isAcademic ? { increment: addPoints } : undefined,
+        behavioralStars: !isAcademic ? { increment: addStars } : undefined,
+        behavioralPoints: !isAcademic ? { increment: addPoints } : undefined,
+        lastSeenAt: new Date(),
+      },
+    });
+
+    const event = await this.prisma.activityEvent.create({
+      data: {
+        studentSessionId,
+        type: 'AWARD_ISSUED',
+        payload: {
+          category,
+          reward,
+          addStars,
+          addPoints,
+          totalAcademicStars: updatedSession.academicStars,
+          totalAcademicPoints: updatedSession.academicPoints,
+          totalBehavioralStars: updatedSession.behavioralStars,
+          totalBehavioralPoints: updatedSession.behavioralPoints,
+        },
+      },
+    });
+
+    return {
+      message: `Successfully issued ${reward} (${category}) to ${updatedSession.studentName}`,
+      studentSession: updatedSession,
+      event,
+    };
+  }
+
   async getTeacherDashboardState(shareCode: string) {
     const session = await this.prisma.activitySession.findUnique({
       where: { shareCode: shareCode.toUpperCase() },

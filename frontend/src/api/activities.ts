@@ -215,6 +215,15 @@ export const activitiesApi = {
     });
   },
 
+  // Issue award to a student session
+  async issueAward(studentSessionId: string, category: string, reward: string, token?: string): Promise<any> {
+    return apiFetch<any>(`/activities/student-session/${studentSessionId}/award`, {
+      method: 'POST',
+      body: JSON.stringify({ category, reward }),
+      token,
+    });
+  },
+
   // Get active sessions for teacher
   async getTeacherActiveSessions(token?: string): Promise<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>> {
     return apiFetch<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>>('/activities/teacher/active-sessions', { token });
