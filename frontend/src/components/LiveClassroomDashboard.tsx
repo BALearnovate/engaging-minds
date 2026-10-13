@@ -15,40 +15,16 @@ interface StudentStatus {
   progressColor: string;
 }
 
-const sampleStudents: StudentStatus[] = [
-  {
-    id: '1',
-    name: 'Leo Vance',
-    status: 'OPTIMAL',
-    subtext: 'Active: Final Reflection Stage',
-    progress: 88,
-    milestone: 'NEAR COMPLETION MILESTONE',
-    progressColor: '#16a34a',
-  },
-  {
-    id: '2',
-    name: 'Tommy Miller',
-    status: 'AT RISK',
-    subtext: 'Idle: Canvas variables untouched',
-    progress: 45,
-    milestone: 'MIDDLE PROGRESS MILESTONE',
-    progressColor: '#ea580c',
-  },
-  {
-    id: '3',
-    name: 'Penny Woods',
-    status: 'ALERT FLAG',
-    subtext: 'Blocked: Digital Canvas Setup',
-    progress: 18,
-    milestone: 'EARLY SETUP MILESTONE',
-    progressColor: '#dc2626',
-  },
-];
+
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode }) => {
   const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
   const [sessionStatus, setSessionStatus] = useState<string>('ACTIVE');
   const [isStopping, setIsStopping] = useState<boolean>(false);
+
+  // Dynamic students state fetched from backend API
+  const [students, setStudents] = useState<StudentStatus[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(true);
 
   // Interactive UI state with sample data
   const [activeScope, setActiveScope] = useState<string>('Individual Student');
@@ -59,10 +35,11 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   const [deliveryMode, setDeliveryMode] = useState<string>('Instant Pop-Up');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const selectedStudent = sampleStudents.find((s) => s.id === selectedStudentId) || null;
+  const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {
+    setIsLoadingStudents(true);
     try {
       const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
       const data = await activitiesApi.getSessionDashboard(shareCode, activeToken);
@@ -72,8 +49,57 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       if (data.status) {
         setSessionStatus(data.status);
       }
+      if (Array.isArray(data.students)) {
+        const mappedStudents: StudentStatus[] = data.students.map((st: any) => {
+          const rawStatus = (st.status || '').toUpperCase();
+          let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
+          let progressColor = '#16a34a';
+
+          if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
+            status = 'ALERT FLAG';
+            progressColor = '#dc2626';
+          } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (st.progress < 30 && rawStatus !== 'COMPLETED')) {
+            status = 'AT RISK';
+            progressColor = '#ea580c';
+          }
+
+          const progress = typeof st.progress === 'number' ? st.progress : 0;
+          let subtext = `Active: ${progress}% progress`;
+          if (rawStatus === 'STUCK') {
+            subtext = 'Blocked: Requires assistance';
+          } else if (rawStatus === 'NOT_STARTED' || progress === 0) {
+            subtext = 'Not Started: Awaiting activity response';
+          } else if (progress >= 80) {
+            subtext = 'Active: Final Reflection Stage';
+          }
+
+          let milestone = 'EARLY SETUP MILESTONE';
+          if (progress >= 80) {
+            milestone = 'NEAR COMPLETION MILESTONE';
+          } else if (progress >= 40) {
+            milestone = 'MIDDLE PROGRESS MILESTONE';
+          }
+
+          const name = st.studentName || (st.student?.firstName ? `${st.student?.firstName || ''} ${st.student?.lastName || ''}`.trim() : 'Student');
+
+          return {
+            id: st.id,
+            name,
+            status,
+            subtext,
+            progress,
+            milestone,
+            progressColor,
+          };
+        });
+        setStudents(mappedStudents);
+      } else {
+        setStudents([]);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard state:', err);
+    } finally {
+      setIsLoadingStudents(false);
     }
   };
 
@@ -205,61 +231,67 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             {/* Horizontal line BEFORE student names/cards */}
             <hr style={styles.fullHrLineTop} />
 
-            <div style={styles.studentCardsContainer}>
-              {sampleStudents.map((student) => {
-                const isSelected = student.id === selectedStudentId;
-                const statusBadgeStyle =
-                  student.status === 'OPTIMAL'
-                    ? { bg: '#e6f4ea', text: '#137333', border: '#a8dab5' }
-                    : student.status === 'AT RISK'
-                    ? { bg: '#fef3c7', text: '#b45309', border: '#fde68a' }
-                    : { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' };
+            {isLoadingStudents ? (
+              <div style={styles.emptyStudentsBox}>Loading class students...</div>
+            ) : students.length === 0 ? (
+              <div style={styles.emptyStudentsBox}>No students in class yet.</div>
+            ) : (
+              <div style={styles.studentCardsContainer}>
+                {students.map((student) => {
+                  const isSelected = student.id === selectedStudentId;
+                  const statusBadgeStyle =
+                    student.status === 'OPTIMAL'
+                      ? { bg: '#e6f4ea', text: '#137333', border: '#a8dab5' }
+                      : student.status === 'AT RISK'
+                      ? { bg: '#fef3c7', text: '#b45309', border: '#fde68a' }
+                      : { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' };
 
-                return (
-                  <div
-                    key={student.id}
-                    onClick={() => handleToggleSelectStudent(student.id)}
-                    style={{
-                      ...styles.studentCard,
-                      border: isSelected ? '2px solid #78be20' : '2px solid #3b82f6',
-                      backgroundColor: isSelected ? '#f8fdf6' : '#ffffff',
-                      opacity: isSelected ? 1 : 0.6,
-                      boxShadow: isSelected ? '0 0 0 3px #dcfce7' : 'none',
-                    }}
-                  >
-                    <div style={styles.studentCardTop}>
-                      <span
-                        style={{
-                          ...styles.studentCardName,
-                          color: isSelected ? '#1e3a8a' : '#2563eb',
-                        }}
-                      >
-                        {student.name}
-                      </span>
-                      <span
-                        style={{
-                          ...styles.studentStatusBadge,
-                          backgroundColor: statusBadgeStyle.bg,
-                          color: statusBadgeStyle.text,
-                          borderColor: statusBadgeStyle.border,
-                        }}
-                      >
-                        {student.status}
-                      </span>
-                    </div>
+                  return (
                     <div
+                      key={student.id}
+                      onClick={() => handleToggleSelectStudent(student.id)}
                       style={{
-                        ...styles.studentCardSubtext,
-                        color: isSelected ? '#334155' : '#64748b',
-                        fontWeight: isSelected ? '600' : '500',
+                        ...styles.studentCard,
+                        border: isSelected ? '2px solid #78be20' : '2px solid #3b82f6',
+                        backgroundColor: isSelected ? '#f8fdf6' : '#ffffff',
+                        opacity: isSelected ? 1 : 0.6,
+                        boxShadow: isSelected ? '0 0 0 3px #dcfce7' : 'none',
                       }}
                     >
-                      {student.subtext}
+                      <div style={styles.studentCardTop}>
+                        <span
+                          style={{
+                            ...styles.studentCardName,
+                            color: isSelected ? '#1e3a8a' : '#2563eb',
+                          }}
+                        >
+                          {student.name}
+                        </span>
+                        <span
+                          style={{
+                            ...styles.studentStatusBadge,
+                            backgroundColor: statusBadgeStyle.bg,
+                            color: statusBadgeStyle.text,
+                            borderColor: statusBadgeStyle.border,
+                          }}
+                        >
+                          {student.status}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          ...styles.studentCardSubtext,
+                          color: isSelected ? '#334155' : '#64748b',
+                          fontWeight: isSelected ? '600' : '500',
+                        }}
+                      >
+                        {student.subtext}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -599,6 +631,17 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1rem',
     border: '1px solid #cbd5e1',
     flex: 1,
+  },
+  emptyStudentsBox: {
+    padding: '2.5rem 1rem',
+    textAlign: 'center',
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    color: '#64748b',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    border: '1px dashed #cbd5e1',
+    margin: '0.5rem 0',
   },
   legendRow: {
     display: 'flex',
