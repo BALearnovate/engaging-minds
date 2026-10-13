@@ -11,6 +11,7 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister }) => {
   const { login } = useAuth();
+  const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('TEACHER');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -34,22 +35,27 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
   const fillQuickAccount = (role: 'TEACHER_ILSE' | 'STUDENT_ILSE' | 'TEACHER_JANE' | 'STUDENT_JANE' | 'ADMIN') => {
     switch (role) {
       case 'TEACHER_ILSE':
+        setPortal('TEACHER');
         setEmail('ilse.teacher@em.com');
         setPassword('password123@');
         break;
       case 'STUDENT_ILSE':
+        setPortal('STUDENT');
         setEmail('ilse.student@em.com');
         setPassword('password123@');
         break;
       case 'TEACHER_JANE':
+        setPortal('TEACHER');
         setEmail('jane.teacher@em.com');
         setPassword('password123@');
         break;
       case 'STUDENT_JANE':
+        setPortal('STUDENT');
         setEmail('jane.student@em.com');
         setPassword('password123@');
         break;
       case 'ADMIN':
+        setPortal('TEACHER');
         setEmail('admin@example.com');
         setPassword('Admin123!');
         break;
@@ -89,7 +95,33 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
 
             {/* Form Body */}
             <div style={styles.formSection}>
-              <h2 style={styles.formTitle}>Login</h2>
+              {/* Portal Switcher Tabs */}
+              <div style={styles.portalToggleWrapper}>
+                <button
+                  type="button"
+                  onClick={() => setPortal('TEACHER')}
+                  style={{
+                    ...styles.toggleBtn,
+                    ...(portal === 'TEACHER' ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                  }}
+                >
+                  Teacher Portal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPortal('STUDENT')}
+                  style={{
+                    ...styles.toggleBtn,
+                    ...(portal === 'STUDENT' ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                  }}
+                >
+                  Student Portal
+                </button>
+              </div>
+
+              <h2 style={styles.formTitle}>
+                {portal === 'TEACHER' ? 'Teacher Login' : 'Student Login'}
+              </h2>
 
               {error && <div style={styles.errorBox}>{error}</div>}
 
@@ -139,7 +171,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
                     opacity: isSubmitting ? 0.8 : 1,
                   }}
                 >
-                  {isSubmitting ? 'Logging in...' : 'Login'}
+                  {isSubmitting ? 'Logging in...' : portal === 'TEACHER' ? 'Login as Teacher' : 'Login as Student'}
                 </button>
               </form>
 
@@ -208,9 +240,14 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
             </div>
           </div>
 
-          {/* Right Section - Hero Image with Teacher Portal Badge */}
+          {/* Right Section - Hero Image with Teacher/Student Portal Badge */}
           <div style={styles.rightSection}>
-            <div style={styles.portalPillBadge}>Teacher Portal</div>
+            <div style={{
+              ...styles.portalPillBadge,
+              backgroundColor: portal === 'TEACHER' ? '#16a34a' : '#0284c7',
+            }}>
+              {portal === 'TEACHER' ? 'Teacher Portal' : 'Student Portal'}
+            </div>
           </div>
         </div>
 
@@ -450,5 +487,32 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.01em',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
     zIndex: 5,
+  },
+  portalToggleWrapper: {
+    display: 'flex',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: '24px',
+    padding: '4px',
+    marginBottom: '1rem',
+    border: '1px solid rgba(255, 255, 255, 0.25)',
+  },
+  toggleBtn: {
+    flex: 1,
+    padding: '0.45rem 0.8rem',
+    borderRadius: '20px',
+    fontSize: '0.85rem',
+    fontWeight: '700',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  toggleBtnActive: {
+    backgroundColor: '#ffffff',
+    color: '#0f766e',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+  },
+  toggleBtnInactive: {
+    backgroundColor: 'transparent',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
 };
