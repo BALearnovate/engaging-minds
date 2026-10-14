@@ -21,6 +21,12 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Post('student-login')
+  async studentLogin(@Body() dto: { studentCode: string; pin: string }) {
+    return this.authService.studentLogin(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('verify-join-code')
   async verifyJoinCode(@Body('code') code: string) {
     return this.authService.verifyJoinCode(code);
