@@ -4,6 +4,7 @@ import bgImage from '../assets/teacher-reg-bg.png';
 import studentBgImage from '../assets/student_reg_bg.png';
 import logoImage from '../assets/logo.png';
 import greenBubbleBg from '../assets/green-bubble.png';
+import cloudBubbleLogo from '../assets/cloud-logo-bubble.png';
 import { EuFooter } from '../components/EuFooter';
 import { authApi } from '../api/auth';
 
@@ -408,17 +409,13 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
             </div>
           </div>
 
-          {/* Absolute Left White Organic Cloud Bubble Container */}
-          <div style={styles.cloudWrapper}>
-            <svg viewBox="0 0 280 135" preserveAspectRatio="none" style={styles.cloudSvg}>
-              <path
-                d="M 0,0 L 210,0 C 235,0 260,18 260,38 C 260,52 278,60 275,78 C 272,98 245,115 210,118 C 180,121 140,135 80,135 L 0,135 Z"
-                fill="#ffffff"
-              />
-            </svg>
-            <div style={styles.cloudContent}>
-              <img src={logoImage} alt="Engaging Minds Logo" style={styles.cloudLogoImg} />
-            </div>
+          {/* Top Left Cloud Logo Bubble */}
+          <div style={styles.studentHeaderLeft}>
+            <img
+              src={cloudBubbleLogo}
+              alt="Engaging Minds Cloud Logo"
+              style={styles.cloudBubbleImg}
+            />
           </div>
         </header>
 
@@ -1145,34 +1142,17 @@ const styles: Record<string, React.CSSProperties> = {
     height: '2px',
     marginBottom: '1.2rem',
   },
-  cloudWrapper: {
+  studentHeaderLeft: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '260px',
-    height: '126px',
-    zIndex: 10,
+    left: '0rem',
+    top: '0',
+    zIndex: 20,
   },
-  cloudSvg: {
-    width: '100%',
-    height: '100%',
-    filter: 'drop-shadow(4px 4px 10px rgba(0,0,0,0.15))',
-  },
-  cloudContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '220px',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingLeft: '1rem',
-  },
-  cloudLogoImg: {
-    height: '60px',
+  cloudBubbleImg: {
+    height: '250px',
     width: 'auto',
     objectFit: 'contain',
+    filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2))',
   },
   teacherSwitchBtn: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
