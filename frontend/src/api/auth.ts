@@ -8,6 +8,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  avatar?: string;
   createdAt?: string;
 }
 
@@ -35,6 +36,13 @@ export const authApi = {
     return apiFetch<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
+    });
+  },
+
+  async studentLogin(data: { studentCode: string; pin: string }): Promise<AuthResponse> {
+    return apiFetch<AuthResponse>('/auth/student-login', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 

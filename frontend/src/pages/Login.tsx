@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { authApi } from '../api/auth';
 import bgImage from '../assets/teacher-reg-bg.png';
+import studentBgImage from '../assets/student_reg_bg.png';
 import logoImage from '../assets/logo.png';
+import cloudBubbleLogo from '../assets/cloud-logo-bubble.png';
 import { EuFooter } from '../components/EuFooter';
 
 interface LoginProps {
@@ -10,25 +13,84 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister }) => {
-  const { login } = useAuth();
-  const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('TEACHER');
+  const { login, setSession } = useAuth();
+  const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('STUDENT');
+
+  // Teacher Login State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [teacherError, setTeacherError] = useState<string | null>(null);
+  const [isTeacherSubmitting, setIsTeacherSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Student Login State
+  const [studentCode, setStudentCode] = useState('');
+  const [pin, setPin] = useState('');
+  const [isPinMasked, setIsPinMasked] = useState(true);
+  const [studentError, setStudentError] = useState<string | null>(null);
+  const [isStudentSubmitting, setIsStudentSubmitting] = useState(false);
+  const [keepMeSignedIn, setKeepMeSignedIn] = useState(true);
+
+  // Teacher Form Submit
+  const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
+    setTeacherError(null);
+    setIsTeacherSubmitting(true);
 
     try {
       const user = await login({ email, password });
       onSuccess(user.role);
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      setTeacherError(err.message || 'Failed to login');
     } finally {
-      setIsSubmitting(false);
+      setIsTeacherSubmitting(false);
+    }
+  };
+
+  // Student Form Submit
+  const handleStudentSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setStudentError(null);
+
+    if (!studentCode.trim()) {
+      setStudentError('Please enter your Student ID or Class Code!');
+      return;
+    }
+
+    if (pin.length < 4) {
+      setStudentError('Please enter your 4-digit PIN!');
+      return;
+    }
+
+    setIsStudentSubmitting(true);
+
+    try {
+      const res = await authApi.studentLogin({
+        studentCode: studentCode.trim(),
+        pin: pin.trim(),
+      });
+      setSession(res.user, res.accessToken);
+      onSuccess(res.user.role);
+    } catch (err: any) {
+      setStudentError(
+        'That code or PIN doesn’t seem right. Please try again or check with your teacher!'
+      );
+    } finally {
+      setIsStudentSubmitting(false);
+    }
+  };
+
+  const handleNumpadPress = (val: string) => {
+    if (val === 'CLEAR') {
+      setPin('');
+      setStudentError(null);
+    } else if (val === 'GO') {
+      handleStudentSubmit();
+    } else {
+      if (pin.length < 4) {
+        const nextPin = pin + val;
+        setPin(nextPin);
+        setStudentError(null);
+      }
     }
   };
 
@@ -41,8 +103,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
         break;
       case 'STUDENT_ILSE':
         setPortal('STUDENT');
-        setEmail('ilse.student@em.com');
-        setPassword('password123@');
+        setStudentCode('STU-ILSE');
+        setPin('1234');
         break;
       case 'TEACHER_JANE':
         setPortal('TEACHER');
@@ -51,8 +113,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
         break;
       case 'STUDENT_JANE':
         setPortal('STUDENT');
-        setEmail('jane.student@em.com');
-        setPassword('password123@');
+        setStudentCode('STU-JANE');
+        setPin('1234');
         break;
       case 'ADMIN':
         setPortal('TEACHER');
@@ -62,6 +124,180 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
     }
   };
 
+  // RENDER STUDENT PORTAL LOGIN VIEW
+  if (portal === 'STUDENT') {
+    return (
+      <div style={styles.studentPageContainer}>
+        {/* Top Header Bar */}
+        <div style={styles.studentHeaderBar}>
+          <div style={styles.studentHeaderLeft}>
+            <img
+              src={cloudBubbleLogo}
+              alt="Engaging Minds Cloud Logo"
+              style={styles.cloudBubbleImg}
+            />
+          </div>
+          <div style={styles.studentHeaderCenter}>
+            <h1 style={styles.studentHeaderTitle}>Sign In</h1>
+          </div>
+          <div style={styles.studentHeaderRight}>
+            <div style={styles.studentBadgePill}>Student Portal</div>
+            <button
+              type="button"
+              onClick={() => setPortal('TEACHER')}
+              style={styles.switchPortalBtn}
+            >
+              Teacher Login →
+            </button>
+          </div>
+        </div>
+
+        {/* Center Content Backdrop */}
+        <div style={styles.studentBodyWrapper}>
+          <div style={styles.studentModalCard}>
+            {/* Header Tag */}
+            <div style={styles.badgeContainer}>
+              <span style={styles.returningStudentTag}>RETURNING STUDENT</span>
+            </div>
+
+            <h2 style={styles.cardTitle}>Sign In to Your Portal</h2>
+            <p style={styles.cardSubtitle}>
+              Enter your Student ID or Class Code and 4-digit PIN to access your dashboard.
+            </p>
+
+            {studentError && (
+              <div style={styles.studentErrorBanner}>{studentError}</div>
+            )}
+
+            <form onSubmit={handleStudentSubmit} style={styles.studentForm}>
+              {/* Field 1: Student Code */}
+              <div style={styles.fieldWrapper}>
+                <div style={styles.labelRow}>
+                  <label style={styles.fieldLabel}>
+                    STUDENT ID / SCHOOL EMAIL, OR CLASS CODE
+                  </label>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={studentCode}
+                  onChange={(e) => setStudentCode(e.target.value)}
+                  placeholder="e.g. STU123 or CLASS101"
+                  style={styles.studentInput}
+                />
+              </div>
+
+              {/* Field 2: 4-Digit Security PIN */}
+              <div style={styles.fieldWrapper}>
+                <div style={styles.labelRow}>
+                  <label style={styles.fieldLabel}>4-DIGIT SECURITY PIN</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsPinMasked(!isPinMasked)}
+                    style={styles.maskToggleBtn}
+                  >
+                    {isPinMasked ? '👁 Unmask PIN' : '🔒 Mask PIN'}
+                  </button>
+                </div>
+
+                {/* PIN Display Slots */}
+                <div style={styles.pinSlotsRow}>
+                  {[0, 1, 2, 3].map((index) => {
+                    const digit = pin[index];
+                    const isFilled = digit !== undefined;
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          ...styles.pinSlot,
+                          borderColor: isFilled ? '#16a34a' : '#cbd5e1',
+                          backgroundColor: isFilled ? '#f0fdf4' : '#ffffff',
+                        }}
+                      >
+                        {isFilled ? (isPinMasked ? '●' : digit) : ''}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3x4 Numpad Keypad */}
+              <div style={styles.numpadGrid}>
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLEAR', '0', 'GO'].map(
+                  (btnVal) => (
+                    <button
+                      key={btnVal}
+                      type="button"
+                      onClick={() => handleNumpadPress(btnVal)}
+                      style={{
+                        ...styles.numpadBtn,
+                        ...(btnVal === 'GO' ? styles.numpadGoBtn : {}),
+                        ...(btnVal === 'CLEAR' ? styles.numpadClearBtn : {}),
+                      }}
+                    >
+                      {btnVal}
+                    </button>
+                  )
+                )}
+              </div>
+
+              {/* Options Row: Checkbox & Forgot PIN */}
+              <div style={styles.optionsRow}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={keepMeSignedIn}
+                    onChange={(e) => setKeepMeSignedIn(e.target.checked)}
+                    style={{ marginRight: '6px' }}
+                  />
+                  Keep me signed in
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    alert('Please ask your teacher or school administrator to look up or reset your 4-digit PIN!')
+                  }
+                  style={styles.forgotPinLink}
+                >
+                  Forgot PIN?
+                </button>
+              </div>
+
+              {/* Main Submit Button */}
+              <button
+                type="submit"
+                disabled={isStudentSubmitting}
+                style={{
+                  ...styles.studentSubmitBtn,
+                  opacity: isStudentSubmitting ? 0.8 : 1,
+                }}
+              >
+                {isStudentSubmitting ? 'SIGNING IN...' : 'SIGN IN TO STUDENT PORTAL →'}
+              </button>
+            </form>
+
+            {/* Bottom Redirect Link */}
+            <div style={styles.studentRedirectRow}>
+              <span>First time here? </span>
+              <button
+                type="button"
+                onClick={onNavigateToRegister}
+                style={styles.joinCodeLink}
+              >
+                Join Class with Code →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* European Union Co-Funded Footer */}
+        <EuFooter />
+      </div>
+    );
+  }
+
+  // RENDER TEACHER PORTAL LOGIN VIEW
   return (
     <div style={styles.pageContainer}>
       <div style={styles.pageWrapper}>
@@ -102,7 +338,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
                   onClick={() => setPortal('TEACHER')}
                   style={{
                     ...styles.toggleBtn,
-                    ...(portal === 'TEACHER' ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                    ...styles.toggleBtnActive,
                   }}
                 >
                   Teacher Portal
@@ -112,20 +348,18 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
                   onClick={() => setPortal('STUDENT')}
                   style={{
                     ...styles.toggleBtn,
-                    ...(portal === 'STUDENT' ? styles.toggleBtnActive : styles.toggleBtnInactive),
+                    ...styles.toggleBtnInactive,
                   }}
                 >
                   Student Portal
                 </button>
               </div>
 
-              <h2 style={styles.formTitle}>
-                {portal === 'TEACHER' ? 'Teacher Login' : 'Student Login'}
-              </h2>
+              <h2 style={styles.formTitle}>Teacher Login</h2>
 
-              {error && <div style={styles.errorBox}>{error}</div>}
+              {teacherError && <div style={styles.errorBox}>{teacherError}</div>}
 
-              <form onSubmit={handleSubmit} style={styles.form}>
+              <form onSubmit={handleTeacherSubmit} style={styles.form}>
                 <div style={styles.fieldGroup}>
                   <label style={styles.label}>Email:</label>
                   <input
@@ -165,13 +399,13 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isTeacherSubmitting}
                   style={{
                     ...styles.submitBtn,
-                    opacity: isSubmitting ? 0.8 : 1,
+                    opacity: isTeacherSubmitting ? 0.8 : 1,
                   }}
                 >
-                  {isSubmitting ? 'Logging in...' : portal === 'TEACHER' ? 'Login as Teacher' : 'Login as Student'}
+                  {isTeacherSubmitting ? 'Logging in...' : 'Login as Teacher'}
                 </button>
               </form>
 
@@ -240,14 +474,9 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
             </div>
           </div>
 
-          {/* Right Section - Hero Image with Teacher/Student Portal Badge */}
+          {/* Right Section - Hero Image */}
           <div style={styles.rightSection}>
-            <div style={{
-              ...styles.portalPillBadge,
-              backgroundColor: portal === 'TEACHER' ? '#16a34a' : '#0284c7',
-            }}>
-              {portal === 'TEACHER' ? 'Teacher Portal' : 'Student Portal'}
-            </div>
+            <div style={styles.portalPillBadge}>Teacher Portal</div>
           </div>
         </div>
 
@@ -259,6 +488,295 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister })
 };
 
 const styles: Record<string, React.CSSProperties> = {
+  // Student Portal Styling
+  studentPageContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    width: '100%',
+    backgroundColor: '#0f766e',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  },
+  studentHeaderBar: {
+    backgroundColor: '#16a34a',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0.75rem 2rem 0.75rem 12rem',
+    color: '#ffffff',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+    position: 'relative',
+    minHeight: '72px',
+    zIndex: 10,
+  },
+  studentHeaderLeft: {
+    position: 'absolute',
+    left: '0rem',
+    top: '0',
+    zIndex: 20,
+  },
+  cloudBubbleImg: {
+    height: '250px',
+    width: 'auto',
+    objectFit: 'contain',
+    filter: 'drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2))',
+  },
+  studentHeaderCenter: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  studentHeaderTitle: {
+    margin: 0,
+    fontSize: '1.5rem',
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: '-0.01em',
+  },
+  studentHeaderRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  studentBadgePill: {
+    backgroundColor: '#84cc16',
+    color: '#ffffff',
+    fontWeight: '800',
+    fontSize: '0.85rem',
+    padding: '0.35rem 1.1rem',
+    borderRadius: '20px',
+    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)',
+  },
+  switchPortalBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: '#ffffff',
+    border: '1px solid rgba(255, 255, 255, 0.4)',
+    padding: '0.35rem 0.85rem',
+    borderRadius: '16px',
+    fontSize: '0.8rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    transition: 'background-color 0.15s ease',
+  },
+  studentBodyWrapper: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '2.5rem 1rem',
+    backgroundImage: `linear-gradient(rgba(15, 118, 110, 0.72), rgba(15, 118, 110, 0.72)), url(${studentBgImage})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center center',
+    backgroundRepeat: 'no-repeat',
+  },
+  studentModalCard: {
+    maxWidth: '460px',
+    width: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: '20px',
+    padding: '2.25rem 2rem',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  badgeContainer: {
+    marginBottom: '0.5rem',
+  },
+  returningStudentTag: {
+    backgroundColor: '#f0fdf4',
+    color: '#15803d',
+    border: '1px solid #bbf7d0',
+    padding: '0.3rem 0.9rem',
+    borderRadius: '9999px',
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    letterSpacing: '0.06em',
+  },
+  cardTitle: {
+    margin: '0.5rem 0 0.35rem 0',
+    fontSize: '1.6rem',
+    fontWeight: '800',
+    color: '#0f172a',
+    textAlign: 'center',
+  },
+  cardSubtitle: {
+    margin: '0 0 1.25rem 0',
+    fontSize: '0.85rem',
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 1.4,
+  },
+  studentErrorBanner: {
+    backgroundColor: '#fef2f2',
+    color: '#991b1b',
+    border: '1px solid #fecaca',
+    borderRadius: '10px',
+    padding: '0.75rem 1rem',
+    marginBottom: '1rem',
+    fontSize: '0.84rem',
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  studentForm: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.1rem',
+  },
+  fieldWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+    width: '100%',
+  },
+  labelRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  fieldLabel: {
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    color: '#334155',
+    letterSpacing: '0.03em',
+  },
+  autoFillBtn: {
+    backgroundColor: '#e0f2fe',
+    color: '#0369a1',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '0.7rem',
+    fontWeight: '700',
+    padding: '0.15rem 0.5rem',
+    cursor: 'pointer',
+  },
+  studentInput: {
+    padding: '0.75rem 0.95rem',
+    borderRadius: '10px',
+    border: '1.5px solid #cbd5e1',
+    fontSize: '0.95rem',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    color: '#0f172a',
+    fontWeight: '500',
+  },
+  maskToggleBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#2563eb',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  pinSlotsRow: {
+    display: 'flex',
+    gap: '0.65rem',
+    justifyContent: 'center',
+    margin: '0.25rem 0',
+  },
+  pinSlot: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '12px',
+    border: '2px solid #cbd5e1',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.5rem',
+    fontWeight: '800',
+    color: '#16a34a',
+    transition: 'all 0.15s ease',
+  },
+  numpadGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.55rem',
+    width: '100%',
+    marginTop: '0.2rem',
+  },
+  numpadBtn: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '0.7rem 0',
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#1e293b',
+    cursor: 'pointer',
+    textAlign: 'center',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+    transition: 'all 0.15s ease',
+  },
+  numpadGoBtn: {
+    backgroundColor: '#16a34a',
+    color: '#ffffff',
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    border: 'none',
+  },
+  numpadClearBtn: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+    fontSize: '0.85rem',
+    fontWeight: '800',
+    border: 'none',
+  },
+  optionsRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    fontSize: '0.82rem',
+    marginTop: '0.2rem',
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    color: '#475569',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  forgotPinLink: {
+    background: 'none',
+    border: 'none',
+    color: '#16a34a',
+    fontWeight: '700',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+  },
+  studentSubmitBtn: {
+    backgroundColor: '#16a34a',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.85rem 1rem',
+    borderRadius: '12px',
+    fontSize: '1rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    width: '100%',
+    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
+    marginTop: '0.4rem',
+  },
+  studentRedirectRow: {
+    marginTop: '1.25rem',
+    fontSize: '0.85rem',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  joinCodeLink: {
+    background: 'none',
+    border: 'none',
+    color: '#16a34a',
+    fontWeight: '800',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+  },
+
+  // Teacher Portal Styling
   pageContainer: {
     display: 'flex',
     flex: '1',
