@@ -185,7 +185,7 @@ export class AuthService {
       };
     }
 
-    throw new UnauthorizedException('Invalid Join Code. No student or class found with this code.');
+    throw new UnauthorizedException('That code doesn’t seem right. Please try again or check with your teacher!');
   }
 
   async completeStudentOnboarding(dto: {
@@ -231,6 +231,7 @@ export class AuthService {
         firstName: updated.firstName,
         lastName: updated.lastName,
         role: 'STUDENT',
+        avatar: dto.avatar || '🎓',
       };
 
       const token = this.generateToken(userObj.id, userObj.email, userObj.role);
@@ -267,6 +268,7 @@ export class AuthService {
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         role: 'STUDENT',
+        avatar: dto.avatar || '🎓',
       },
       accessToken: token,
     };

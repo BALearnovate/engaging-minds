@@ -238,14 +238,22 @@ export const StudentDashboard: React.FC = () => {
     );
   }
 
+  // Derive selected student avatar from user profile or local session
+  const avatarSetting = user?.avatar || localStorage.getItem('student_avatar');
+  const userInitials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'ST';
+  const displayAvatar = avatarSetting === 'MONOGRAM' ? userInitials : (avatarSetting || '🎓');
+
   return (
     <div style={styles.pageWrapper}>
       <div style={styles.container}>
         {/* Welcome Header */}
         <header style={styles.headerCard}>
           <div style={styles.welcomeBox}>
-            <div style={styles.studentAvatar}>
-              {user?.firstName ? user.firstName[0].toUpperCase() : '🎓'}
+            <div style={{
+              ...styles.studentAvatar,
+              fontSize: displayAvatar.length > 2 ? '1.6rem' : '1.15rem',
+            }}>
+              {displayAvatar}
             </div>
             <div>
               <div style={styles.portalBadge}>🎓 STUDENT LEARNING PORTAL</div>

@@ -114,10 +114,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         setStudentOptionalEmail(response.student.email || '');
         setStep(2);
       } else {
-        setStudentError('Invalid Join Code. Please check with your teacher.');
+        setStudentError('That code doesn’t seem right. Please try again or check with your teacher!');
       }
     } catch (err: any) {
-      setStudentError(err.message || 'Invalid Join Code. No student or class found with this code.');
+      setStudentError('That code doesn’t seem right. Please try again or check with your teacher!');
     } finally {
       setIsVerifyingCode(false);
     }
@@ -152,20 +152,26 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
     setIsSubmitting(true);
 
     try {
+      const avatarVal = useMonogram ? 'MONOGRAM' : selectedAvatar;
       const result = await authApi.studentOnboarding({
         studentId: verifiedStudent?.id,
         loginCode: verifiedStudent?.loginCode || joinCode.trim(),
         displayName: customDisplayName.trim() || verifiedStudent?.displayName,
         email: studentOptionalEmail.trim(),
         pin: pin,
-        avatar: useMonogram ? 'MONOGRAM' : selectedAvatar,
+        avatar: avatarVal,
       });
 
       if (result && result.accessToken && result.user) {
+        const updatedUser = {
+          ...result.user,
+          avatar: result.user.avatar || avatarVal,
+        };
         localStorage.setItem('em_token', result.accessToken);
-        localStorage.setItem('em_user', JSON.stringify(result.user));
+        localStorage.setItem('em_user', JSON.stringify(updatedUser));
+        localStorage.setItem('student_avatar', avatarVal);
         if (setSession) {
-          setSession(result.user, result.accessToken);
+          setSession(updatedUser, result.accessToken);
         }
         onSuccess(result.user.role);
       }
@@ -498,24 +504,26 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     </div>
                   </div>
                 ) : (
-                  <div style={styles.completedBox}>
-                    <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.95rem' }}>
-                      ✓ School Connected
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', marginTop: '0.3rem' }}>
-                      {verifiedClassroom?.schoolName || 'Westbridge High School'}
-                    </div>
-                    <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.15rem' }}>
-                      {verifiedClassroom?.details || 'Year 10 Mathematics (Mr. Harris)'}
-                    </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <div style={styles.completedBox}>
+                      <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.95rem' }}>
+                        ✓ School Connected
+                      </div>
+                      <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', marginTop: '0.3rem' }}>
+                        {verifiedClassroom?.schoolName || 'Westbridge High School'}
+                      </div>
+                      <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.15rem' }}>
+                        {verifiedClassroom?.details || 'Year 10 Mathematics (Mr. Harris)'}
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      style={styles.changeCodeLink}
-                    >
-                      Change School / Code
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        style={styles.changeCodeLink}
+                      >
+                        Change School / Code
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
