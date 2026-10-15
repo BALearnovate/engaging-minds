@@ -792,7 +792,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 🔥
               </div>
               <div style={styles.confirmPillBadge}>
-                LIVE ACTIVITY DETECTED!
+                Ready to publish this activity
               </div>
             </div>
 
