@@ -167,4 +167,22 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       this.server.to(roomName).emit('live_student_update', studentState);
     }
   }
+
+  emitActivityPublished(data: {
+  classroomId?: string;
+  activityId: string;
+  activityTitle: string;
+  shareCode: string;
+  teacherName?: string;
+}) {
+  if (this.server) {
+    this.server.emit('activity_published', data);
+    if (data.classroomId) {
+      this.server.to(`classroom_${data.classroomId}`).emit('activity_published', data);
+    }
+  }
 }
+
+}
+
+
