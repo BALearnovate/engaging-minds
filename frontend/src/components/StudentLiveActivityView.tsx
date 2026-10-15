@@ -23,9 +23,11 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   onExit,
 }) => {
   let contextToken = '';
+  let currentUser: any = null;
   try {
     const auth = useAuth();
     contextToken = auth.token || '';
+    currentUser = auth.user;
   } catch (e) {
     // Optional fallback if rendered outside AuthProvider
   }
@@ -106,6 +108,41 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   };
 
   const progressPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
+
+  // Join live session socket room on mount
+  useEffect(() => {
+    if (!shareCode) return;
+    const socket = getSocket();
+    const studentId = currentUser?.id || 'student_guest';
+    const studentName = currentUser
+      ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+      : 'Student';
+
+    socket.emit('join_room', {
+      activityId: shareCode,
+      userId: studentId,
+      role: 'STUDENT',
+      userName: studentName,
+    });
+  }, [shareCode, currentUser]);
+
+  // Emit real-time progress changes to Socket.IO
+  useEffect(() => {
+    if (!shareCode) return;
+    const socket = getSocket();
+    const studentId = currentUser?.id || 'student_guest';
+    const studentName = currentUser
+      ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+      : 'Student';
+
+    socket.emit('update_progress', {
+      activityId: shareCode,
+      studentId,
+      studentName,
+      progress: progressPct,
+      status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
+    });
+  }, [progressPct, shareCode, currentUser]);
 
   const handleAskTeacher = () => {
     setHelpRequested(true);

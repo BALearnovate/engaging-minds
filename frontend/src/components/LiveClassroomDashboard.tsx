@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { activitiesApi } from '../api';
+import { getSocket } from '../services/socket';
 
 interface LiveClassroomDashboardProps {
   shareCode: string;
@@ -195,6 +196,101 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   useEffect(() => {
     fetchDashboardState();
+  }, [shareCode]);
+
+  // Connect to Socket.IO and listen for real-time student progress updates
+  useEffect(() => {
+    if (!shareCode) return;
+    const socket = getSocket();
+
+    socket.emit('join_room', {
+      activityId: shareCode,
+      userId: 'teacher',
+      role: 'TEACHER',
+    });
+
+    const handleLiveStudentUpdate = (updatedState: any) => {
+      setStudents((prevStudents) => {
+        const existingIndex = prevStudents.findIndex(
+          (s) =>
+            s.id === updatedState.studentId ||
+            s.name.toLowerCase() === (updatedState.studentName || '').toLowerCase()
+        );
+
+        const newProgress = typeof updatedState.progress === 'number' ? updatedState.progress : 0;
+        const rawStatus = (updatedState.status || '').toUpperCase();
+        let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
+        let progressColor = '#16a34a';
+
+        if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
+          status = 'ALERT FLAG';
+          progressColor = '#dc2626';
+        } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (newProgress < 30 && rawStatus !== 'COMPLETED')) {
+          status = 'AT RISK';
+          progressColor = '#ea580c';
+        }
+
+        let subtext = `Active: ${newProgress}% progress`;
+        if (rawStatus === 'STUCK') {
+          subtext = 'Blocked: Requires assistance';
+        } else if (rawStatus === 'NOT_STARTED' || newProgress === 0) {
+          subtext = 'Not Started: Awaiting activity response';
+        } else if (newProgress >= 80) {
+          subtext = 'Active: Final Reflection Stage';
+        }
+
+        let milestone = 'EARLY SETUP MILESTONE';
+        if (newProgress >= 80) {
+          milestone = 'NEAR COMPLETION MILESTONE';
+        } else if (newProgress >= 40) {
+          milestone = 'MIDDLE PROGRESS MILESTONE';
+        }
+
+        if (existingIndex >= 0) {
+          const copy = [...prevStudents];
+          copy[existingIndex] = {
+            ...copy[existingIndex],
+            progress: newProgress,
+            status,
+            subtext,
+            progressColor,
+            milestone,
+          };
+          return copy;
+        } else {
+          const newStudent: StudentStatus = {
+            id: updatedState.studentId || `student_${Date.now()}`,
+            name: updatedState.studentName || 'Student',
+            status,
+            subtext,
+            progress: newProgress,
+            milestone,
+            progressColor,
+            academicStars: 0,
+            academicPoints: 0,
+            behavioralStars: 0,
+            behavioralPoints: 0,
+            totalStars: 0,
+            totalPoints: 0,
+          };
+          return [...prevStudents, newStudent];
+        }
+      });
+    };
+
+    const handleRoomState = (payload: { activityId: string; students: any[] }) => {
+      if (Array.isArray(payload.students) && payload.students.length > 0) {
+        payload.students.forEach((st) => handleLiveStudentUpdate(st));
+      }
+    };
+
+    socket.on('live_student_update', handleLiveStudentUpdate);
+    socket.on('room_state', handleRoomState);
+
+    return () => {
+      socket.off('live_student_update', handleLiveStudentUpdate);
+      socket.off('room_state', handleRoomState);
+    };
   }, [shareCode]);
 
   return (
@@ -421,7 +517,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 <h3 style={styles.sectionHeaderTitle}>COMPLETION PROGRESS</h3>
                 <div style={styles.progressInnerCard}>
                   <div style={styles.studentProgressName}>{selectedStudent.name}</div>
-                  <div style={{ ...styles.progressPercentage, color: selectedStudent.progressColor }}>
+                  <div style={{ ...styles.progressPercentage, color: '#16a34a' }}>
                     {selectedStudent.progress}%
                   </div>
                   <div style={styles.progressBarTrack}>

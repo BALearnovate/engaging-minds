@@ -14,8 +14,9 @@ export interface StudentProgressState {
   studentName: string;
   studentEmail?: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
-  progressText: string;
-  answers: Record<string, string>;
+  progress?: number;
+  progressText?: string;
+  answers?: Record<string, string>;
   helpMessage?: string;
   score?: number;
   lastUpdated: string;
@@ -68,9 +69,10 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       activityId: string;
       studentId: string;
       studentName: string;
-      status: 'IN_PROGRESS' | 'COMPLETED';
-      progressText: string;
-      answers: Record<string, string>;
+      status: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
+      progress?: number;
+      progressText?: string;
+      answers?: Record<string, string>;
       score?: number;
     },
   ) {
@@ -83,13 +85,16 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     const activityStateMap = this.liveTrackingMap.get(payload.activityId)!;
     const existing = activityStateMap.get(payload.studentId);
 
+    const progressVal = typeof payload.progress === 'number' ? payload.progress : existing?.progress || 0;
+
     const updatedState: StudentProgressState = {
       studentId: payload.studentId,
       studentName: payload.studentName,
       status: payload.status,
-      progressText: payload.progressText,
-      answers: payload.answers || {},
-      score: payload.score,
+      progress: progressVal,
+      progressText: payload.progressText || `${progressVal}% completed`,
+      answers: payload.answers || existing?.answers || {},
+      score: payload.score ?? existing?.score,
       helpMessage: payload.status === 'COMPLETED' ? undefined : existing?.helpMessage,
       lastUpdated: new Date().toISOString(),
     };
