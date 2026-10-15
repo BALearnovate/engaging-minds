@@ -18,6 +18,13 @@ interface ActivityRuntimeProps {
   studentName?: string;
   isTeacherView?: boolean;
   hideTitle?: boolean;
+  onProgressUpdate?: (info: {
+    currentStep: number;
+    totalSteps: number;
+    completedCount: number;
+    percent: number;
+    avgScore: number;
+  }) => void;
   onCompleted?: (groupName?: string, selectedStudents?: string[]) => void;
 }
 
@@ -28,6 +35,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   studentName,
   isTeacherView = false,
   hideTitle = false,
+  onProgressUpdate,
   onCompleted,
 }) => {
   const [currentBlockIndex, setCurrentIndex] = useState(0);
@@ -152,9 +160,19 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
       payload: { response, isCorrect, score },
     };
 
-    if (compDef && currentBlockState) {
-      const nextState = compDef.reduceEvent(currentBlockState, event);
-      setBlockStates((prev) => ({ ...prev, [currentBlock.id]: nextState }));
+    if (currentBlock) {
+      setBlockStates((prev) => {
+        const existing = prev[currentBlock.id] || currentBlockState;
+        const nextState = compDef ? compDef.reduceEvent(existing, event) : existing;
+        return {
+          ...prev,
+          [currentBlock.id]: {
+            ...nextState,
+            status: 'completed',
+            score: score ?? nextState.score ?? 100,
+          },
+        };
+      });
     }
 
     if (socket && shareCode) {
@@ -235,6 +253,18 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   };
 
   const progress = calculateOverallProgress();
+
+  useEffect(() => {
+    if (onProgressUpdate && definition && Array.isArray(definition.blocks) && definition.blocks.length > 0) {
+      onProgressUpdate({
+        currentStep: currentBlockIndex + 1,
+        totalSteps: definition.blocks.length,
+        completedCount: progress.completedCount,
+        percent: progress.percent,
+        avgScore: progress.avgScore,
+      });
+    }
+  }, [currentBlockIndex, progress.completedCount, progress.percent, progress.avgScore, definition, onProgressUpdate]);
 
   if (!definition || !Array.isArray(definition.blocks) || definition.blocks.length === 0) {
     return <div style={styles.errorBox}>No blocks available in this activity definition.</div>;
@@ -318,14 +348,38 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
         {currentBlockIndex < definition.blocks.length - 1 ? (
           <button
-            onClick={() => setCurrentIndex(currentBlockIndex + 1)}
+            onClick={() => {
+              if (currentBlock) {
+                setBlockStates((prev) => ({
+                  ...prev,
+                  [currentBlock.id]: {
+                    ...(prev[currentBlock.id] || currentBlockState),
+                    status: 'completed',
+                    score: prev[currentBlock.id]?.score || 100,
+                  },
+                }));
+              }
+              setCurrentIndex(currentBlockIndex + 1);
+            }}
             style={styles.navBtnPrimary}
           >
             Next →
           </button>
         ) : !isTeacherView ? (
           <button
-            onClick={handleCompleteActivity}
+            onClick={() => {
+              if (currentBlock) {
+                setBlockStates((prev) => ({
+                  ...prev,
+                  [currentBlock.id]: {
+                    ...(prev[currentBlock.id] || currentBlockState),
+                    status: 'completed',
+                    score: prev[currentBlock.id]?.score || 100,
+                  },
+                }));
+              }
+              handleCompleteActivity();
+            }}
             style={styles.navBtnSuccess}
           >
             Complete Activity ✓

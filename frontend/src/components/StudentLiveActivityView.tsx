@@ -42,6 +42,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   const [stepIndex, setStepIndex] = useState<number>(1);
   const [totalSteps, setTotalSteps] = useState<number>(1);
+  const [completedSteps, setCompletedSteps] = useState<number>(0);
   const [questionsCorrect, setQuestionsCorrect] = useState<number>(0);
 
   const [helpRequested, setHelpRequested] = useState<boolean>(false);
@@ -104,7 +105,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progressPct = totalSteps > 0 ? Math.round((stepIndex / totalSteps) * 100) : 0;
+  const progressPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
   const handleAskTeacher = () => {
     setHelpRequested(true);
@@ -126,9 +127,10 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   const handleSubmitAnswer = () => {
     setToastMessage('✅ Step answer submitted successfully!');
+    setCompletedSteps((prev) => Math.min(prev + 1, totalSteps));
+    setQuestionsCorrect((prev) => Math.min(prev + 1, totalSteps));
     if (stepIndex < totalSteps) {
       setStepIndex((prev) => prev + 1);
-      setQuestionsCorrect((prev) => Math.min(prev + 1, totalSteps));
     } else {
       setToastMessage('🎉 All activity steps completed! Great work!');
     }
@@ -194,6 +196,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   shareCode={shareCode}
                   studentName="Student"
                   hideTitle={true}
+                  onProgressUpdate={({ currentStep, totalSteps: runtimeTotalSteps, completedCount }) => {
+                    setStepIndex(currentStep);
+                    setTotalSteps(runtimeTotalSteps);
+                    setCompletedSteps((prev) => Math.max(prev, completedCount));
+                    setQuestionsCorrect((prev) => Math.max(prev, completedCount));
+                  }}
                   onCompleted={() => {
                     setToastMessage('🎉 Activity completed!');
                   }}
@@ -218,7 +226,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           <div style={styles.rightColumn}>
             {/* Activity Progress Card */}
             <div style={styles.progressCard}>
-              <div style={styles.progressHeaderTitle}>ACTIVITY PROGRESS</div>
+              <div style={styles.progressHeaderTitle}>YOUR ACTIVITY PROGRESS</div>
 
               {/* Circular Gauge */}
               <div style={styles.circularGaugeContainer}>
@@ -226,14 +234,18 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   <span style={styles.gaugePercentageText}>{progressPct}%</span>
                 </div>
                 <div style={styles.gaugeStatsColumn}>
-                  <div style={styles.stepTitleText}>Step {stepIndex} of {totalSteps} Complete</div>
+                  <div style={styles.stepTitleText}>
+                    {completedSteps >= totalSteps && totalSteps > 0
+                      ? `All ${totalSteps} Steps Completed`
+                      : `Step ${stepIndex} of ${totalSteps} in Progress`}
+                  </div>
                   <div style={styles.correctSubText}>Questions Correct: {questionsCorrect}/{totalSteps}</div>
                 </div>
               </div>
 
               {/* Progress Fill Bar */}
               <div style={styles.progressBarWrapper}>
-                <div style={styles.progressBarLabel}>{progressPct}% PROGRESS COMPLETED</div>
+                <div style={styles.progressBarLabel}>{progressPct}% COMPLETED</div>
                 <div style={styles.barTrack}>
                   <div
                     style={{
