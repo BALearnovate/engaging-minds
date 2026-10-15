@@ -274,6 +274,7 @@ export const StudentDashboard: React.FC = () => {
         activityTitle={liveActivityData.title}
         shareCode={liveActivityData.shareCode}
         teacherName={liveActivityData.teacherName}
+        activityId={liveActivityData.activityId}
         onExit={() => setJoinedLiveView(false)}
       />
     );

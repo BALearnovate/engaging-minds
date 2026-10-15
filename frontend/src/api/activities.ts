@@ -194,6 +194,10 @@ export const activitiesApi = {
     return apiFetch<{ session: any; definition: ActivityDefinition }>(`/activities/session/${shareCode}`);
   },
 
+  async getPublishedSessionByCode(shareCode: string, token?: string): Promise<any> {
+    return apiFetch(`/activities/session/${shareCode}`, { token });
+  },
+
   // Join a student session with share code
   async joinStudentSession(data: JoinStudentSessionPayload): Promise<{ id: string; [key: string]: any }> {
     return apiFetch<{ id: string; [key: string]: any }>('/activities/student-session/join', {
