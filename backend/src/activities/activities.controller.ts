@@ -74,7 +74,7 @@ export class ActivitiesController {
   // Check Active Assignment for a Classroom
   @Get('assignments/check-class/:classroomId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.TEACHER, Role.ADMIN)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.STUDENT)
   async checkClassActiveAssignment(@Param('classroomId') classroomId: string) {
     return this.activitiesService.checkClassActiveAssignment(classroomId);
   }

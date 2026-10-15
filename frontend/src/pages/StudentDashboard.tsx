@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from '../components/ActivityRuntime';
+import { LiveActivityPopupModal } from '../components/LiveActivityPopupModal';
+import { StudentLiveActivityView } from '../components/StudentLiveActivityView';
+import { getSocket } from '../services/socket';
 import { activitiesApi } from '../api/activities';
 import type { ActivityDefinition } from '../types/activityDsl';
 
@@ -44,11 +47,67 @@ export const StudentDashboard: React.FC = () => {
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  const [showLiveModal, setShowLiveModal] = useState<boolean>(false);
+  const [joinedLiveView, setJoinedLiveView] = useState<boolean>(false);
+  const [liveActivityData, setLiveActivityData] = useState<{
+    title: string;
+    shareCode?: string;
+    teacherName?: string;
+    activityId?: string;
+  } | null>(null);
+
   const activeToken =
     authContextToken ||
     localStorage.getItem('access_token') ||
     localStorage.getItem('token') ||
     '';
+
+  // Listen for Live Activity broadcasts via Socket and check active classroom assignments
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleActivityPublished = (data: {
+      classroomId?: string;
+      activityId: string;
+      activityTitle: string;
+      shareCode?: string;
+      teacherName?: string;
+    }) => {
+      console.log('Live activity published event received:', data);
+      setLiveActivityData({
+        title: data.activityTitle,
+        shareCode: data.shareCode,
+        teacherName: data.teacherName || 'Mrs. Sarah Jenkins',
+        activityId: data.activityId,
+      });
+      setShowLiveModal(true);
+    };
+
+    socket.on('activity_published', handleActivityPublished);
+
+    const studentClassroomId = (user as any)?.classroomId;
+    if (studentClassroomId) {
+      activitiesApi.checkClassActiveAssignment(studentClassroomId, activeToken)
+        .then((res: any) => {
+          if (res && (res.existingActivityTitle || res.assignment?.activity?.title)) {
+            setLiveActivityData({
+              title: res.existingActivityTitle || res.assignment?.activity?.title || 'Live Activity',
+              shareCode: res.assignment?.shareCode,
+              teacherName: res.assignment?.teacher
+                ? `${res.assignment.teacher.firstName} ${res.assignment.teacher.lastName}`.trim()
+                : 'Mrs. Sarah Jenkins',
+              activityId: res.assignment?.activityId,
+            });
+            setShowLiveModal(true);
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      socket.off('activity_published', handleActivityPublished);
+    };
+  }, [(user as any)?.classroomId, activeToken]);
 
   // Fetch Database Activities
   useEffect(() => {
@@ -208,6 +267,17 @@ export const StudentDashboard: React.FC = () => {
     setActivePlayingActivity(item.content);
     setActivePlayingTitle(item.title);
   };
+
+  if (joinedLiveView && liveActivityData) {
+    return (
+      <StudentLiveActivityView
+        activityTitle={liveActivityData.title}
+        shareCode={liveActivityData.shareCode}
+        teacherName={liveActivityData.teacherName}
+        onExit={() => setJoinedLiveView(false)}
+      />
+    );
+  }
 
   if (activePlayingActivity) {
     return (
@@ -410,6 +480,19 @@ export const StudentDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Live Activity Dialog Popup */}
+      <LiveActivityPopupModal
+        isOpen={showLiveModal}
+        activityTitle={liveActivityData?.title || 'Interactive Lesson'}
+        teacherName={liveActivityData?.teacherName || 'Mrs. Sarah Jenkins'}
+        shareCode={liveActivityData?.shareCode}
+        onJoin={() => {
+          setShowLiveModal(false);
+          setJoinedLiveView(true);
+        }}
+        onClose={() => setShowLiveModal(false)}
+      />
     </div>
   );
 };

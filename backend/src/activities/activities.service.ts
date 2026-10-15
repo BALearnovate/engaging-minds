@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ActivitiesGateway } from './activities.gateway';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { SubmitActivityDto } from './dto/submit-activity.dto';
 import { ActivityDefinition, ActivityBlock } from './types/activityDsl';
@@ -15,7 +16,10 @@ export interface ActivityFilterOptions {
 
 @Injectable()
 export class ActivitiesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private activitiesGateway: ActivitiesGateway,
+  ) {}
 
   // ==========================================
   // STRUCTURED DSL & VERSIONING API METHODS
@@ -240,6 +244,28 @@ export class ActivitiesService {
         });
         provisionedStudentSessionsCount++;
       }
+
+      // Fetch teacher details for notification
+      let teacherName = 'Your Teacher';
+      try {
+        const teacherUser = await this.prisma.user.findUnique({
+          where: { id: teacherId },
+          select: { firstName: true, lastName: true },
+        });
+        if (teacherUser) {
+          teacherName = `${teacherUser.firstName} ${teacherUser.lastName}`.trim() || 'Your Teacher';
+        }
+      } catch (err) {
+        // Fallback
+      }
+
+      this.activitiesGateway.emitActivityPublished({
+        classroomId,
+        activityId: activity.id,
+        activityTitle: activity.title,
+        shareCode,
+        teacherName,
+      });
     }
 
     return {
