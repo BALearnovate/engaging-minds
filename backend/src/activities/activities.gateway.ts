@@ -15,6 +15,8 @@ export interface StudentProgressState {
   studentEmail?: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
   progress?: number;
+  engagementScore?: number;
+  performanceScore?: number;
   progressText?: string;
   answers?: Record<string, string>;
   helpMessage?: string;
@@ -71,6 +73,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       studentName: string;
       status: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
       progress?: number;
+      engagementScore?: number;
+      performanceScore?: number;
       progressText?: string;
       answers?: Record<string, string>;
       score?: number;
@@ -86,12 +90,16 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     const existing = activityStateMap.get(payload.studentId);
 
     const progressVal = typeof payload.progress === 'number' ? payload.progress : existing?.progress || 0;
+    const engagementVal = typeof payload.engagementScore === 'number' ? payload.engagementScore : existing?.engagementScore || 0;
+    const performanceVal = typeof payload.performanceScore === 'number' ? payload.performanceScore : existing?.performanceScore || 0;
 
     const updatedState: StudentProgressState = {
       studentId: payload.studentId,
       studentName: payload.studentName,
       status: payload.status,
       progress: progressVal,
+      engagementScore: engagementVal,
+      performanceScore: performanceVal,
       progressText: payload.progressText || `${progressVal}% completed`,
       answers: payload.answers || existing?.answers || {},
       score: payload.score ?? existing?.score,

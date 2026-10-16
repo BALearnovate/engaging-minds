@@ -12,6 +12,8 @@ interface StudentStatus {
   status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG';
   subtext: string;
   progress: number;
+  engagementScore: number;
+  performanceScore: number;
   milestone: string;
   progressColor: string;
   academicStars: number;
@@ -76,6 +78,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           }
 
           const progress = typeof st.progress === 'number' ? st.progress : 0;
+          const engagementScore = typeof st.engagementScore === 'number' ? st.engagementScore : (progress > 0 ? Math.min(100, progress + 10) : 0);
+          const performanceScore = typeof st.performanceScore === 'number' ? st.performanceScore : (typeof st.score === 'number' ? st.score : 0);
+
           let subtext = `Active: ${progress}% progress`;
           if (rawStatus === 'STUCK') {
             subtext = 'Blocked: Requires assistance';
@@ -107,6 +112,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             status,
             subtext,
             progress,
+            engagementScore,
+            performanceScore,
             milestone,
             progressColor,
             academicStars,
@@ -218,6 +225,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         );
 
         const newProgress = typeof updatedState.progress === 'number' ? updatedState.progress : 0;
+        const newEngagement = typeof updatedState.engagementScore === 'number' ? updatedState.engagementScore : (prevStudents[existingIndex]?.engagementScore || (newProgress > 0 ? Math.min(100, newProgress + 10) : 0));
+        const newPerformance = typeof updatedState.performanceScore === 'number' ? updatedState.performanceScore : (typeof updatedState.score === 'number' ? updatedState.score : (prevStudents[existingIndex]?.performanceScore || 0));
+
         const rawStatus = (updatedState.status || '').toUpperCase();
         let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
         let progressColor = '#16a34a';
@@ -251,6 +261,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           copy[existingIndex] = {
             ...copy[existingIndex],
             progress: newProgress,
+            engagementScore: newEngagement,
+            performanceScore: newPerformance,
             status,
             subtext,
             progressColor,
@@ -264,6 +276,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             status,
             subtext,
             progress: newProgress,
+            engagementScore: newEngagement,
+            performanceScore: newPerformance,
             milestone,
             progressColor,
             academicStars: 0,
@@ -512,25 +526,90 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         <div style={styles.rightActionsColumn}>
           {selectedStudent ? (
             <>
-              {/* COMPLETION PROGRESS */}
+              {/* STUDENT TRI-DIMENSION ANALYTICS (ENGAGEMENT, PROGRESS, PERFORMANCE) */}
               <div style={styles.cardProgress}>
-                <h3 style={styles.sectionHeaderTitle}>COMPLETION PROGRESS</h3>
+                <div style={styles.cardHeaderRow}>
+                  <h3 style={styles.sectionHeaderTitle}>STUDENT TRI-DIMENSION ANALYTICS</h3>
+                  <span style={styles.targetLabelRight}>{selectedStudent.name}</span>
+                </div>
+
                 <div style={styles.progressInnerCard}>
-                  <div style={styles.studentProgressName}>{selectedStudent.name}</div>
-                  <div style={{ ...styles.progressPercentage, color: '#16a34a' }}>
-                    {selectedStudent.progress}%
+                  {/* DIMENSION 1: ENGAGEMENT */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>🎯 Engagement</span>
+                      <span style={{ ...styles.triDimensionValue, color: '#2563eb' }}>
+                        {selectedStudent.engagementScore}%
+                      </span>
+                    </div>
+                    <div style={styles.progressBarTrack}>
+                      <div
+                        style={{
+                          ...styles.progressBarFill,
+                          width: `${selectedStudent.engagementScore}%`,
+                          backgroundColor: '#2563eb',
+                        }}
+                      />
+                    </div>
+                    <div style={styles.triDimensionTag}>
+                      {selectedStudent.engagementScore >= 75
+                        ? '🔥 High Active Participation'
+                        : selectedStudent.engagementScore >= 40
+                        ? '⚡ Moderate Session Activity'
+                        : '💤 Low / Idle Participation'}
+                    </div>
                   </div>
-                  <div style={styles.progressBarTrack}>
-                    <div
-                      style={{
-                        ...styles.progressBarFill,
-                        width: `${selectedStudent.progress}%`,
-                        backgroundColor: selectedStudent.progressColor,
-                      }}
-                    />
+
+                  <hr style={styles.triDimensionDivider} />
+
+                  {/* DIMENSION 2: PROGRESS */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>📈 Completion Progress</span>
+                      <span style={{ ...styles.triDimensionValue, color: selectedStudent.progressColor }}>
+                        {selectedStudent.progress}%
+                      </span>
+                    </div>
+                    <div style={styles.progressBarTrack}>
+                      <div
+                        style={{
+                          ...styles.progressBarFill,
+                          width: `${selectedStudent.progress}%`,
+                          backgroundColor: selectedStudent.progressColor,
+                        }}
+                      />
+                    </div>
+                    <div style={styles.triDimensionTag}>
+                      ▲ {selectedStudent.milestone}
+                    </div>
                   </div>
-                  <div style={styles.progressMilestoneText}>
-                    ▲ {selectedStudent.milestone}
+
+                  <hr style={styles.triDimensionDivider} />
+
+                  {/* DIMENSION 3: PERFORMANCE */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>🏆 Performance Mastery</span>
+                      <span style={{ ...styles.triDimensionValue, color: '#d97706' }}>
+                        {selectedStudent.performanceScore}%
+                      </span>
+                    </div>
+                    <div style={styles.progressBarTrack}>
+                      <div
+                        style={{
+                          ...styles.progressBarFill,
+                          width: `${selectedStudent.performanceScore}%`,
+                          backgroundColor: '#d97706',
+                        }}
+                      />
+                    </div>
+                    <div style={styles.triDimensionTag}>
+                      {selectedStudent.performanceScore >= 80
+                        ? '🌟 High Mastery Demonstrated'
+                        : selectedStudent.performanceScore >= 50
+                        ? '📘 Developing Understanding'
+                        : '⚠️ Needs Learning Support'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1161,6 +1240,36 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     fontSize: '2rem',
     pointerEvents: 'none',
+  },
+  triDimensionRow: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+  },
+  triDimensionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  triDimensionTitle: {
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  triDimensionValue: {
+    fontSize: '1.1rem',
+    fontWeight: '800',
+  },
+  triDimensionTag: {
+    fontSize: '0.78rem',
+    fontWeight: '600',
+    color: '#64748b',
+    marginTop: '0.15rem',
+  },
+  triDimensionDivider: {
+    border: 'none',
+    borderTop: '1px solid #e2e8f0',
+    margin: '0.6rem 0',
   },
 };
 

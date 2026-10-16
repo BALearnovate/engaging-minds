@@ -455,20 +455,31 @@ export class ActivitiesService {
       },
     });
 
-    // Compute updated session status & progress
-    let updatedStatus = studentSession.status;
-    let updatedProgress = studentSession.progress;
-    let updatedScore = studentSession.score;
+    // Compute tri-dimension metrics (Progress, Performance, Engagement) from session events
+    const allEvents = await this.prisma.activityEvent.findMany({
+      where: { studentSessionId },
+      orderBy: { createdAt: 'asc' },
+    });
 
+    const sessionWithDef = await this.prisma.studentSession.findUnique({
+      where: { id: studentSessionId },
+      include: {
+        activitySession: {
+          include: {
+            activityVersion: true,
+          },
+        },
+      },
+    });
+
+    const def = (sessionWithDef?.activitySession?.activityVersion?.definition as any) || {};
+    const totalBlocksCount = Array.isArray(def.blocks) && def.blocks.length > 0 ? def.blocks.length : 1;
+
+    let updatedStatus = studentSession.status;
     if (type === 'ANSWERED' || type === 'ANSWER_SUBMITTED') {
       updatedStatus = 'IN_PROGRESS';
-      updatedProgress = Math.min(100, updatedProgress + 20);
-      if (payload?.result?.completion || payload?.isCorrect) {
-        updatedScore += (payload?.result?.score?.raw as number) || (payload?.score as number) || 100;
-      }
     } else if (type === 'COMPLETED' || type === 'ACTIVITY_COMPLETED') {
       updatedStatus = 'COMPLETED';
-      updatedProgress = 100;
     } else if (type === 'INTERACTED') {
       if (updatedStatus === 'NOT_STARTED') {
         updatedStatus = 'IN_PROGRESS';
@@ -476,20 +487,87 @@ export class ActivitiesService {
     } else if (type === 'ASKED') {
       updatedStatus = 'STUCK';
     } else if (type === 'TEACHER_INTERVENTION') {
-      if (payload?.action === 'SHOW_HINT') {
+      if (payload?.action === 'SHOW_HINT' || payload?.action === 'RESET_BLOCK') {
         updatedStatus = 'IN_PROGRESS';
-      } else if (payload?.action === 'RESET_BLOCK') {
-        updatedStatus = 'IN_PROGRESS';
-        updatedProgress = Math.max(0, updatedProgress - 20);
       }
     }
+
+    // 1. Progress (P): proportion of activity blocks completed
+    const completedBlockIds = new Set<string>();
+    allEvents.forEach((ev) => {
+      if (
+        ev.blockId &&
+        (ev.type === 'ANSWERED' ||
+          ev.type === 'ANSWER_SUBMITTED' ||
+          ev.type === 'COMPLETED' ||
+          ev.type === 'ACTIVITY_COMPLETED')
+      ) {
+        completedBlockIds.add(ev.blockId);
+      }
+    });
+
+    let updatedProgress = Math.min(
+      100,
+      Math.round((completedBlockIds.size / totalBlocksCount) * 100)
+    );
+    if (type === 'COMPLETED' || type === 'ACTIVITY_COMPLETED') {
+      updatedProgress = 100;
+    }
+
+    // 2. Performance (S): accuracy & effort across answered blocks
+    const blockScores: number[] = [];
+    allEvents.forEach((ev) => {
+      if (ev.type === 'ANSWERED' || ev.type === 'ANSWER_SUBMITTED') {
+        const p = (ev.payload as any) || {};
+        if (typeof p.isCorrect === 'boolean') {
+          blockScores.push(p.isCorrect ? 100 : 0);
+        } else if (typeof p.score === 'number') {
+          blockScores.push(Math.min(100, Math.max(0, p.score)));
+        } else if (p.response && typeof p.response === 'string') {
+          // Open-ended response effort heuristic: >= 10 words = 100%, < 10 words = 50%
+          const wordCount = p.response.trim().split(/\s+/).filter(Boolean).length;
+          blockScores.push(wordCount >= 10 ? 100 : wordCount > 0 ? 50 : 0);
+        } else {
+          blockScores.push(100);
+        }
+      }
+    });
+
+    const calculatedPerformanceScore =
+      blockScores.length > 0
+        ? Math.round(blockScores.reduce((a, b) => a + b, 0) / blockScores.length)
+        : 0;
+
+    // 3. Engagement (E): volume, recency, and proactivity
+    const totalEventCount = allEvents.length;
+    const volumeRatio = Math.min(100, Math.round((totalEventCount / (totalBlocksCount * 3)) * 100));
+
+    // Recency score (seconds since last event)
+    const nowMs = Date.now();
+    const lastEventMs = allEvents.length > 0 ? new Date(allEvents[allEvents.length - 1].createdAt).getTime() : nowMs;
+    const diffSec = Math.floor((nowMs - lastEventMs) / 1000);
+    const recencyScore = diffSec <= 60 ? 100 : diffSec <= 180 ? 75 : diffSec <= 300 ? 40 : 10;
+
+    let proactivityModifier = 0;
+    if (blockScores.length > 0) proactivityModifier += 15;
+    if (updatedStatus === 'STUCK') proactivityModifier -= 20;
+
+    const calculatedEngagementScore = Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(0.45 * volumeRatio + 0.35 * recencyScore + 0.20 * (50 + proactivityModifier))
+      )
+    );
 
     const updatedStudentSession = await this.prisma.studentSession.update({
       where: { id: studentSessionId },
       data: {
         status: updatedStatus,
         progress: updatedProgress,
-        score: updatedScore,
+        score: calculatedPerformanceScore,
+        performanceScore: calculatedPerformanceScore,
+        engagementScore: calculatedEngagementScore,
         currentBlockId: blockId || studentSession.currentBlockId,
         lastSeenAt: new Date(),
       },
