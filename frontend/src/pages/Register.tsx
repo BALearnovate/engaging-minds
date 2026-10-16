@@ -6,6 +6,7 @@ import logoImage from '../assets/logo.png';
 import greenBubbleBg from '../assets/green-bubble.png';
 import cloudBubbleLogo from '../assets/cloud-logo-bubble.png';
 import { EuFooter } from '../components/EuFooter';
+import { ProjectPartnerBar } from '../components/ProjectPartnerBar';
 import { authApi } from '../api/auth';
 
 interface RegisterProps {
@@ -204,6 +205,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     their learning journey.
                   </p>
                 </div>
+              </div>
+
+              <div style={styles.partnerBarWrapper}>
+                <ProjectPartnerBar />
               </div>
             </div>
 
@@ -831,6 +836,16 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundRepeat: 'no-repeat',
     position: 'relative',
     minHeight: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    padding: 0,
+    boxSizing: 'border-box',
+  },
+  partnerBarWrapper: {
+    width: '100%',
+    zIndex: 10,
+    marginTop: 'auto',
   },
   bubbleContainer: {
     position: 'absolute',
