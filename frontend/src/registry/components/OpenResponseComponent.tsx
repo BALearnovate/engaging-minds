@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../i18n/useTranslation';
 import type {
   ActivityComponentDefinition,
   StudentBlockProps,
@@ -24,6 +25,7 @@ export const OpenResponseStudent: React.FC<
   onHelpRequest,
   isTeacherView,
 }) => {
+  const { t } = useTranslation();
   const [responseText, setResponseText] = useState<string>(
     typeof studentState.response === 'string' ? studentState.response : '',
   );
@@ -63,13 +65,13 @@ export const OpenResponseStudent: React.FC<
         {submitted ? (
           <div style={styles.submittedBox}>
             <div style={styles.submittedHeader}>
-              <span style={styles.submittedBadge}>✅ Submitted Response</span>
+              <span style={styles.submittedBadge}>✅ {t('openResponse.submittedResponse', 'Submitted Response')}</span>
             </div>
             <p style={styles.submittedText}>{responseText}</p>
 
             {!isTeacherView && (
               <button onClick={handleEditResponse} style={styles.secondaryBtn}>
-                ✏️ Edit Response
+                ✏️ {t('openResponse.editResponse', 'Edit Response')}
               </button>
             )}
           </div>
@@ -79,7 +81,7 @@ export const OpenResponseStudent: React.FC<
               rows={5}
               value={responseText}
               onChange={(e) => setResponseText(e.target.value)}
-              placeholder={config.placeholder || 'Type your reflection or answer here...'}
+              placeholder={config.placeholder || t('openResponse.placeholder', 'Type your reflection or answer here...')}
               style={styles.textarea}
               disabled={isTeacherView}
             />
@@ -96,7 +98,7 @@ export const OpenResponseStudent: React.FC<
                       cursor: !responseText.trim() ? 'not-allowed' : 'pointer',
                     }}
                   >
-                    Submit Response
+                    {t('openResponse.submitResponse', 'Submit Response')}
                   </button>
                 )}
 
@@ -112,7 +114,7 @@ export const OpenResponseStudent: React.FC<
                     }
                     style={styles.helpBtn}
                   >
-                    🙋 Ask Teacher for Help
+                    🙋 {t('openResponse.askHelp', 'Ask Teacher for Help')}
                   </button>
                 )}
               </div>
@@ -123,13 +125,13 @@ export const OpenResponseStudent: React.FC<
 
       {studentState.hint && (
         <div style={styles.hintBox}>
-          💡 <strong>Teacher Hint:</strong> {studentState.hint}
+          💡 <strong>{t('openResponse.teacherHint', 'Teacher Hint:')}</strong> {studentState.hint}
         </div>
       )}
 
       {isTeacherView && config.sampleAnswer && (
         <div style={styles.sampleAnswerBox}>
-          📘 <strong>Sample Answer / Grading Guidelines:</strong>
+          📘 <strong>{t('openResponse.sampleAnswerTitle', 'Sample Answer / Grading Guidelines:')}</strong>
           <p style={styles.sampleAnswerText}>{config.sampleAnswer}</p>
         </div>
       )}
@@ -140,37 +142,39 @@ export const OpenResponseStudent: React.FC<
 export const OpenResponseTeacherEditor: React.FC<
   TeacherEditorProps<OpenResponseConfig>
 > = ({ config, onChange }) => {
+  const { t } = useTranslation();
+
   return (
     <div style={styles.editorBox}>
       <div style={styles.field}>
-        <label style={styles.label}>Prompt / Reflection Question:</label>
+        <label style={styles.label}>{t('openResponse.promptLabel', 'Prompt / Reflection Question:')}</label>
         <textarea
           rows={3}
           value={config.prompt || ''}
           onChange={(e) => onChange({ ...config, prompt: e.target.value })}
-          placeholder="Enter the reflection question or prompt for students..."
+          placeholder={t('openResponse.promptPlaceholder', 'Enter the reflection question or prompt for students...')}
           style={styles.textareaInput}
         />
       </div>
 
       <div style={styles.field}>
-        <label style={styles.label}>Input Placeholder Text (Optional):</label>
+        <label style={styles.label}>{t('openResponse.placeholderLabel', 'Input Placeholder Text (Optional):')}</label>
         <input
           type="text"
           value={config.placeholder || ''}
           onChange={(e) => onChange({ ...config, placeholder: e.target.value })}
-          placeholder="e.g. Type your response here..."
+          placeholder={t('openResponse.placeholderInputPlaceholder', 'e.g. Type your response here...')}
           style={styles.inputSmall}
         />
       </div>
 
       <div style={styles.field}>
-        <label style={styles.label}>Sample Answer / Teacher Guidelines (Optional):</label>
+        <label style={styles.label}>{t('openResponse.sampleAnswerLabel', 'Sample Answer / Teacher Guidelines (Optional):')}</label>
         <textarea
           rows={3}
           value={config.sampleAnswer || ''}
           onChange={(e) => onChange({ ...config, sampleAnswer: e.target.value })}
-          placeholder="Key concepts or exemplar response points for grading..."
+          placeholder={t('openResponse.sampleAnswerPlaceholder', 'Key concepts or exemplar response points for grading...')}
           style={styles.textareaInput}
         />
       </div>

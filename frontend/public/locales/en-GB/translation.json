@@ -1,0 +1,26 @@
+{
+  "partnerBar": {
+    "partnersInfo": "Partners: Ireland · Finland · Denmark · Sweden.",
+    "projectPeriod": "Project period: 2025–2027",
+    "learnovate": "Learnovate",
+    "tcd": "Trinity College Dublin",
+    "tampere": "Tampere University",
+    "vejle": "Campus Vejle",
+    "gavle": "University of Gävle"
+  },
+  "openResponse": {
+    "submittedResponse": "Submitted Response",
+    "editResponse": "Edit Response",
+    "placeholder": "Type your reflection or answer here...",
+    "submitResponse": "Submit Response",
+    "askHelp": "Ask Teacher for Help",
+    "teacherHint": "Teacher Hint:",
+    "sampleAnswerTitle": "Sample Answer / Grading Guidelines:",
+    "promptLabel": "Prompt / Reflection Question:",
+    "promptPlaceholder": "Enter the reflection question or prompt for students...",
+    "placeholderLabel": "Input Placeholder Text (Optional):",
+    "placeholderInputPlaceholder": "e.g. Type your response here...",
+    "sampleAnswerLabel": "Sample Answer / Teacher Guidelines (Optional):",
+    "sampleAnswerPlaceholder": "Key concepts or exemplar response points for grading..."
+  }
+}

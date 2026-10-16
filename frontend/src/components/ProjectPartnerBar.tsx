@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 import learnovateLogo from '../assets/logo-learnovate.png';
 import tcdLogo from '../assets/logo-tcd.png';
 import tampereLogo from '../assets/logo-tampere.png';
@@ -11,19 +12,21 @@ interface ProjectPartnerBarProps {
 }
 
 export const ProjectPartnerBar: React.FC<ProjectPartnerBarProps> = ({ className, style }) => {
+  const { t } = useTranslation();
+
   const partners = [
-    { name: 'Learnovate', logo: learnovateLogo },
-    { name: 'Trinity College Dublin', logo: tcdLogo },
-    { name: 'Tampere University', logo: tampereLogo },
-    { name: 'Campus Vejle', logo: vejleLogo },
-    { name: 'University of Gävle', logo: gavleLogo },
+    { name: t('partnerBar.learnovate', 'Learnovate'), logo: learnovateLogo },
+    { name: t('partnerBar.tcd', 'Trinity College Dublin'), logo: tcdLogo },
+    { name: t('partnerBar.tampere', 'Tampere University'), logo: tampereLogo },
+    { name: t('partnerBar.vejle', 'Campus Vejle'), logo: vejleLogo },
+    { name: t('partnerBar.gavle', 'University of Gävle'), logo: gavleLogo },
   ];
 
   return (
     <div style={{ ...styles.container, ...style }} className={className}>
       <div style={styles.textSection}>
-        <div style={styles.textLine}>Partners: Ireland · Finland · Denmark · Sweden.</div>
-        <div style={styles.textLine}>Project period: 2025–2027</div>
+        <div style={styles.textLine}>{t('partnerBar.partnersInfo', 'Partners: Ireland · Finland · Denmark · Sweden.')}</div>
+        <div style={styles.textLine}>{t('partnerBar.projectPeriod', 'Project period: 2025–2027')}</div>
       </div>
 
       <div style={styles.logosRow}>
@@ -45,7 +48,6 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     backgroundColor: '#e6f4f1',
     padding: '0.85rem 1.5rem',
-    borderRadius: '8px',
     borderRadius: 0,
     display: 'flex',
     flexDirection: 'column',
