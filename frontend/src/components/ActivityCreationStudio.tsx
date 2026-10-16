@@ -567,7 +567,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                     onChange={(e) => setBlockTypeFilter(e.target.value)}
                     style={styles.paramSelect}
                   >
-                    <option value="all">All 8 Activity Types</option>
+                    <option value="all">All Activity Types</option>
                     <option value="multiple_choice">Multiple Choice</option>
                     <option value="fill_blank">Fill in the Blanks</option>
                     <option value="flashcards">Flashcards</option>
@@ -576,6 +576,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                     <option value="drag_drop">Drag & Drop</option>
                     <option value="find_hotspots">Find Multiple Hotspots</option>
                     <option value="clock_diagram">24-Hour Clock Diagram</option>
+                    <option value="open_response">Open Response / Reflection</option>
                   </select>
                 </div>
 

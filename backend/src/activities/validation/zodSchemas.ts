@@ -99,6 +99,7 @@ export class ZodSchemaValidator {
       'drag_drop',
       'find_hotspots',
       'clock_diagram',
+      'open_response',
     ];
 
     if (!validTypes.includes(block.type)) {
@@ -222,6 +223,12 @@ export class ZodSchemaValidator {
       case 'clock_diagram':
         if (cfg.hours !== undefined && !Array.isArray(cfg.hours)) {
           errors.push({ path: `${cfgPath}.hours`, message: 'Clock Diagram hours must be an array' });
+        }
+        break;
+
+      case 'open_response':
+        if (typeof cfg.prompt !== 'string' || cfg.prompt.trim().length === 0) {
+          errors.push({ path: `${cfgPath}.prompt`, message: 'Open Response prompt is required and cannot be empty' });
         }
         break;
     }

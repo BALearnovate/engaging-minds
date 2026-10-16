@@ -8,6 +8,7 @@ import { orderingDefinition } from './components/OrderingComponent';
 import { dragDropDefinition } from './components/DragDropComponent';
 import { findHotspotsDefinition } from './components/FindHotspotsComponent';
 import { clockDiagramDefinition } from './components/ClockDiagramComponent';
+import { openResponseDefinition } from './components/OpenResponseComponent';
 
 export type { StudentBlockProps, TeacherEditorProps, ActivityComponentDefinition } from './types';
 
@@ -21,6 +22,7 @@ export class ComponentRegistry {
     ['drag_drop', dragDropDefinition as ActivityComponentDefinition<any, any>],
     ['find_hotspots', findHotspotsDefinition as ActivityComponentDefinition<any, any>],
     ['clock_diagram', clockDiagramDefinition as ActivityComponentDefinition<any, any>],
+    ['open_response', openResponseDefinition as ActivityComponentDefinition<any, any>],
   ]);
 
   public static get(type: ActivityBlockType): ActivityComponentDefinition<any, any> | undefined {

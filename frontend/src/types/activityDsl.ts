@@ -6,7 +6,8 @@ export type ActivityBlockType =
   | 'ordering'
   | 'drag_drop'
   | 'find_hotspots'
-  | 'clock_diagram';
+  | 'clock_diagram'
+  | 'open_response';
 
 export interface MultipleChoiceConfig {
   question: string;
@@ -103,6 +104,12 @@ export interface ClockDiagramConfig {
   isQuizMode?: boolean;
 }
 
+export interface OpenResponseConfig {
+  prompt: string;
+  placeholder?: string;
+  sampleAnswer?: string;
+}
+
 export type BlockConfig =
   | MultipleChoiceConfig
   | FillBlankConfig
@@ -111,7 +118,8 @@ export type BlockConfig =
   | OrderingConfig
   | DragDropConfig
   | FindHotspotsConfig
-  | ClockDiagramConfig;
+  | ClockDiagramConfig
+  | OpenResponseConfig;
 
 export interface ActivityBlock {
   id: string;

@@ -7,6 +7,7 @@ import {
   DragDropConfig,
   FindHotspotsConfig,
   ClockDiagramConfig,
+  OpenResponseConfig,
   ValidationResult,
 } from '../types/activityDsl';
 import { ZodSchemaValidator } from './zodSchemas';
@@ -167,6 +168,16 @@ export class ActivityValidator {
               seenHours.add(slot.hour);
             }
           });
+        }
+        break;
+      }
+
+      case 'open_response': {
+        const config = block.config as OpenResponseConfig;
+        if (!config.prompt || typeof config.prompt !== 'string' || config.prompt.trim().length === 0) {
+          errors.push(
+            `[Tier 2 Deterministic Error] Block #${blockNum} (Open Response): prompt is required and cannot be empty.`,
+          );
         }
         break;
       }

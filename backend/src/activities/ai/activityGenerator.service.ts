@@ -82,6 +82,7 @@ Supported interactive exercise block types:
 6. "drag_drop": config { "instructions": "...", "draggableItems": [{ "id": "d1", "content": "..." }], "dropTargets": [{ "id": "t1", "label": "...", "correctItemIds": ["d1"] }] }
 7. "find_hotspots": config { "imageUrl": "https://...", "instructions": "Click on the diagram to locate spots...", "hotspots": [{ "id": "h1", "label": "...", "x": 35, "y": 45, "radius": 10 }] }
 8. "clock_diagram": config { "prompt": "Fill in your 24-hour daily schedule...", "instructions": "Write what you do in each hour directly in front of the radial clock sectors...", "clockType": "24_hour", "hours": [{ "hour": 0, "label": "00:00", "expectedActivity": "..." }], "allowedOptions": ["Breakfast", "Class", "Lunch", "Homework", "Sleep"] }
+9. "open_response": config { "prompt": "Explain in your own words...", "placeholder": "Type your reflection or answer here...", "sampleAnswer": "Key points students should address..." }
 
 CRITICAL RULES:
 - Only include block types that are relevant to or requested in the prompt.
@@ -91,7 +92,8 @@ CRITICAL RULES:
 - In "ordering", "correctOrder" array MUST contain all item IDs.
 - In "drag_drop", "correctItemIds" in "dropTargets" MUST reference existing "draggableItems" IDs.
 - In "find_hotspots", "x" and "y" MUST be percentages between 0 and 100 representing spot coordinates on the image.
-- In "clock_diagram", "hours" MUST be an array containing objects with "hour" (number 0-23 or 1-24).`;
+- In "clock_diagram", "hours" MUST be an array containing objects with "hour" (number 0-23 or 1-24).
+- In "open_response", "prompt" MUST be a clear open-ended question or reflection prompt.`;
 
     const userPromptText = `Subject: ${subject || 'General Secondary Education'}
 Grade Level: ${gradeLevel || 'Secondary School (Grade 6-8)'}
@@ -338,6 +340,21 @@ Generate a complete, engaging interactive activity containing appropriate exerci
                 { id: 'target_num', label: 'Numerator Properties', correctItemIds: ['d1', 'd3'] },
                 { id: 'target_den', label: 'Denominator Properties', correctItemIds: ['d2', 'd4'] },
               ],
+        },
+      },
+      {
+        id: `blk_or_${Date.now()}_9`,
+        type: 'open_response',
+        title: 'Step 9: Open Response & Reflection',
+        instructions: 'Reflect on what you have learned in this lesson and explain key concepts in your own words.',
+        config: {
+          prompt: isPhotosynthesis
+            ? 'Explain why photosynthesis is vital for living organisms and how energy is transformed during the process.'
+            : 'Explain how fractions are simplified and why keeping equivalent ratios equal matters in real-world problems.',
+          placeholder: 'Write your detailed response here...',
+          sampleAnswer: isPhotosynthesis
+            ? 'Photosynthesis converts light energy into chemical energy (glucose) and releases oxygen essential for aerobic respiration.'
+            : 'Fractions are simplified by dividing the numerator and denominator by their greatest common factor.',
         },
       },
     ];
