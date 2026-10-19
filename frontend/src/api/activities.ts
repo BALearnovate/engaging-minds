@@ -207,8 +207,20 @@ export const activitiesApi = {
   },
 
   // Get live classroom dashboard state
-  async getSessionDashboard(shareCode: string, token?: string): Promise<{ session: any; activityTitle?: string; status?: string; students: any[] }> {
-    return apiFetch<{ session: any; activityTitle?: string; status?: string; students: any[] }>(`/activities/session/${shareCode}/dashboard`, { token });
+  async getSessionDashboard(shareCode: string, token?: string): Promise<{
+    session: any;
+    activityTitle?: string;
+    status?: string;
+    students: any[];
+    classroom?: { id: string; subject: string; grade: string; year: string } | null;
+  }> {
+    return apiFetch<{
+      session: any;
+      activityTitle?: string;
+      status?: string;
+      students: any[];
+      classroom?: { id: string; subject: string; grade: string; year: string } | null;
+    }>(`/activities/session/${shareCode}/dashboard`, { token });
   },
 
   // Stop active activity session
@@ -229,8 +241,24 @@ export const activitiesApi = {
   },
 
   // Get active sessions for teacher
-  async getTeacherActiveSessions(token?: string): Promise<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>> {
-    return apiFetch<Array<{ id: string; shareCode: string; status: string; createdAt: string; activityTitle: string }>>('/activities/teacher/active-sessions', { token });
+  async getTeacherActiveSessions(token?: string): Promise<Array<{
+    id: string;
+    shareCode: string;
+    status: string;
+    createdAt: string;
+    activityTitle: string;
+    classroom?: { id: string; subject: string; grade: string; year: string } | null;
+    studentCount?: number;
+  }>> {
+    return apiFetch<Array<{
+      id: string;
+      shareCode: string;
+      status: string;
+      createdAt: string;
+      activityTitle: string;
+      classroom?: { id: string; subject: string; grade: string; year: string } | null;
+      studentCount?: number;
+    }>>('/activities/teacher/active-sessions', { token });
   },
 
   // Record an activity event / telemetry

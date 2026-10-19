@@ -646,7 +646,19 @@ export class ActivitiesService {
       include: {
         activityVersion: {
           include: {
-            activity: true,
+            activity: {
+              include: {
+                assignments: {
+                  include: {
+                    classroom: {
+                      include: {
+                        students: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         studentSessions: {
@@ -670,11 +682,76 @@ export class ActivitiesService {
       (session.activityVersion?.definition as any)?.title ||
       'Interactive Activity';
 
+    const assignments = session.activityVersion?.activity?.assignments || [];
+    const activeAssignment = assignments.find((a) => a.status === 'ACTIVE') || assignments[0];
+
+    // Ensure all enrolled classroom students are auto-provisioned into this session
+    if (activeAssignment?.classroom?.students?.length) {
+      const existingStudentIds = new Set(
+        session.studentSessions.map((st) => st.studentId).filter(Boolean),
+      );
+      const existingStudentNames = new Set(
+        session.studentSessions.map((st) => st.studentName.toLowerCase().trim()),
+      );
+
+      for (const student of activeAssignment.classroom.students) {
+        const studentFullName = `${student.firstName} ${student.lastName}`.trim();
+        if (
+          !existingStudentIds.has(student.id) &&
+          !existingStudentNames.has(studentFullName.toLowerCase())
+        ) {
+          try {
+            await this.prisma.studentSession.create({
+              data: {
+                activitySessionId: session.id,
+                studentId: student.id,
+                studentName: studentFullName,
+                status: 'NOT_STARTED',
+                progress: 0,
+                score: 0,
+                performanceScore: 0,
+                engagementScore: 0,
+              },
+            });
+            existingStudentIds.add(student.id);
+            existingStudentNames.add(studentFullName.toLowerCase());
+          } catch (e) {
+            // Ignore race conditions if already provisioned
+          }
+        }
+      }
+    }
+
+    // Re-fetch all student sessions for this activity session to include any newly provisioned students
+    const allStudentSessions = await this.prisma.studentSession.findMany({
+      where: { activitySessionId: session.id },
+      include: {
+        events: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+      },
+      orderBy: [
+        { progress: 'desc' },
+        { studentName: 'asc' },
+      ],
+    });
+
+    const classroomInfo = activeAssignment?.classroom
+      ? {
+          id: activeAssignment.classroom.id,
+          subject: activeAssignment.classroom.subject,
+          grade: activeAssignment.classroom.grade,
+          year: activeAssignment.classroom.year,
+        }
+      : null;
+
     return {
       session,
       activityTitle,
       status: session.status,
-      students: session.studentSessions,
+      students: allStudentSessions,
+      classroom: classroomInfo,
     };
   }
 
@@ -731,20 +808,44 @@ export class ActivitiesService {
       include: {
         activityVersion: {
           include: {
-            activity: true,
+            activity: {
+              include: {
+                assignments: {
+                  where: { status: 'ACTIVE' },
+                  include: {
+                    classroom: {
+                      select: {
+                        id: true,
+                        subject: true,
+                        grade: true,
+                        year: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
+        },
+        studentSessions: {
+          select: { id: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return sessions.map((s) => ({
-      id: s.id,
-      shareCode: s.shareCode,
-      status: s.status,
-      createdAt: s.createdAt,
-      activityTitle: s.activityVersion?.activity?.title || 'Interactive Activity',
-    }));
+    return sessions.map((s) => {
+      const activeAssignment = s.activityVersion?.activity?.assignments?.[0];
+      return {
+        id: s.id,
+        shareCode: s.shareCode,
+        status: s.status,
+        createdAt: s.createdAt,
+        activityTitle: s.activityVersion?.activity?.title || 'Interactive Activity',
+        classroom: activeAssignment?.classroom || null,
+        studentCount: s.studentSessions.length,
+      };
+    });
   }
 
   private generateShareCode(): string {

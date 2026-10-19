@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { activitiesApi } from '../api';
 import { getSocket } from '../services/socket';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface LiveClassroomDashboardProps {
   shareCode: string;
+  onSessionStopped?: () => void;
 }
 
 interface StudentStatus {
@@ -24,9 +26,11 @@ interface StudentStatus {
   totalPoints: number;
 }
 
-export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode }) => {
+export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
+  const { t } = useTranslation();
   const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
   const [sessionStatus, setSessionStatus] = useState<string>('ACTIVE');
+  const [classroomInfo, setClassroomInfo] = useState<{ id: string; subject: string; grade: string; year: string } | null>(null);
   const [isStopping, setIsStopping] = useState<boolean>(false);
 
   // Dynamic students state fetched from backend API
@@ -62,6 +66,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       }
       if (data.status) {
         setSessionStatus(data.status);
+      }
+      if (data.classroom) {
+        setClassroomInfo(data.classroom);
       }
       if (Array.isArray(data.students)) {
         const mappedStudents: StudentStatus[] = data.students.map((st: any) => {
@@ -125,6 +132,14 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           };
         });
         setStudents(mappedStudents);
+
+        // Auto-select first student if none selected or previous selection no longer exists
+        if (mappedStudents.length > 0) {
+          setSelectedStudentId((prev) => {
+            const exists = mappedStudents.some((s) => s.id === prev);
+            return exists ? prev : mappedStudents[0].id;
+          });
+        }
       } else {
         setStudents([]);
       }
@@ -147,6 +162,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       await activitiesApi.stopSession(shareCode, activeToken);
       setSessionStatus('COMPLETED');
       alert(`⚠️ Activity session "${shareCode}" stopped successfully! You can now publish new activities for this classroom.`);
+      onSessionStopped?.();
     } catch (err: any) {
       console.error('Failed to stop activity session:', err);
       alert(`⚠️ Could not stop session: ${err?.message || 'Unknown error'}`);
@@ -394,12 +410,21 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 borderColor: sessionStatus === 'ACTIVE' ? '#86efac' : '#cbd5e1',
               }}
             >
-              {sessionStatus === 'ACTIVE' ? '🔴 ACTIVE' : '🏁 COMPLETED'}
+              {sessionStatus === 'ACTIVE'
+                ? `🔴 ${t('liveDashboard.activeStatus', 'ACTIVE')}`
+                : `🏁 ${t('liveDashboard.completedStatus', 'COMPLETED')}`}
             </span>
-            <span style={styles.codeTag}>Join Code: {shareCode}</span>
+            <span style={styles.codeTag}>
+              {t('liveDashboard.joinCode', 'Join Code')}: {shareCode}
+            </span>
+            {classroomInfo && (
+              <span style={styles.classroomBadge}>
+                🏫 {classroomInfo.subject} ({classroomInfo.grade})
+              </span>
+            )}
           </div>
           <h2 style={styles.activeTitle}>
-            📖 {activityTitle || 'Active Interactive Activity'}
+            📖 {activityTitle || t('liveDashboard.activeTitle', 'Active Interactive Activity')}
           </h2>
         </div>
 
@@ -409,7 +434,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             disabled={isStopping}
             style={styles.redStopBtn}
           >
-            {isStopping ? 'Stopping...' : '⚠️ Stop Activity'}
+            {isStopping
+              ? t('liveDashboard.stopping', 'Stopping...')
+              : `⚠️ ${t('liveDashboard.stopActivity', 'Stop Activity')}`}
           </button>
         )}
       </div>
@@ -803,6 +830,15 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#dbeafe',
     padding: '0.25rem 0.65rem',
     borderRadius: '6px',
+  },
+  classroomBadge: {
+    fontSize: '0.85rem',
+    fontWeight: '700',
+    color: '#065f46',
+    backgroundColor: '#d1fae5',
+    padding: '0.25rem 0.65rem',
+    borderRadius: '6px',
+    border: '1px solid #a7f3d0',
   },
   activeTitle: {
     fontSize: '1.1rem',
