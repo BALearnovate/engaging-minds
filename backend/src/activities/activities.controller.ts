@@ -168,6 +168,14 @@ export class ActivitiesController {
     return this.activitiesService.getTeacherActiveSessions(teacherId);
   }
 
+  // Get teacher home overview data
+  @Get('teacher/home-overview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async getTeacherHomeOverview(@CurrentUser('id') teacherId: string) {
+    return this.activitiesService.getTeacherHomeOverview(teacherId);
+  }
+
   // Existing Endpoints
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -1028,4 +1028,154 @@ export class ActivitiesService {
       studentSubmissions: activity.submissions,
     };
   }
+
+  async getTeacherHomeOverview(teacherId: string) {
+    const teacher = await this.prisma.user.findUnique({
+      where: { id: teacherId },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+
+    // 1. Total Classes
+    const totalClasses = await this.prisma.classroom.count({
+      where: { teacherId },
+    });
+
+    // 2. Total Activities
+    const totalActivities = await this.prisma.activity.count({
+      where: { teacherId },
+    });
+
+    // 3. Total Engaged Students (distinct students with checkins/hints or session interactions)
+    const distinctEngagedSessions = await this.prisma.studentSession.findMany({
+      where: {
+        activitySession: { teacherId },
+        events: {
+          some: {
+            type: {
+              in: [
+                'HINT_SENT',
+                'REMINDER_SENT',
+                'TEACHER_HINT',
+                'TEACHER_CHECKIN',
+                'DISCREET_CHECKIN',
+                'CHECKIN',
+                'SUPPORT_MESSAGE',
+              ],
+            },
+          },
+        },
+      },
+      select: { studentName: true, studentId: true },
+    });
+
+    const engagedSet = new Set<string>();
+    distinctEngagedSessions.forEach((s) => {
+      engagedSet.add(s.studentId || s.studentName);
+    });
+
+    let totalEngagedStudents = engagedSet.size;
+    if (totalEngagedStudents === 0) {
+      const allSessions = await this.prisma.studentSession.findMany({
+        where: { activitySession: { teacherId } },
+        select: { studentName: true, studentId: true },
+      });
+      const allSet = new Set<string>();
+      allSessions.forEach((s) => allSet.add(s.studentId || s.studentName));
+      totalEngagedStudents = allSet.size;
+    }
+
+    // 4. Your Classes
+    const classrooms = await this.prisma.classroom.findMany({
+      where: { teacherId },
+      include: {
+        students: true,
+        assignments: {
+          include: {
+            activity: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const yourClasses = classrooms.map((cls) => {
+      const activeAssignmentsCount = cls.assignments.filter((a) => a.status === 'ACTIVE').length;
+      return {
+        id: cls.id,
+        subject: cls.subject,
+        grade: cls.grade,
+        year: cls.year,
+        studentCount: cls.students.length,
+        activeActivitiesCount: activeAssignmentsCount,
+        averageCompletionRate: 0,
+      };
+    });
+
+    // 5. Top 5 Used Activities by Teacher
+    const teacherActivities = await this.prisma.activity.findMany({
+      where: { teacherId },
+      include: {
+        versions: {
+          include: {
+            sessions: true,
+          },
+        },
+      },
+    });
+
+    const mappedActivities = teacherActivities.map((act) => {
+      const usageCount = act.versions.reduce((sum, v) => sum + v.sessions.length, 0);
+      return {
+        id: act.id,
+        title: act.title,
+        usageCount,
+      };
+    });
+
+    mappedActivities.sort((a, b) => b.usageCount - a.usageCount);
+    const top5UsedActivities = mappedActivities.slice(0, 5);
+
+    // 6. Recent Activities
+    const recentSessions = await this.prisma.activitySession.findMany({
+      where: { teacherId },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      include: {
+        activityVersion: {
+          include: {
+            activity: true,
+          },
+        },
+        studentSessions: true,
+      },
+    });
+
+    const recentActivities = recentSessions.map((sess) => ({
+      id: sess.id,
+      shareCode: sess.shareCode,
+      activityTitle: sess.activityVersion.activity.title,
+      status: sess.status,
+      createdAt: sess.createdAt,
+      studentCount: sess.studentSessions.length,
+    }));
+
+    return {
+      teacher: {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+      },
+      stats: {
+        totalClasses,
+        totalActivities,
+        totalEngagedStudents,
+      },
+      yourClasses,
+      top5UsedActivities,
+      recentActivities,
+    };
+  }
 }

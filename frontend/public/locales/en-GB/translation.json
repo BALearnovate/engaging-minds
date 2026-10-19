@@ -22,5 +22,39 @@
     "placeholderInputPlaceholder": "e.g. Type your response here...",
     "sampleAnswerLabel": "Sample Answer / Teacher Guidelines (Optional):",
     "sampleAnswerPlaceholder": "Key concepts or exemplar response points for grading..."
+  },
+  "teacherDashboard": {
+    "title": "Teacher Live Classroom",
+    "noActiveSession": "No Active Classroom Session",
+    "noActiveSessionSubtext": "There are currently no active live activity sessions running. Publish an activity from Activity Studio or select a session below.",
+    "selectActiveSession": "Select Active Session:",
+    "launchActivity": "Launch New Activity",
+    "viewClassrooms": "Classroom Setup",
+    "manualShareCode": "Or Monitor Join Code:",
+    "loadCode": "Load Session",
+    "activeSessions": "Active Classroom Sessions"
+  },
+  "liveDashboard": {
+    "activeTitle": "Active Interactive Activity",
+    "activeStatus": "ACTIVE",
+    "completedStatus": "COMPLETED",
+    "joinCode": "Join Code",
+    "stopActivity": "Stop Activity",
+    "stopping": "Stopping...",
+    "loadingStudents": "Loading class students...",
+    "noStudents": "No students in class yet.",
+    "optimal": "OPTIMAL",
+    "atRisk": "AT RISK",
+    "alertFlag": "ALERT FLAG",
+    "notStarted": "Not Started: Awaiting activity response",
+    "blocked": "Blocked: Requires assistance",
+    "activeProgress": "Active: {{progress}}% progress",
+    "finalStage": "Active: Final Reflection Stage",
+    "triDimensionAnalytics": "STUDENT TRI-DIMENSION ANALYTICS",
+    "engagement": "Engagement",
+    "completionProgress": "Completion Progress",
+    "performanceMastery": "Performance Mastery",
+    "metricsScope": "METRICS SCOPE SELECTOR",
+    "statusMonitor": "INDIVIDUAL STATUS MONITOR"
   }
 }

@@ -133,10 +133,49 @@ export interface RecordEventPayload {
   payload?: any;
 }
 
+export interface TeacherHomeOverviewData {
+  teacher: {
+    firstName: string;
+    lastName: string;
+  };
+  stats: {
+    totalClasses: number;
+    totalActivities: number;
+    totalEngagedStudents: number;
+  };
+  yourClasses: Array<{
+    id: string;
+    subject: string;
+    grade: string;
+    year: string;
+    studentCount: number;
+    activeActivitiesCount: number;
+    averageCompletionRate: number;
+  }>;
+  top5UsedActivities: Array<{
+    id: string;
+    title: string;
+    usageCount: number;
+  }>;
+  recentActivities: Array<{
+    id: string;
+    shareCode: string;
+    activityTitle: string;
+    status: string;
+    createdAt: string;
+    studentCount: number;
+  }>;
+}
+
 export const activitiesApi = {
   // Get all activities
   async getActivities(token?: string): Promise<Activity[]> {
     return apiFetch<Activity[]>('/activities', { token });
+  },
+
+  // Get teacher home overview
+  async getTeacherHomeOverview(token?: string): Promise<TeacherHomeOverviewData> {
+    return apiFetch<TeacherHomeOverviewData>('/activities/teacher/home-overview', { token });
   },
 
   // Get single activity by ID

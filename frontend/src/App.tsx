@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { ActivityCreationStudio } from './components/ActivityCreationStudio';
 import { ClassroomSetupComponent } from './components/ClassroomSetupComponent';
 import { TeacherDashboard } from './pages/TeacherDashboard';
+import { TeacherHomeView } from './pages/TeacherHomeView';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -12,13 +13,13 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 
 const MainApp: React.FC = () => {
   const { user } = useAuth();
-  const [currentTab, setCurrentTab] = useState<string>('classroom_setup');
+  const [currentTab, setCurrentTab] = useState<string>('home');
 
   const handleLoginSuccess = (role: string) => {
     if (role === 'STUDENT') {
       setCurrentTab('student_home');
     } else {
-      setCurrentTab('classroom_setup');
+      setCurrentTab('home');
     }
   };
 
@@ -49,6 +50,14 @@ const MainApp: React.FC = () => {
       );
     }
 
+    if (currentTab === 'home') {
+      return (
+        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
+          <TeacherHomeView onNavigateTab={setCurrentTab} />
+        </ProtectedRoute>
+      );
+    }
+
     if (currentTab === 'classroom_setup') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
@@ -58,14 +67,6 @@ const MainApp: React.FC = () => {
     }
 
     if (currentTab === 'teacher_dashboard') {
-      return (
-        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <TeacherDashboard />
-        </ProtectedRoute>
-      );
-    }
-
-    if (currentTab === 'home') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
           <TeacherDashboard />
@@ -92,7 +93,7 @@ const MainApp: React.FC = () => {
     // Default view for teacher
     return (
       <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-        <ClassroomSetupComponent />
+        <TeacherHomeView onNavigateTab={setCurrentTab} />
       </ProtectedRoute>
     );
   };
