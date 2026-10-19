@@ -69,11 +69,19 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
 
   return (
     <div style={styles.container}>
-      {/* Header Greeting */}
-      <div style={styles.greetingHeader}>
+      {/* Header Bar with Greeting on Left & Create Activity Button on Right */}
+      <div style={styles.greetingHeaderBar}>
         <h1 style={styles.greetingTitle}>
           {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`)}
         </h1>
+
+        <button
+          onClick={() => onNavigateTab?.('activity_creation')}
+          style={styles.headerCreateActivityBtn}
+        >
+          <span style={styles.headerPlusIcon}>+</span>
+          <span>{t('teacherHome.createActivity', 'Create Activity')}</span>
+        </button>
       </div>
 
       {isLoading ? (
@@ -127,130 +135,181 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
             </div>
           </section>
 
-          {/* Detailed Overview Label */}
+          {/* Detailed Overview Section Label */}
           <h2 style={styles.sectionLabel}>
             {t('teacherHome.detailedOverview', 'Detailed Overview')}
           </h2>
 
-          {/* Two-Column Layout: Left (Classes & Create) | Right (Top 5 Activities) */}
-          <div style={styles.twoColumnGrid}>
-            {/* Left Column: YOUR CLASSES + Create Activity Button */}
-            <div style={styles.leftCol}>
-              <div style={styles.subHeaderBox}>
-                <span style={styles.subHeaderTitle}>
-                  {t('teacherHome.yourClasses', 'YOUR CLASSES')}
-                </span>
-              </div>
-
-              <div style={styles.classesGrid}>
-                {data?.yourClasses && data.yourClasses.length > 0 ? (
-                  data.yourClasses.map((cls) => (
-                    <div key={cls.id} style={styles.classCard}>
-                      <div style={styles.classCardTop}>
-                        <h3 style={styles.classNameText}>
-                          {cls.subject} {cls.grade} ({cls.year})
-                        </h3>
-                      </div>
-                      <div style={styles.classCardMeta}>
-                        <span style={styles.metaChip}>
-                          👥 {t('teacherHome.studentsCount', `${cls.studentCount} Students`)}
-                        </span>
-                        <span style={styles.metaChip}>
-                          ⚡ {t('teacherHome.activeActivitiesCount', `${cls.activeActivitiesCount} Active Activities`)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={styles.emptyCardBox}>
-                    <p style={styles.emptyText}>
-                      {t('teacherHome.noClassesYet', 'No classes found. Create your first class in Classroom Setup.')}
-                    </p>
+          {/* Detailed Overview Soft Light-Blue Panel Wrapper */}
+          <div style={styles.detailedOverviewPanel}>
+            <div style={styles.twoColumnGrid}>
+              {/* Left Column: YOUR CLASSES Box */}
+              <div style={styles.leftCol}>
+                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                  <div style={styles.subHeaderBox}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 3h20" />
+                      <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3" />
+                      <path d="m7 21 5-5 5 5" />
+                    </svg>
+                    <span style={styles.subHeaderTitle}>
+                      {t('teacherHome.yourClasses', 'YOUR CLASSES')}
+                    </span>
                   </div>
-                )}
 
-                {/* + Create Activity Card */}
-                <button
-                  onClick={() => onNavigateTab?.('activity_creation')}
-                  style={styles.createActivityCard}
-                >
-                  <div style={styles.plusCircle}>+</div>
-                  <span style={styles.createBtnText}>
-                    {t('teacherHome.createActivity', '+ Create Activity')}
-                  </span>
-                </button>
-              </div>
-            </div>
+                  {/* Scrollable Container for Classes */}
+                  <div style={styles.scrollableContent}>
+                    {data?.yourClasses && data.yourClasses.length > 0 ? (
+                      data.yourClasses.map((cls) => (
+                        <div key={cls.id} style={styles.classCard}>
+                          {/* Class Header Title */}
+                          <div style={styles.classCardHeader}>
+                            <h3 style={styles.classNameText}>
+                              {cls.subject.toUpperCase()} {cls.grade.toUpperCase()} ({cls.year})
+                            </h3>
+                          </div>
 
-            {/* Right Column: Top 5 Used Activities by You */}
-            <div style={styles.rightCol}>
-              <div style={styles.subHeaderBox}>
-                <span style={styles.subHeaderTitle}>
-                  {t('teacherHome.top5UsedActivities', 'Top 5 Used Activities by You')}
-                </span>
-              </div>
+                          {/* Row 1: Students */}
+                          <div style={styles.classMetricRow}>
+                            <div style={styles.metricIconBox}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                              </svg>
+                            </div>
+                            <span style={styles.metricText}>
+                              {t('teacherHome.studentsCount', `${cls.studentCount} Students`)}
+                            </span>
+                          </div>
 
-              <div style={styles.topActivitiesList}>
-                {data?.top5UsedActivities && data.top5UsedActivities.length > 0 ? (
-                  data.top5UsedActivities.map((act, index) => (
-                    <div key={act.id || index} style={styles.topActivityItem}>
-                      <div style={styles.activityNameText}>
-                        <span style={styles.rankNum}>{index + 1}.</span> {act.title}
+                          {/* Row 2: Active Activities */}
+                          <div style={styles.classMetricRow}>
+                            <div style={styles.metricIconBox}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                              </svg>
+                            </div>
+                            <span style={styles.metricText}>
+                              {t('teacherHome.activeActivitiesCount', `${cls.activeActivitiesCount} Active Activities`)}
+                            </span>
+                          </div>
+
+                          {/* Row 3: Average Completion */}
+                          <div style={{ ...styles.classMetricRow, borderBottom: 'none' }}>
+                            <div style={styles.metricIconBox}>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                            </div>
+                            <span style={styles.metricText}>
+                              {t('teacherHome.avgCompletionRate', `${cls.averageCompletionRate}% Average Completion`)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.emptyCardBox}>
+                        <p style={styles.emptyText}>
+                          {t('teacherHome.noClassesYet', 'No classes found. Create your first class in Classroom Setup.')}
+                        </p>
                       </div>
-                      <div style={styles.usageBadge}>
-                        {t('teacherHome.timesUsed', `${act.usageCount} times`)}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div style={styles.emptyCardBox}>
-                    <p style={styles.emptyText}>
-                      {t('teacherHome.noActivitiesYet', 'No activities used yet.')}
-                    </p>
+                    )}
                   </div>
-                )}
+                </div>
+              </div>
+
+              {/* Right Column: Top 5 Used Activities & Recent Activities */}
+              <div style={styles.rightCol}>
+                {/* TOP 5 USED ACTIVITIES BY YOU Box */}
+                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                  <div style={styles.subHeaderBox}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="8" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="18" x2="21" y2="18" />
+                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                    </svg>
+                    <span style={styles.subHeaderTitle}>
+                      {t('teacherHome.top5UsedActivities', 'Top 5 Used Activities by You')}
+                    </span>
+                  </div>
+
+                  {/* Scrollable Container for Top Activities */}
+                  <div style={styles.scrollableContent}>
+                    {data?.top5UsedActivities && data.top5UsedActivities.length > 0 ? (
+                      data.top5UsedActivities.map((act, index) => (
+                        <div key={act.id || index} style={styles.topActivityCard}>
+                          <div style={styles.activityTitleText}>
+                            {act.title}
+                          </div>
+                          <div style={styles.usagePillBadge}>
+                            {t('teacherHome.timesUsed', `${act.usageCount} times`)}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.emptyCardBox}>
+                        <p style={styles.emptyText}>
+                          {t('teacherHome.noActivitiesYet', 'No activities used yet.')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* RECENT ACTIVITIES Box */}
+                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                  <div style={styles.subHeaderBox}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                    <span style={styles.subHeaderTitle}>
+                      {t('teacherHome.recentActivities', 'RECENT ACTIVITIES')}
+                    </span>
+                  </div>
+
+                  {/* Scrollable Container for Recent Activities */}
+                  <div style={{ ...styles.scrollableContent, backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #92cadb', padding: '0.25rem 1.1rem' }}>
+                    {data?.recentActivities && data.recentActivities.length > 0 ? (
+                      data.recentActivities.map((session, idx) => (
+                        <div
+                          key={session.id}
+                          style={{
+                            ...styles.recentListItem,
+                            borderBottom: idx === data.recentActivities.length - 1 ? 'none' : '1px solid #e2f0f5',
+                          }}
+                        >
+                          <div style={styles.recentItemIconBox}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#217391" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                          </div>
+                          <div style={styles.recentItemText}>
+                            Activity "{session.activityTitle}" session - {formatTimestamp(session.createdAt)}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.emptyCardBox}>
+                        <p style={styles.emptyText}>
+                          {t('teacherHome.noRecentActivitiesYet', 'No recent activity history found.')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Bottom Section: RECENT ACTIVITIES */}
-          <section style={styles.sectionBlock}>
-            <div style={styles.subHeaderBox}>
-              <span style={styles.subHeaderTitle}>
-                {t('teacherHome.recentActivities', 'RECENT ACTIVITIES')}
-              </span>
-            </div>
-
-            <div style={styles.recentActivitiesGrid}>
-              {data?.recentActivities && data.recentActivities.length > 0 ? (
-                data.recentActivities.map((session) => (
-                  <div key={session.id} style={styles.recentActivityCard}>
-                    <div style={styles.recentCardHeader}>
-                      <span style={styles.recentCodeBadge}>{session.shareCode}</span>
-                      <span style={styles.recentTimeText}>
-                        {formatTimestamp(session.createdAt)}
-                      </span>
-                    </div>
-                    <h4 style={styles.recentActivityTitle}>{session.activityTitle}</h4>
-                    <div style={styles.recentCardFooter}>
-                      <span style={styles.recentStatusChip}>
-                        ● {session.status}
-                      </span>
-                      <span style={styles.recentStudentCount}>
-                        {session.studentCount} students
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div style={styles.emptyCardBox}>
-                  <p style={styles.emptyText}>
-                    {t('teacherHome.noRecentActivitiesYet', 'No recent activity history found.')}
-                  </p>
-                </div>
-              )}
-            </div>
-          </section>
         </>
       )}
     </div>
@@ -267,15 +326,38 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1.75rem',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
-  greetingHeader: {
+  greetingHeaderBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingBottom: '0.25rem',
   },
   greetingTitle: {
     fontSize: '1.85rem',
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#005175', // User requested label color #005175
     margin: 0,
     letterSpacing: '-0.02em',
+  },
+  headerCreateActivityBtn: {
+    backgroundColor: '#0083ba', // Vibrant blue create activity button matching image style
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '0.75rem 1.4rem',
+    fontSize: '0.98rem',
+    fontWeight: '700',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    cursor: 'pointer',
+    boxShadow: '0 3px 10px rgba(0, 131, 186, 0.2)',
+    transition: 'all 0.15s ease',
+  },
+  headerPlusIcon: {
+    fontSize: '1.3rem',
+    fontWeight: '400',
+    lineHeight: 1,
   },
   loadingBox: {
     padding: '3rem',
@@ -312,7 +394,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionLabel: {
     fontSize: '1.25rem',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#005175', // User requested label color #005175
     margin: 0,
   },
   overviewGrid: {
@@ -321,7 +403,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1.25rem',
   },
   darkBlueCard: {
-    backgroundColor: '#035375', // Exact dark blue match from uploaded image
+    backgroundColor: '#035375',
     borderRadius: '14px',
     padding: '1.5rem 1rem',
     color: '#ffffff',
@@ -335,9 +417,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.4rem',
   },
   cardBigNumber: {
-    fontSize: '4rem',
+    fontSize: '2.8rem',
     fontWeight: '800',
-    color: '#92d0e6', // Exact light blue number color from uploaded image
+    color: '#92d0e6',
     lineHeight: 1,
     margin: 0,
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -345,212 +427,172 @@ const styles: Record<string, React.CSSProperties> = {
   cardTitle: {
     fontSize: '0.98rem',
     fontWeight: '700',
-    color: '#92d0e6', // Exact light blue label color from uploaded image
+    color: '#92d0e6',
     margin: 0,
     lineHeight: 1.2,
   },
+
+  /* Detailed Overview Outer Soft Light-Blue Panel */
+  detailedOverviewPanel: {
+    backgroundColor: '#a1d2e6',
+    borderRadius: '16px',
+    border: '2px solid #82bfd4',
+    padding: '1.5rem',
+  },
   twoColumnGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 340px',
+    gridTemplateColumns: '1fr 1fr',
     gap: '1.5rem',
     alignItems: 'start',
   },
   leftCol: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '1.25rem',
   },
   rightCol: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '1.25rem',
+  },
+
+  /* Inner Card Section Containers with Fixed Equal Height */
+  innerSectionBox: {
+    backgroundColor: '#cae7f3',
+    border: '1px solid #92cadb',
+    borderRadius: '12px',
+    padding: '1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
     gap: '1rem',
+    boxSizing: 'border-box',
   },
   subHeaderBox: {
-    borderBottom: '2px solid #e2e8f0',
-    paddingBottom: '0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    borderBottom: '2px solid #92cadb',
+    paddingBottom: '0.65rem',
+    flexShrink: 0,
   },
   subHeaderTitle: {
-    fontSize: '1rem',
+    fontSize: '1.05rem',
     fontWeight: '800',
-    color: '#1e293b',
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
+    color: '#125873',
+    letterSpacing: '0.02em',
   },
-  classesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: '1rem',
-  },
-  classCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '1.2rem 1.25rem',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+
+  /* Scrollable Inner Container */
+  scrollableContent: {
+    flex: 1,
+    overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.85rem',
+    paddingRight: '0.25rem',
   },
-  classCardTop: {
+
+  /* Class Cards */
+  classCard: {
+    backgroundColor: '#329bb6',
+    borderRadius: '10px',
+    padding: '1rem 1.25rem',
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+    flexShrink: 0,
+  },
+  classCardHeader: {
+    borderBottom: '1px solid rgba(255, 255, 255, 0.35)',
+    paddingBottom: '0.6rem',
+    marginBottom: '0.5rem',
   },
   classNameText: {
-    fontSize: '1.1rem',
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: '1rem',
+    fontWeight: '800',
+    color: '#ffffff',
     margin: 0,
+    letterSpacing: '0.03em',
   },
-  classCardMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.35rem',
-  },
-  metaChip: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#475569',
-  },
-  createActivityCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '2px dashed #93c5fd',
-    padding: '1.5rem 1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    minHeight: '130px',
-  },
-  plusCircle: {
-    width: '38px',
-    height: '38px',
-    borderRadius: '50%',
-    backgroundColor: '#eff6ff',
-    color: '#2563eb',
-    fontSize: '1.5rem',
-    fontWeight: '700',
+  classMetricRow: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  createBtnText: {
-    fontSize: '0.95rem',
-    fontWeight: '700',
-    color: '#2563eb',
-  },
-  topActivitiesList: {
-    display: 'flex',
-    flexDirection: 'column',
     gap: '0.75rem',
+    padding: '0.55rem 0',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.25)',
   },
-  topActivityItem: {
+  metricIconBox: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '22px',
+  },
+  metricText: {
+    fontSize: '0.92rem',
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+
+  /* Top 5 Activities List */
+  topActivityCard: {
     backgroundColor: '#ffffff',
     borderRadius: '10px',
-    padding: '0.9rem 1.1rem',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #92cadb',
+    padding: '0.85rem 1.1rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+    flexShrink: 0,
   },
-  rankNum: {
-    color: '#2563eb',
-    fontWeight: '800',
-    marginRight: '0.35rem',
-  },
-  activityNameText: {
-    fontSize: '0.92rem',
+  activityTitleText: {
+    fontSize: '0.95rem',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#125873',
     flex: 1,
     paddingRight: '0.5rem',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
   },
-  usageBadge: {
-    backgroundColor: '#eff6ff',
-    color: '#1d4ed8',
-    padding: '0.3rem 0.65rem',
-    borderRadius: '6px',
-    fontSize: '0.8rem',
-    fontWeight: '700',
-    whiteSpace: 'nowrap',
-  },
-  recentActivitiesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: '1rem',
-  },
-  recentActivityCard: {
-    backgroundColor: '#ffffff',
+  usagePillBadge: {
+    backgroundColor: '#e1f2f7',
+    color: '#125873',
+    padding: '0.25rem 0.65rem',
     borderRadius: '12px',
-    padding: '1.1rem 1.25rem',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    whiteSpace: 'nowrap',
+  },
+
+  /* Recent Activities Box */
+  recentListItem: {
     display: 'flex',
-    flexDirection: 'column',
+    alignItems: 'center',
     gap: '0.75rem',
+    padding: '0.85rem 0',
+    flexShrink: 0,
   },
-  recentCardHeader: {
+  recentItemIconBox: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
-  recentCodeBadge: {
-    backgroundColor: '#f1f5f9',
-    color: '#334155',
-    padding: '0.2rem 0.5rem',
-    borderRadius: '6px',
-    fontSize: '0.78rem',
-    fontWeight: '800',
-    fontFamily: 'monospace',
-  },
-  recentTimeText: {
-    fontSize: '0.8rem',
-    fontWeight: '500',
-    color: '#64748b',
-  },
-  recentActivityTitle: {
-    fontSize: '1rem',
-    fontWeight: '700',
-    color: '#0f172a',
-    margin: 0,
-  },
-  recentCardFooter: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: '0.35rem',
-    borderTop: '1px solid #f1f5f9',
-  },
-  recentStatusChip: {
-    fontSize: '0.78rem',
-    fontWeight: '700',
-    color: '#16a34a',
-  },
-  recentStudentCount: {
-    fontSize: '0.8rem',
+  recentItemText: {
+    fontSize: '0.92rem',
     fontWeight: '600',
-    color: '#64748b',
+    color: '#125873',
+    lineHeight: 1.4,
   },
+
   emptyCardBox: {
-    padding: '1.5rem',
+    padding: '1.25rem',
     backgroundColor: '#ffffff',
     borderRadius: '10px',
-    border: '1px dashed #cbd5e1',
+    border: '1px dashed #92cadb',
     textAlign: 'center',
     width: '100%',
   },
   emptyText: {
     fontSize: '0.88rem',
-    color: '#64748b',
+    color: '#125873',
     margin: 0,
   },
 };
-
