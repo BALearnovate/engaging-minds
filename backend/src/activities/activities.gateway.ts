@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface StudentProgressState {
   studentId: string;
@@ -33,6 +34,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
   @WebSocketServer()
   server: Server;
 
+  constructor(private prisma: PrismaService) {}
 
   // In-memory live activity tracking: activityId -> Map<studentId, StudentProgressState>
   private liveTrackingMap = new Map<string, Map<string, StudentProgressState>>();
@@ -46,7 +48,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   @SubscribeMessage('join_room')
-  handleJoinRoom(
+  async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { activityId: string; userId: string; role: string; userName?: string },
   ) {
@@ -59,13 +61,51 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     const activityStateMap = this.liveTrackingMap.get(payload.activityId)!;
 
+    // Load initial student states from DB if in-memory map doesn't have them yet
+    try {
+      if (payload.activityId) {
+        const actSession = await this.prisma.activitySession.findFirst({
+          where: {
+            OR: [
+              { shareCode: payload.activityId.toUpperCase() },
+              { id: payload.activityId },
+            ],
+          },
+          include: {
+            studentSessions: true,
+          },
+        });
+
+        if (actSession && actSession.studentSessions) {
+          for (const st of actSession.studentSessions) {
+            const key = st.studentId || st.id;
+            if (!activityStateMap.has(key)) {
+              activityStateMap.set(key, {
+                studentId: key,
+                studentName: st.studentName,
+                status: (st.status as any) || 'NOT_STARTED',
+                progress: st.progress || 0,
+                engagementScore: st.engagementScore || 0,
+                performanceScore: st.performanceScore || 0,
+                progressText: `${st.progress || 0}% completed`,
+                score: st.score || 0,
+                lastUpdated: st.lastSeenAt ? st.lastSeenAt.toISOString() : new Date().toISOString(),
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching room state from database in handleJoinRoom:', e);
+    }
+
     // Send current live states of all students to the client
     const currentStudents = Array.from(activityStateMap.values());
     client.emit('room_state', { activityId: payload.activityId, students: currentStudents });
   }
 
   @SubscribeMessage('update_progress')
-  handleUpdateProgress(
+  async handleUpdateProgress(
     @MessageBody()
     payload: {
       activityId: string;
@@ -111,10 +151,15 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Broadcast updated state to room
     this.server.to(roomName).emit('live_student_update', updatedState);
+
+    // Asynchronously persist progress update to database
+    this.persistStudentProgress(payload, progressVal, engagementVal, performanceVal).catch((err) => {
+      console.warn('Failed to persist student progress:', err);
+    });
   }
 
   @SubscribeMessage('request_help')
-  handleRequestHelp(
+  async handleRequestHelp(
     @MessageBody()
     payload: {
       activityId: string;
@@ -148,6 +193,18 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     // Broadcast stuck alert to room
     this.server.to(roomName).emit('live_student_update', stuckState);
     this.server.to(roomName).emit('student_stuck_alert', stuckState);
+
+    this.persistStudentProgress(
+      {
+        activityId: payload.activityId,
+        studentId: payload.studentId,
+        studentName: payload.studentName,
+        status: 'STUCK',
+      },
+      existing?.progress || 0,
+      existing?.engagementScore || 0,
+      existing?.performanceScore || 0,
+    ).catch(() => {});
   }
 
   @SubscribeMessage('send_hint')
@@ -178,24 +235,115 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       studentState.progressText = 'Hint Received from Teacher';
       studentState.lastUpdated = new Date().toISOString();
       this.server.to(roomName).emit('live_student_update', studentState);
+
+      this.persistStudentProgress(
+        {
+          activityId: payload.activityId,
+          studentId: payload.studentId,
+          studentName: studentState.studentName,
+          status: 'IN_PROGRESS',
+        },
+        studentState.progress || 0,
+        studentState.engagementScore || 0,
+        studentState.performanceScore || 0,
+      ).catch(() => {});
     }
   }
 
   emitActivityPublished(data: {
-  classroomId?: string;
-  activityId: string;
-  activityTitle: string;
-  shareCode: string;
-  teacherName?: string;
-}) {
-  if (this.server) {
-    this.server.emit('activity_published', data);
-    if (data.classroomId) {
-      this.server.to(`classroom_${data.classroomId}`).emit('activity_published', data);
+    classroomId?: string;
+    activityId: string;
+    activityTitle: string;
+    shareCode: string;
+    teacherName?: string;
+  }) {
+    if (this.server) {
+      this.server.emit('activity_published', data);
+      if (data.classroomId) {
+        this.server.to(`classroom_${data.classroomId}`).emit('activity_published', data);
+      }
+    }
+  }
+
+  private async persistStudentProgress(
+    payload: {
+      activityId: string;
+      studentId: string;
+      studentName: string;
+      status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
+      score?: number;
+    },
+    progress: number,
+    engagementScore: number,
+    performanceScore: number,
+  ) {
+    if (!payload.activityId) return;
+
+    try {
+      const actSession = await this.prisma.activitySession.findFirst({
+        where: {
+          OR: [
+            { shareCode: payload.activityId.toUpperCase() },
+            { id: payload.activityId },
+          ],
+        },
+      });
+
+      if (!actSession) return;
+
+      const trimmedName = payload.studentName?.trim();
+
+      let studentSession = await this.prisma.studentSession.findFirst({
+        where: {
+          activitySessionId: actSession.id,
+          OR: [
+            { id: payload.studentId },
+            { studentId: payload.studentId },
+            ...(trimmedName
+              ? [{ studentName: { equals: trimmedName, mode: 'insensitive' as const } }]
+              : []),
+          ],
+        },
+      });
+
+      const effectiveStatus =
+        payload.status ||
+        (progress === 100 ? 'COMPLETED' : progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED');
+
+      if (studentSession) {
+        await this.prisma.studentSession.update({
+          where: { id: studentSession.id },
+          data: {
+            status: effectiveStatus,
+            progress: progress,
+            engagementScore: engagementScore,
+            performanceScore: performanceScore,
+            score: payload.score ?? performanceScore ?? studentSession.score,
+            lastSeenAt: new Date(),
+          },
+        });
+      } else {
+        await this.prisma.studentSession.create({
+          data: {
+            activitySessionId: actSession.id,
+            studentId:
+              payload.studentId && !payload.studentId.startsWith('student_guest')
+                ? payload.studentId
+                : null,
+            studentName: trimmedName || 'Student',
+            status: effectiveStatus,
+            progress: progress,
+            engagementScore: engagementScore,
+            performanceScore: performanceScore,
+            score: payload.score ?? performanceScore ?? 0,
+          },
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to persist student progress to database:', err);
     }
   }
 }
 
-}
 
 
