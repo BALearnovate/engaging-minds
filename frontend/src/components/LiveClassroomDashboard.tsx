@@ -325,32 +325,76 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   return (
     <div style={styles.outerWrapper}>
+      <style>{`
+        .vibrating-dot-green {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background-color: #22c55e;
+          display: inline-block;
+          flex-shrink: 0;
+        }
+        .vibrating-dot-yellow {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background-color: #f59e0b;
+          box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8);
+          animation: vibratePulseYellow 1.1s infinite ease-in-out;
+          display: inline-block;
+          flex-shrink: 0;
+        }
+        .vibrating-dot-red {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background-color: #ef4444;
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9);
+          animation: vibratePulseRed 0.85s infinite ease-in-out;
+          display: inline-block;
+          flex-shrink: 0;
+        }
+
+        @keyframes vibratePulseYellow {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+          50% { transform: scale(1.18) translate(0.5px, -0.5px); box-shadow: 0 0 0 9px rgba(245, 158, 11, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        @keyframes vibratePulseRed {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); }
+          25% { transform: scale(1.22) translate(-1px, 1px); }
+          50% { transform: scale(1.15) box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          75% { transform: scale(1.22) translate(1px, -1px); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes popScaleGlow {
+          0% { transform: scale(0.1) rotate(-15deg); opacity: 0; }
+          50% { transform: scale(1.3) rotate(8deg); opacity: 1; filter: drop-shadow(0 0 35px #f59e0b); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 20px #f59e0b); }
+        }
+        @keyframes floatParticle1 {
+          0% { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(-90px, -130px) scale(1.5); opacity: 0; }
+        }
+        @keyframes floatParticle2 {
+          0% { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(100px, -150px) scale(1.6); opacity: 0; }
+        }
+        @keyframes floatParticle3 {
+          0% { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(20px, -170px) scale(1.8); opacity: 0; }
+        }
+        @keyframes spinCoin {
+          0% { transform: rotateY(0deg) scale(0.2); opacity: 0; }
+          50% { transform: rotateY(540deg) scale(1.3); opacity: 1; }
+          100% { transform: rotateY(720deg) scale(1); opacity: 1; }
+        }
+      `}</style>
+
       {awardOverlay && (
         <div style={styles.celebrationBackdrop}>
-          <style>{`
-            @keyframes popScaleGlow {
-              0% { transform: scale(0.1) rotate(-15deg); opacity: 0; }
-              50% { transform: scale(1.3) rotate(8deg); opacity: 1; filter: drop-shadow(0 0 35px #f59e0b); }
-              100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 20px #f59e0b); }
-            }
-            @keyframes floatParticle1 {
-              0% { transform: translate(0, 0) scale(1); opacity: 1; }
-              100% { transform: translate(-90px, -130px) scale(1.5); opacity: 0; }
-            }
-            @keyframes floatParticle2 {
-              0% { transform: translate(0, 0) scale(1); opacity: 1; }
-              100% { transform: translate(100px, -150px) scale(1.6); opacity: 0; }
-            }
-            @keyframes floatParticle3 {
-              0% { transform: translate(0, 0) scale(1); opacity: 1; }
-              100% { transform: translate(20px, -170px) scale(1.8); opacity: 0; }
-            }
-            @keyframes spinCoin {
-              0% { transform: rotateY(0deg) scale(0.2); opacity: 0; }
-              50% { transform: rotateY(540deg) scale(1.3); opacity: 1; }
-              100% { transform: rotateY(720deg) scale(1); opacity: 1; }
-            }
-          `}</style>
           <div style={styles.celebrationCard}>
             <div style={{ ...styles.sparkleParticle, top: '20px', left: '30px', animation: 'floatParticle1 2s ease-out infinite' }}>✨</div>
             <div style={{ ...styles.sparkleParticle, top: '15px', right: '40px', animation: 'floatParticle2 2.2s ease-out infinite' }}>🌟</div>
@@ -473,9 +517,18 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             <div style={styles.cardHeaderRow}>
               <h3 style={styles.sectionHeaderTitle}>INDIVIDUAL STATUS MONITOR</h3>
               <div style={styles.legendRow}>
-                <span style={styles.legendItem}><span style={{ color: '#16a34a' }}>🟢</span> GREEN: OPTIMAL</span>
-                <span style={styles.legendItem}><span style={{ color: '#eab308' }}>🟡</span> YELLOW: AT RISK</span>
-                <span style={styles.legendItem}><span style={{ color: '#dc2626' }}>🔴</span> RED: ALERT FLAG</span>
+                <span style={styles.legendItem}>
+                  <span className="vibrating-dot-green" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
+                  OPTIMAL
+                </span>
+                <span style={styles.legendItem}>
+                  <span className="vibrating-dot-yellow" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
+                  AT RISK
+                </span>
+                <span style={styles.legendItem}>
+                  <span className="vibrating-dot-red" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
+                  ALERT
+                </span>
               </div>
             </div>
 
@@ -490,12 +543,6 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               <div style={styles.studentCardsContainer}>
                 {students.map((student) => {
                   const isSelected = student.id === selectedStudentId;
-                  const statusBadgeStyle =
-                    student.status === 'OPTIMAL'
-                      ? { bg: '#e6f4ea', text: '#137333', border: '#a8dab5' }
-                      : student.status === 'AT RISK'
-                      ? { bg: '#fef3c7', text: '#b45309', border: '#fde68a' }
-                      : { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' };
 
                   return (
                     <div
@@ -518,16 +565,16 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                         >
                           {student.name}
                         </span>
-                        <span
-                          style={{
-                            ...styles.studentStatusBadge,
-                            backgroundColor: statusBadgeStyle.bg,
-                            color: statusBadgeStyle.text,
-                            borderColor: statusBadgeStyle.border,
-                          }}
-                        >
-                          {student.status}
-                        </span>
+                        <div
+                          className={
+                            student.status === 'OPTIMAL'
+                              ? 'vibrating-dot-green'
+                              : student.status === 'AT RISK'
+                              ? 'vibrating-dot-yellow'
+                              : 'vibrating-dot-red'
+                          }
+                          title={student.status}
+                        />
                       </div>
                       <div
                         style={{
@@ -991,6 +1038,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.25rem',
+    
   },
   studentCardsContainer: {
     display: 'grid',
