@@ -10,11 +10,12 @@ import { EuFooter } from '../components/EuFooter';
 interface LoginProps {
   onSuccess: (role: string) => void;
   onNavigateToRegister: () => void;
+  initialPortal?: 'TEACHER' | 'STUDENT';
 }
 
-export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister }) => {
+export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, initialPortal = 'TEACHER' }) => {
   const { login, setSession } = useAuth();
-  const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('STUDENT');
+  const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>(initialPortal);
 
   // Teacher Login State
   const [email, setEmail] = useState('');
