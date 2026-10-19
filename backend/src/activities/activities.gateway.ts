@@ -69,8 +69,11 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
             OR: [
               { shareCode: payload.activityId.toUpperCase() },
               { id: payload.activityId },
+              { activityVersion: { activityId: payload.activityId } },
             ],
+            status: 'ACTIVE',
           },
+          orderBy: { createdAt: 'desc' },
           include: {
             studentSessions: true,
           },
@@ -285,8 +288,11 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           OR: [
             { shareCode: payload.activityId.toUpperCase() },
             { id: payload.activityId },
+            { activityVersion: { activityId: payload.activityId } },
           ],
+          status: 'ACTIVE',
         },
+        orderBy: { createdAt: 'desc' },
       });
 
       if (!actSession) return;

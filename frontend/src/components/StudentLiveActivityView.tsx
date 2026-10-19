@@ -61,6 +61,11 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   // Fetch Activity Content dynamically if not passed directly
   useEffect(() => {
+    // Reset step progress when switching activities
+    setStepIndex(1);
+    setCompletedSteps(0);
+    setQuestionsCorrect(0);
+
     if (initialContent) {
       setLoadedContent(initialContent);
       setIsLoading(false);
@@ -236,8 +241,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   onProgressUpdate={({ currentStep, totalSteps: runtimeTotalSteps, completedCount }) => {
                     setStepIndex(currentStep);
                     setTotalSteps(runtimeTotalSteps);
-                    setCompletedSteps((prev) => Math.max(prev, completedCount));
-                    setQuestionsCorrect((prev) => Math.max(prev, completedCount));
+                    setCompletedSteps(completedCount);
+                    setQuestionsCorrect(completedCount);
                   }}
                   onCompleted={() => {
                     setToastMessage('🎉 Activity completed!');
