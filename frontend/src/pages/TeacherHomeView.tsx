@@ -153,7 +153,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                       <path d="m7 21 5-5 5 5" />
                     </svg>
                     <span style={styles.subHeaderTitle}>
-                      {t('teacherHome.yourClasses', 'YOUR CLASSES')}
+                      {t('teacherHome.yourClasses', 'Your Classes')}
                     </span>
                   </div>
 
@@ -229,7 +229,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                       <line x1="6" y1="20" x2="6" y2="14" />
                     </svg>
                     <span style={styles.subHeaderTitle}>
-                      {t('teacherHome.mostEngagedSchoolActivities', 'MOST ENGAGED ACTIVITIES IN SCHOOL')}
+                      {t('teacherHome.mostEngagedSchoolActivities', 'Activities with Most Engagement in School')}
                     </span>
                   </div>
 
@@ -318,7 +318,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
                     <span style={styles.subHeaderTitle}>
-                      {t('teacherHome.recentActivities', 'RECENT ACTIVITIES')}
+                      {t('teacherHome.recentActivities', 'Recent activities')}
                     </span>
                   </div>
 
