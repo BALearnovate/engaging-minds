@@ -55,6 +55,31 @@
     "completionProgress": "Completion Progress",
     "performanceMastery": "Performance Mastery",
     "metricsScope": "METRICS SCOPE SELECTOR",
-    "statusMonitor": "INDIVIDUAL STATUS MONITOR"
+  },
+  "teacherHome": {
+    "welcome": "Welcome {{name}} !",
+    "subtitle": "Ready to inspire learning today? You currently manage {{totalClasses}} active classes and {{totalActivities}} total activities.",
+    "createActivity": "Create Activity",
+    "generalOverview": "General Overview",
+    "totalClasses": "Total Classes",
+    "totalActivities": "Total Activities",
+    "totalEngagedStudents": "Total Engaged Students",
+    "detailedOverview": "Detailed Overview",
+    "yourClasses": "YOUR CLASSES",
+    "studentsCount": "{{count}} Students",
+    "activeActivitiesCount": "{{count}} Active Activities",
+    "avgCompletionRate": "{{rate}}% Average Completion",
+    "noClassesYet": "No classes found. Create your first class in Classroom Setup.",
+    "top5UsedActivities": "Top 5 Used Activities by You",
+    "timesUsed": "{{count}} times",
+    "noActivitiesYet": "No activities used yet.",
+    "recentActivities": "RECENT ACTIVITIES",
+    "noRecentActivitiesYet": "No recent activity history found.",
+    "justNow": "Just now",
+    "minutesAgo": "{{min}} min ago",
+    "hoursAgo": "{{hrs}} hrs ago",
+    "mostEngagedSchoolActivities": "MOST ENGAGED ACTIVITIES IN SCHOOL",
+    "engagementScore": "{{score}}% Engagement",
+    "noSchoolActivitiesYet": "No engaged activities recorded in the school yet."
   }
 }

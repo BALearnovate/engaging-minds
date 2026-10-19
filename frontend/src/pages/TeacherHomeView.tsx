@@ -69,11 +69,19 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
 
   return (
     <div style={styles.container}>
-      {/* Header Bar with Greeting on Left & Create Activity Button on Right */}
+      {/* Header Bar with Greeting & Subtitle on Left & Create Activity Button on Right */}
       <div style={styles.greetingHeaderBar}>
-        <h1 style={styles.greetingTitle}>
-          {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`)}
-        </h1>
+        <div style={styles.greetingTextGroup}>
+          <h1 style={styles.greetingTitle}>
+            {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`)}
+          </h1>
+          <p style={styles.greetingSubtitle}>
+            {t(
+              'teacherHome.subtitle',
+              ` You currently manage ${data?.stats.totalClasses ?? 0} active classes and ${data?.stats.totalActivities ?? 0} total activities. Ready to inspire learning today? Create another activity now!`
+            )}
+          </p>
+        </div>
 
         <button
           onClick={() => onNavigateTab?.('activity_creation')}
@@ -378,12 +386,25 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
     paddingBottom: '0.25rem',
   },
+  greetingTextGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+  },
   greetingTitle: {
     fontSize: '1.85rem',
     fontWeight: '800',
     color: '#005175', // User requested label color #005175
     margin: 0,
     letterSpacing: '-0.02em',
+  },
+  greetingSubtitle: {
+    fontSize: '0.95rem',
+    fontWeight: '500',
+    color: '#125873',
+    margin: 0,
+    lineHeight: 1.3,
+    paddingTop: '1rem'
   },
   headerCreateActivityBtn: {
     backgroundColor: '#0083ba', // Vibrant blue create activity button matching image style
