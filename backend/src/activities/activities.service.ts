@@ -1163,6 +1163,56 @@ export class ActivitiesService {
       studentCount: sess.studentSessions.length,
     }));
 
+    // 7. Most Engaged Activities in School
+    const allSchoolActivities = await this.prisma.activity.findMany({
+      include: {
+        versions: {
+          include: {
+            sessions: {
+              include: {
+                studentSessions: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const schoolEngagedActivities = allSchoolActivities.map((act) => {
+      let totalStudents = 0;
+      let totalProgressSum = 0;
+
+      for (const ver of act.versions) {
+        for (const sess of ver.sessions) {
+          for (const sSess of sess.studentSessions) {
+            totalStudents++;
+            totalProgressSum += sSess.progress || 0;
+          }
+        }
+      }
+
+      const engagementScore =
+        totalStudents > 0
+          ? Math.min(100, Math.round(totalProgressSum / totalStudents))
+          : 0;
+
+      return {
+        id: act.id,
+        title: act.title,
+        engagementScore,
+        totalStudents,
+      };
+    });
+
+    schoolEngagedActivities.sort((a, b) => {
+      if (b.engagementScore !== a.engagementScore) {
+        return b.engagementScore - a.engagementScore;
+      }
+      return b.totalStudents - a.totalStudents;
+    });
+
+    const mostEngagedSchoolActivities = schoolEngagedActivities.slice(0, 5);
+
     return {
       teacher: {
         firstName: teacher.firstName,
@@ -1176,6 +1226,7 @@ export class ActivitiesService {
       yourClasses,
       top5UsedActivities,
       recentActivities,
+      mostEngagedSchoolActivities,
     };
   }
 }

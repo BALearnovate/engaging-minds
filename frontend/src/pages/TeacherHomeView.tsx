@@ -219,6 +219,52 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                     )}
                   </div>
                 </div>
+
+                {/* MOST ENGAGED ACTIVITIES IN SCHOOL Box */}
+                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                  <div style={styles.subHeaderBox}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10" />
+                      <line x1="12" y1="20" x2="12" y2="4" />
+                      <line x1="6" y1="20" x2="6" y2="14" />
+                    </svg>
+                    <span style={styles.subHeaderTitle}>
+                      {t('teacherHome.mostEngagedSchoolActivities', 'MOST ENGAGED ACTIVITIES IN SCHOOL')}
+                    </span>
+                  </div>
+
+                  {/* Scrollable Container with Horizontal Bar Chart Items */}
+                  <div style={styles.scrollableContent}>
+                    {data?.mostEngagedSchoolActivities && data.mostEngagedSchoolActivities.length > 0 ? (
+                      data.mostEngagedSchoolActivities.map((act) => (
+                        <div key={act.id} style={styles.chartCardItem}>
+                          <div style={styles.chartItemHeader}>
+                            <span style={styles.chartItemTitle}>{act.title}</span>
+                            <span style={styles.chartItemBadge}>
+                              {t('teacherHome.engagementScore', `${act.engagementScore}% Engagement`)}
+                            </span>
+                          </div>
+
+                          {/* Horizontal Progress Bar Track */}
+                          <div style={styles.chartBarTrack}>
+                            <div
+                              style={{
+                                ...styles.chartBarFill,
+                                width: `${Math.max(act.engagementScore, 3)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={styles.emptyCardBox}>
+                        <p style={styles.emptyText}>
+                          {t('teacherHome.noSchoolActivitiesYet', 'No engaged activities recorded in the school yet.')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Right Column: Top 5 Used Activities & Recent Activities */}
@@ -594,5 +640,52 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.88rem',
     color: '#125873',
     margin: 0,
+  },
+
+  /* Chart Card Item & Bar Styling */
+  chartCardItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: '10px',
+    border: '1px solid #92cadb',
+    padding: '0.85rem 1.1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.55rem',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+    flexShrink: 0,
+  },
+  chartItemHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '0.5rem',
+  },
+  chartItemTitle: {
+    fontSize: '0.93rem',
+    fontWeight: '700',
+    color: '#125873',
+    flex: 1,
+  },
+  chartItemBadge: {
+    backgroundColor: '#0083ba',
+    color: '#ffffff',
+    padding: '0.2rem 0.6rem',
+    borderRadius: '12px',
+    fontSize: '0.8rem',
+    fontWeight: '700',
+    whiteSpace: 'nowrap',
+  },
+  chartBarTrack: {
+    backgroundColor: '#d8eef5',
+    borderRadius: '6px',
+    height: '10px',
+    width: '100%',
+    overflow: 'hidden',
+  },
+  chartBarFill: {
+    backgroundColor: '#0083ba',
+    height: '100%',
+    borderRadius: '6px',
+    transition: 'width 0.4s ease-in-out',
   },
 };

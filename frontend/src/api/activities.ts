@@ -165,6 +165,12 @@ export interface TeacherHomeOverviewData {
     createdAt: string;
     studentCount: number;
   }>;
+  mostEngagedSchoolActivities?: Array<{
+    id: string;
+    title: string;
+    engagementScore: number;
+    totalStudents: number;
+  }>;
 }
 
 export const activitiesApi = {
