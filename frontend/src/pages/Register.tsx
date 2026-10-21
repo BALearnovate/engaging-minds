@@ -927,8 +927,8 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
   },
   logoImg: {
-    maxWidth: '220px',
-    maxHeight: '110px',
+    maxWidth: '120px',
+    maxHeight: '120px',
     width: 'auto',
     height: 'auto',
     display: 'block',

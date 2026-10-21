@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
 
 const styles: Record<string, React.CSSProperties> = {
   header: {
-    height: '76px',
+    height: '120px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -91,9 +91,13 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 2,
   },
   logoImage: {
-    height: '46px',
+    maxWidth: '120px',
+    maxHeight: '120px',
     width: 'auto',
-    objectFit: 'contain',
+    height: 'auto',
+    display: 'block',
+    margin: '0 auto',
+    objectFit: 'contain'
   },
   titleContainer: {
     position: 'absolute',
