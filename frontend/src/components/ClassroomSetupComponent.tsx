@@ -236,26 +236,84 @@ export const ClassroomSetupComponent: React.FC = () => {
       {/* Global CSS Print Styles Injection */}
       <style>{`
         @media print {
+          @page {
+            size: portrait;
+            margin: 10mm;
+          }
+          html, body {
+            background: #ffffff !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * {
             visibility: hidden;
           }
+          header, nav, aside, .no-print, .no-print * {
+            display: none !important;
+          }
+          .modal-backdrop, .modal-container {
+            position: static !important;
+            background: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
           #printable-area, #printable-area * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #printable-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
           }
-          .no-print {
-            display: none !important;
+          .printHeaderBox {
+            text-align: center !important;
+            width: 100% !important;
+            margin: 0 auto 1.25rem auto !important;
+            padding-bottom: 0.5rem !important;
+          }
+          .slipsGrid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(280px, 360px)) !important;
+            justify-content: center !important;
+            gap: 1rem !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            overflow: visible !important;
+          }
+          .slipCard {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+            border: 2px dashed #0284c7 !important;
+            border-radius: 8px !important;
+            padding: 0.85rem 1rem !important;
+            background-color: #f0f9ff !important;
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>
 
       {/* Main Studio Card Enclosing Whole Page (Header + Content) */}
-      <div style={styles.mainStudioCard}>
+      <div style={styles.mainStudioCard} className="no-print">
         {/* Header */}
         <div style={styles.headerBox}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -264,7 +322,7 @@ export const ClassroomSetupComponent: React.FC = () => {
             {isSaving && <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>💾 Saving Changes...</span>}
           </div>
           <p style={styles.bannerSubtitle}>
-            Configure classroom profiles, academic rosters, and student access credentials.
+            Configure classrooms and student access credentials.
           </p>
         </div>
 
@@ -582,8 +640,8 @@ export const ClassroomSetupComponent: React.FC = () => {
 
       {/* PRINTABLE PASS SLIPS MODAL OVERLAY */}
       {showPrintModal && (
-        <div style={styles.modalBackdrop}>
-          <div style={styles.modalContainer}>
+        <div style={styles.modalBackdrop} className="modal-backdrop">
+          <div style={styles.modalContainer} className="modal-container">
             {/* Modal Controls Bar (Hidden during actual print) */}
             <div className="no-print" style={styles.modalControlBar}>
               <div style={styles.modalTabGroup}>
@@ -619,7 +677,7 @@ export const ClassroomSetupComponent: React.FC = () => {
 
             {/* Printable Content Container */}
             <div id="printable-area" style={styles.printableContentArea}>
-              <div style={styles.printHeaderBox}>
+              <div style={styles.printHeaderBox} className="printHeaderBox">
                 <h2 style={styles.printHeaderTitle}>
                   {selectedClassroom.subject} - {selectedClassroom.grade} ({selectedClassroom.year})
                 </h2>
@@ -630,9 +688,9 @@ export const ClassroomSetupComponent: React.FC = () => {
 
               {printMode === 'slips' ? (
                 /* CUTTABLE STUDENT SLIPS GRID (2 Columns x N Rows) */
-                <div style={styles.slipsGrid}>
+                <div style={styles.slipsGrid} className="slipsGrid">
                   {selectedClassroom.students.map((st) => (
-                    <div key={st.id} style={styles.slipCard}>
+                    <div key={st.id} style={styles.slipCard} className="slipCard">
                       <div style={styles.slipHeader}>
                         <span style={styles.slipBrand}>🎓 ENGAGING MINDS</span>
                         <span style={styles.slipBadge}>STUDENT PASS</span>
@@ -693,7 +751,7 @@ export const ClassroomSetupComponent: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    maxWidth: '1200px',
+    maxWidth: '1400px',
     margin: '0 auto',
     padding: '1.25rem',
     backgroundColor: '#f8fafc',
@@ -716,6 +774,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxSizing: 'border-box',
     width: '100%',
     maxWidth: '100%',
+    
   },
   headerBox: {
     display: 'flex',
@@ -740,7 +799,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   splitGrid: {
     display: 'grid',
-    gridTemplateColumns: '270px minmax(0, 1fr)',
+    gridTemplateColumns: '350px minmax(0, 1fr)',
     gap: '1.25rem',
     boxSizing: 'border-box',
     width: '100%',
@@ -750,13 +809,14 @@ const styles: Record<string, React.CSSProperties> = {
   leftColumn: {
     backgroundColor: '#e0f2fe',
     borderRadius: '12px',
-    padding: '1.25rem',
+    padding: '1rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
     border: '1px solid #bae6fd',
     boxSizing: 'border-box',
     minWidth: 0,
+    width: '100%'
   },
   leftHeaderRow: {
     display: 'flex',
@@ -776,7 +836,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '0.2rem 0 0 0',
   },
   createClassBtn: {
-    padding: '0.4rem 0.8rem',
+    padding: '0.4rem 1.5rem',
     backgroundColor: '#0284c7',
     color: '#ffffff',
     border: 'none',
@@ -948,7 +1008,7 @@ const styles: Record<string, React.CSSProperties> = {
 
   rosterBodyGrid: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) 240px',
+    gridTemplateColumns: 'minmax(0, 1fr) 320px',
     gap: '1rem',
     alignItems: 'stretch',
     boxSizing: 'border-box',
@@ -1254,11 +1314,16 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '2rem',
     overflowY: 'auto',
     backgroundColor: '#ffffff',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   printHeaderBox: {
     borderBottom: '2px solid #0369a1',
     paddingBottom: '0.75rem',
     marginBottom: '1.5rem',
+    width: '100%',
+    textAlign: 'center',
   },
   printHeaderTitle: {
     fontSize: '1.4rem',
@@ -1275,18 +1340,23 @@ const styles: Record<string, React.CSSProperties> = {
   /* Slips Grid */
   slipsGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1.25rem',
+    gridTemplateColumns: 'repeat(2, minmax(280px, 360px))',
+    justifyContent: 'center',
+    gap: '0.85rem',
+    width: '100%',
   },
   slipCard: {
     border: '2px dashed #0284c7',
     borderRadius: '10px',
-    padding: '1.25rem',
+    padding: '0.85rem 1rem',
     backgroundColor: '#f0f9ff',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    gap: '0.75rem',
+    gap: '0.5rem',
+    boxSizing: 'border-box',
+    pageBreakInside: 'avoid',
+    breakInside: 'avoid',
   },
   slipHeader: {
     display: 'flex',
