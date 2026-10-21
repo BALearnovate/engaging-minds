@@ -397,12 +397,12 @@ const styles: Record<string, React.CSSProperties> = {
     border: '2px solid #84cc16',
     borderRadius: '24px',
     padding: '2rem 2.25rem',
-    maxWidth: '1200px',
     width: '100%',
     boxShadow: '0 12px 36px rgba(0, 0, 0, 0.08), 0 0 20px rgba(132, 204, 22, 0.15)',
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+    
   },
   headerRow: {
     display: 'flex',
