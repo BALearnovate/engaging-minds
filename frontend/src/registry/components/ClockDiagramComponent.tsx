@@ -17,10 +17,12 @@ export const ClockDiagramStudent: React.FC<
     return (studentState.response as Record<number, string>) || {};
   });
   const [selectedHour, setSelectedHour] = useState<number>(0);
+  const [activeModalHour, setActiveModalHour] = useState<number | null>(null);
+  const [modalInputValue, setModalInputValue] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
   const [feedback, setFeedback] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
-  // ALWAYS generate all 24 hour slots (00:00 to 23:00) unless explicitly 12_hour
+  // ALWAYS generate all 24 hour slots (0 to 23) unless explicitly 12_hour
   const numSlots = config.clockType === '12_hour' ? 12 : 24;
   const hourSlots: ClockHourSlot[] = Array.from({ length: numSlots }, (_, i) => {
     const hourVal = config.clockType === '12_hour' ? i + 1 : i;
@@ -30,7 +32,7 @@ export const ClockDiagramStudent: React.FC<
 
     return {
       hour: hourVal,
-      label: `${hourVal.toString().padStart(2, '0')}:00`,
+      label: `${hourVal}`,
       expectedActivity: custom?.expectedActivity,
       hint: custom?.hint,
     };
@@ -39,14 +41,21 @@ export const ClockDiagramStudent: React.FC<
   const totalHours = hourSlots.length;
   const filledCount = Object.values(hourActivities).filter((val) => val && val.trim().length > 0).length;
 
-  const handleSetActivity = (hour: number, text: string) => {
-    const nextActivities = { ...hourActivities, [hour]: text };
-    setHourActivities(nextActivities);
+  const openModalForHour = (hour: number) => {
     setSelectedHour(hour);
+    setModalInputValue(hourActivities[hour] || '');
+    setActiveModalHour(hour);
+  };
 
+  const handleSaveModal = () => {
+    if (activeModalHour === null) return;
+    const nextActivities = { ...hourActivities, [activeModalHour]: modalInputValue };
+    setHourActivities(nextActivities);
+    
     const filledCountUpdated = Object.values(nextActivities).filter((val) => val && val.trim().length > 0).length;
     const score = Math.round((filledCountUpdated / totalHours) * 100);
     onAnswerSubmit(nextActivities, true, score);
+    setActiveModalHour(null);
   };
 
   const handleSubmit = () => {
@@ -78,8 +87,8 @@ export const ClockDiagramStudent: React.FC<
   };
 
   // Radial coordinate calculator (360 degrees divided by total hours)
-  const getPolarPos = (index: number, total: number, radius: number, cx = 450, cy = 450) => {
-    const angleDeg = (index / total) * 360 - 90; // Start at top (12 o'clock / 00:00)
+  const getPolarPos = (index: number, total: number, radius: number, cx = 490, cy = 490) => {
+    const angleDeg = (index / total) * 360 - 90; // Start at top (12 o'clock / hour 0)
     const angleRad = (angleDeg * Math.PI) / 180;
     return {
       x: cx + radius * Math.cos(angleRad),
@@ -88,8 +97,33 @@ export const ClockDiagramStudent: React.FC<
     };
   };
 
+  // Sector wedge path generator for 24-hour clock sectors
+  const getSectorPath = (index: number, total: number, rInner: number, rOuter: number, cx = 490, cy = 490) => {
+    const startAngleDeg = (index / total) * 360 - 90;
+    const endAngleDeg = ((index + 1) / total) * 360 - 90;
+
+    const startRad = (startAngleDeg * Math.PI) / 180;
+    const endRad = (endAngleDeg * Math.PI) / 180;
+
+    const x1 = cx + rInner * Math.cos(startRad);
+    const y1 = cy + rInner * Math.sin(startRad);
+
+    const x2 = cx + rOuter * Math.cos(startRad);
+    const y2 = cy + rOuter * Math.sin(startRad);
+
+    const x3 = cx + rOuter * Math.cos(endRad);
+    const y3 = cy + rOuter * Math.sin(endRad);
+
+    const x4 = cx + rInner * Math.cos(endRad);
+    const y4 = cy + rInner * Math.sin(endRad);
+
+    const largeArcFlag = endAngleDeg - startAngleDeg <= 180 ? '0' : '1';
+
+    return `M ${x1} ${y1} L ${x2} ${y2} A ${rOuter} ${rOuter} 0 ${largeArcFlag} 1 ${x3} ${y3} L ${x4} ${y4} A ${rInner} ${rInner} 0 ${largeArcFlag} 0 ${x1} ${y1} Z`;
+  };
+
   const formatHourLabel = (h: number) => {
-    return `${h.toString().padStart(2, '0')}:00`;
+    return `${h}`;
   };
 
   return (
@@ -99,67 +133,71 @@ export const ClockDiagramStudent: React.FC<
         <h3 style={styles.title}>{block.title || '24-Hour Daily Schedule Activity'}</h3>
         <p style={styles.instructions}>
           {config.instructions ||
-            'Enter what you do in each hour directly in front of the 24 radial clock sectors below.'}
+            'Click on any radial hour sector below to enter or edit your activity.'}
         </p>
       </div>
-
-      {/* Allowed Option Chips */}
-      {config.allowedOptions && config.allowedOptions.length > 0 && (
-        <div style={styles.optionsSection}>
-          <span style={styles.optionsLabel}>💡 Quick Activity Options (Click an option to set active hour activity):</span>
-          <div style={styles.chipsWrap}>
-            {config.allowedOptions.map((option, idx) => (
-              <button
-                key={idx}
-                disabled={submitted}
-                onClick={() => handleSetActivity(selectedHour, option)}
-                style={styles.chipBtn}
-              >
-                + {option}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 24-Hour Radial Clock Visual Diagram Container */}
       <div style={styles.radialClockCard}>
         <div style={styles.radialWrapper}>
-          <svg width="900" height="900" viewBox="0 0 900 900" style={styles.clockSvg}>
-            {/* Outer Decorative Ring */}
-            <circle cx="450" cy="450" r="440" fill="#f8fafc" stroke="#0066b2" strokeWidth="4" />
-            <circle cx="450" cy="450" r="290" fill="#ffffff" stroke="#0284c7" strokeWidth="2" strokeDasharray="4 4" />
-            <circle cx="450" cy="450" r="135" fill="#e0f2fe" stroke="#0066b2" strokeWidth="3" />
+          <svg width="980" height="980" viewBox="0 0 980 980" style={styles.clockSvg}>
+            {/* Background Outer Ring & Rings with Bold Borders */}
+            <circle cx="490" cy="490" r="380" fill="#f8fafc" stroke="#0055a5" strokeWidth="6" />
+            <circle cx="490" cy="490" r="235" fill="#ffffff" stroke="#0284c7" strokeWidth="2" strokeDasharray="5 5" />
 
-            {/* Radial Hour Sector Lines & Background Shading */}
+            {/* Clickable Sector Wedges for each hour */}
             {hourSlots.map((slot, idx) => {
-              const linePosInner = getPolarPos(idx, totalHours, 135);
-              const linePosOuter = getPolarPos(idx, totalHours, 440);
-
-              const midPos = getPolarPos(idx + 0.5, totalHours, 210);
+              const sectorPath = getSectorPath(idx, totalHours, 90, 380, 490, 490);
               const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
               const isSelected = selectedHour === slot.hour;
 
               return (
-                <g key={slot.hour}>
-                  {/* Radial Divider Line separating hours */}
+                <path
+                  key={`wedge-${slot.hour}`}
+                  d={sectorPath}
+                  fill={isSelected ? '#e0f2fe' : isFilled ? '#f0f9ff' : 'transparent'}
+                  stroke="#cbd5e1"
+                  strokeWidth="1.5"
+                  style={{
+                    cursor: submitted ? 'default' : 'pointer',
+                    transition: 'fill 0.15s ease',
+                  }}
+                  onClick={() => !submitted && openModalForHour(slot.hour)}
+                >
+                  <title>{`Hour ${formatHourLabel(slot.hour)}: ${hourActivities[slot.hour] || 'Click to add activity'}`}</title>
+                </path>
+              );
+            })}
+
+            {/* Bold Radial Hour Divider Lines & Prominent Outer Hour Labels */}
+            {hourSlots.map((slot, idx) => {
+              const linePosInner = getPolarPos(idx, totalHours, 90, 490, 490);
+              const linePosOuter = getPolarPos(idx, totalHours, 380, 490, 490);
+              const outerHourPos = getPolarPos(idx + 0.5, totalHours, 422, 490, 490);
+
+              const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
+              const isSelected = selectedHour === slot.hour;
+
+              return (
+                <g key={slot.hour} style={{ pointerEvents: 'none' }}>
+                  {/* Bold Radial Divider Line separating hours */}
                   <line
                     x1={linePosInner.x}
                     y1={linePosInner.y}
                     x2={linePosOuter.x}
                     y2={linePosOuter.y}
-                    stroke="#cbd5e1"
-                    strokeWidth="1.5"
+                    stroke="#334155"
+                    strokeWidth="2.5"
                   />
 
-                  {/* Inner Hour Label */}
+                  {/* Prominent Outer Hour Label (0 .. 23) outside circle */}
                   <text
-                    x={midPos.x}
-                    y={midPos.y + 4}
+                    x={outerHourPos.x}
+                    y={outerHourPos.y + 8}
                     textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="800"
-                    fill={isSelected ? '#0066b2' : isFilled ? '#0369a1' : '#475569'}
+                    fontSize="22"
+                    fontWeight="900"
+                    fill={isSelected ? '#0066b2' : isFilled ? '#0284c7' : '#0f172a'}
                   >
                     {formatHourLabel(slot.hour)}
                   </text>
@@ -167,69 +205,67 @@ export const ClockDiagramStudent: React.FC<
               );
             })}
 
-            {/* Center Clock Hub */}
-            <circle cx="450" cy="450" r="100" fill="#0066b2" />
-            <text x="450" y="442" textAnchor="middle" fill="#ffffff" fontSize="16" fontWeight="800">
+            {/* Enlarged Center Clock Hub & Larger Text */}
+            <circle cx="490" cy="490" r="90" fill="#0055a5" stroke="#ffffff" strokeWidth="4" />
+            <text x="490" y="482" textAnchor="middle" fill="#ffffff" fontSize="18" fontWeight="900">
               24-HOUR
             </text>
-            <text x="450" y="464" textAnchor="middle" fill="#bae6fd" fontSize="13" fontWeight="700">
-              CLOCK DIAGRAM
+            <text x="490" y="505" textAnchor="middle" fill="#bae6fd" fontSize="14" fontWeight="800">
+              CLOCK
             </text>
 
-            {/* Radial Inputs via SVG ForeignObject positioned directly in front of each hour */}
+            {/* Clean Large-Font Activity Text with High Contrast Along Radial Sectors */}
             {hourSlots.map((slot, idx) => {
-              const midPos = getPolarPos(idx + 0.5, totalHours, 365);
-              const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
-              const isSelected = selectedHour === slot.hour;
+              const activityText = hourActivities[slot.hour];
+              if (!activityText || activityText.trim().length === 0) return null;
+
+              const midAngleDeg = ((idx + 0.5) / totalHours) * 360 - 90;
+              const isRightSide = midAngleDeg >= -90 && midAngleDeg < 90;
+              const rotationAngle = isRightSide ? midAngleDeg : midAngleDeg + 180;
+              const posX = isRightSide ? 98 : -370;
 
               return (
-                <foreignObject
-                  key={slot.hour}
-                  x={midPos.x - 70}
-                  y={midPos.y - 19}
-                  width="140"
-                  height="38"
+                <g
+                  key={`text-${slot.hour}`}
+                  transform={`translate(490, 490) rotate(${rotationAngle})`}
+                  style={{ cursor: submitted ? 'default' : 'pointer' }}
+                  onClick={() => !submitted && openModalForHour(slot.hour)}
                 >
-                  <input
-                    type="text"
-                    disabled={submitted}
-                    value={hourActivities[slot.hour] || ''}
-                    onFocus={() => setSelectedHour(slot.hour)}
-                    onChange={(e) => handleSetActivity(slot.hour, e.target.value)}
-                    placeholder={formatHourLabel(slot.hour)}
-                    title={`Activity for ${formatHourLabel(slot.hour)}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '8px',
-                      border: isSelected
-                        ? '2px solid #0066b2'
-                        : isFilled
-                        ? '1.5px solid #0284c7'
-                        : '1px solid #cbd5e1',
-                      backgroundColor: isSelected
-                        ? '#ffffff'
-                        : isFilled
-                        ? '#f0f9ff'
-                        : '#ffffff',
-                      color: '#0f172a',
-                      fontSize: '0.82rem',
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      boxShadow: isSelected ? '0 0 10px rgba(0,102,178,0.3)' : 'none',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      padding: '0.25rem 0.5rem',
-                    }}
-                  />
-                </foreignObject>
+                  <foreignObject
+                    x={posX}
+                    y="-18"
+                    width="272"
+                    height="36"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isRightSide ? 'flex-start' : 'flex-end',
+                        color: '#0f172a',
+                        fontSize: '18px',
+                        fontWeight: '800',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        padding: '0 6px',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      {activityText}
+                    </div>
+                  </foreignObject>
+                </g>
               );
             })}
           </svg>
         </div>
 
         <div style={styles.clockFooterNote}>
-          <span>Selected Hour Slot: <strong>{formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)</span>
+          <span>Selected Hour Slot: <strong>Hour {formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)</span>
           {!isTeacherView && !submitted && (
             <button
               onClick={handleSubmit}
@@ -249,6 +285,82 @@ export const ClockDiagramStudent: React.FC<
           )}
         </div>
       </div>
+
+      {/* Application Style Modal Overlay Dialog for Hour Activity Entry */}
+      {activeModalHour !== null && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h4 style={styles.modalTitle}>
+                🕒 Set Activity for Hour {formatHourLabel(activeModalHour)}
+              </h4>
+              <button
+                style={styles.closeBtn}
+                onClick={() => setActiveModalHour(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={styles.modalBody}>
+              <label style={styles.inputLabel}>
+                Describe your activity during Hour {formatHourLabel(activeModalHour)}:
+              </label>
+              <input
+                type="text"
+                autoFocus
+                value={modalInputValue}
+                onChange={(e) => setModalInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveModal();
+                }}
+                placeholder="e.g., Breakfast, Sleep, Study, Rest..."
+                style={styles.modalTextInput}
+              />
+
+              {/* Quick Activity Options Chips inside Modal */}
+              {config.allowedOptions && config.allowedOptions.length > 0 && (
+                <div style={styles.modalOptionsWrap}>
+                  <span style={styles.optionsLabel}>💡 Quick Select Activity:</span>
+                  <div style={styles.chipsWrap}>
+                    {config.allowedOptions.map((option, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setModalInputValue(option)}
+                        style={{
+                          ...styles.chipBtn,
+                          backgroundColor: modalInputValue === option ? '#e0f2fe' : '#ffffff',
+                          borderColor: modalInputValue === option ? '#0066b2' : '#cbd5e1',
+                          color: modalInputValue === option ? '#0066b2' : '#334155',
+                        }}
+                      >
+                        + {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.modalFooter}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setActiveModalHour(null)}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.saveBtn}
+                onClick={handleSaveModal}
+              >
+                Save Activity
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Feedback Banner */}
       {feedback && <div style={styles.feedbackBanner}>{feedback.text}</div>}
     </div>
@@ -487,6 +599,111 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     fontSize: '0.9rem',
     fontWeight: '700',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(3px)',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    width: '90%',
+    maxWidth: '480px',
+    padding: '1.5rem',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+    animation: 'fadeIn 0.15s ease-out',
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottom: '1px solid #f1f5f9',
+    paddingBottom: '0.75rem',
+  },
+  modalTitle: {
+    fontSize: '1.1rem',
+    fontWeight: '800',
+    color: '#0f172a',
+    margin: 0,
+  },
+  closeBtn: {
+    background: 'none',
+    border: 'none',
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#64748b',
+    cursor: 'pointer',
+    padding: '0.25rem',
+  },
+  modalBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  inputLabel: {
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    color: '#334155',
+  },
+  modalTextInput: {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    borderRadius: '8px',
+    border: '2px solid #0066b2',
+    fontSize: '1rem',
+    fontWeight: '600',
+    outline: 'none',
+    color: '#0f172a',
+    boxSizing: 'border-box',
+  },
+  modalOptionsWrap: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    backgroundColor: '#f8fafc',
+    padding: '0.85rem',
+    borderRadius: '10px',
+    border: '1px solid #e2e8f0',
+  },
+  modalFooter: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '0.75rem',
+    borderTop: '1px solid #f1f5f9',
+    paddingTop: '1rem',
+  },
+  cancelBtn: {
+    backgroundColor: '#f1f5f9',
+    color: '#475569',
+    border: '1px solid #cbd5e1',
+    padding: '0.55rem 1.25rem',
+    borderRadius: '8px',
+    fontWeight: '700',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+  },
+  saveBtn: {
+    backgroundColor: '#0066b2',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.55rem 1.5rem',
+    borderRadius: '8px',
+    fontWeight: '700',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0, 102, 178, 0.25)',
   },
   submitRow: {
     display: 'flex',

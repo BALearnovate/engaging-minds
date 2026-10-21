@@ -130,11 +130,10 @@ async function main() {
 
     if (!draftVersion) {
       let candidateCode = `ACT-${seededCount + 100}`;
-      const codeExists = await prisma.activityVersion.findUnique({
-        where: { shareCode: candidateCode },
-      });
-      if (codeExists) {
-        candidateCode = `ACT-${seededCount + 500}`;
+      let attempts = 0;
+      while (await prisma.activityVersion.findUnique({ where: { shareCode: candidateCode } })) {
+        attempts++;
+        candidateCode = `ACT-${seededCount + 100 + attempts * 1000}`;
       }
 
       draftVersion = await prisma.activityVersion.create({
