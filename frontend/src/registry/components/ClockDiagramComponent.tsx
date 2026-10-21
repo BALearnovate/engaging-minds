@@ -141,13 +141,12 @@ export const ClockDiagramStudent: React.FC<
       <div style={styles.radialClockCard}>
         <div style={styles.radialWrapper}>
           <svg width="980" height="980" viewBox="0 0 980 980" style={styles.clockSvg}>
-            {/* Background Outer Ring & Rings with Bold Borders */}
-            <circle cx="490" cy="490" r="380" fill="#f8fafc" stroke="#0055a5" strokeWidth="6" />
-            <circle cx="490" cy="490" r="235" fill="#ffffff" stroke="#0284c7" strokeWidth="2" strokeDasharray="5 5" />
+            {/* Solid Clock Base Circle */}
+            <circle cx="490" cy="490" r="383" fill="#ffffff" />
 
-            {/* Clickable Sector Wedges for each hour */}
+            {/* Clickable Sector Wedges for each hour (extended rInner=86, rOuter=383 to eliminate gaps) */}
             {hourSlots.map((slot, idx) => {
-              const sectorPath = getSectorPath(idx, totalHours, 90, 380, 490, 490);
+              const sectorPath = getSectorPath(idx, totalHours, 86, 383, 490, 490);
               const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
               const isSelected = selectedHour === slot.hour;
 
@@ -155,9 +154,8 @@ export const ClockDiagramStudent: React.FC<
                 <path
                   key={`wedge-${slot.hour}`}
                   d={sectorPath}
-                  fill={isSelected ? '#e0f2fe' : isFilled ? '#f0f9ff' : 'transparent'}
-                  stroke="#cbd5e1"
-                  strokeWidth="1.5"
+                  fill={isSelected ? '#e0f2fe' : isFilled ? '#f0f9ff' : '#f8fafc'}
+                  stroke="none"
                   style={{
                     cursor: submitted ? 'default' : 'pointer',
                     transition: 'fill 0.15s ease',
@@ -169,10 +167,13 @@ export const ClockDiagramStudent: React.FC<
               );
             })}
 
-            {/* Bold Radial Hour Divider Lines & Prominent Outer Hour Labels */}
+            {/* Dashed Intermediate Guide Circle */}
+            <circle cx="490" cy="490" r="235" fill="none" stroke="#0284c7" strokeWidth="2" strokeDasharray="5 5" style={{ pointerEvents: 'none' }} />
+
+            {/* Bold Radial Hour Divider Lines & Outer Hour Labels */}
             {hourSlots.map((slot, idx) => {
-              const linePosInner = getPolarPos(idx, totalHours, 90, 490, 490);
-              const linePosOuter = getPolarPos(idx, totalHours, 380, 490, 490);
+              const linePosInner = getPolarPos(idx, totalHours, 88, 490, 490);
+              const linePosOuter = getPolarPos(idx, totalHours, 381, 490, 490);
               const outerHourPos = getPolarPos(idx + 0.5, totalHours, 422, 490, 490);
 
               const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
@@ -205,12 +206,15 @@ export const ClockDiagramStudent: React.FC<
               );
             })}
 
-            {/* Enlarged Center Clock Hub & Larger Text */}
-            <circle cx="490" cy="490" r="90" fill="#0055a5" stroke="#ffffff" strokeWidth="4" />
-            <text x="490" y="482" textAnchor="middle" fill="#ffffff" fontSize="18" fontWeight="900">
+            {/* Solid Outer Circle Border ON TOP (r=380, width=6) */}
+            <circle cx="490" cy="490" r="380" fill="none" stroke="#0055a5" strokeWidth="6" style={{ pointerEvents: 'none' }} />
+
+            {/* Enlarged Center Clock Hub ON TOP & Text */}
+            <circle cx="490" cy="490" r="90" fill="#0055a5" stroke="#ffffff" strokeWidth="5" style={{ pointerEvents: 'none' }} />
+            <text x="490" y="482" textAnchor="middle" fill="#ffffff" fontSize="18" fontWeight="900" style={{ pointerEvents: 'none' }}>
               24-HOUR
             </text>
-            <text x="490" y="505" textAnchor="middle" fill="#bae6fd" fontSize="14" fontWeight="800">
+            <text x="490" y="505" textAnchor="middle" fill="#bae6fd" fontSize="14" fontWeight="800" style={{ pointerEvents: 'none' }}>
               CLOCK
             </text>
 
