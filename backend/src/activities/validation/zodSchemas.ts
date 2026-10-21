@@ -226,11 +226,14 @@ export class ZodSchemaValidator {
         }
         break;
 
-      case 'open_response':
-        if (typeof cfg.prompt !== 'string' || cfg.prompt.trim().length === 0) {
-          errors.push({ path: `${cfgPath}.prompt`, message: 'Open Response prompt is required and cannot be empty' });
+      case 'open_response': {
+        const hasPrompt = typeof cfg.prompt === 'string' && cfg.prompt.trim().length > 0;
+        const hasPrompts = Array.isArray(cfg.prompts) && cfg.prompts.length > 0;
+        if (!hasPrompt && !hasPrompts) {
+          errors.push({ path: `${cfgPath}.prompt`, message: 'Open Response prompt or prompts array is required and cannot be empty' });
         }
         break;
+      }
     }
   }
 }

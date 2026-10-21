@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import type {
   ActivityComponentDefinition,
@@ -14,7 +14,7 @@ import type {
 import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
 
 export const OpenResponseStudent: React.FC<
-  StudentBlockProps<OpenResponseConfig, string>
+  StudentBlockProps<OpenResponseConfig, string | Record<number, string>>
 > = ({
   block,
   config,
@@ -22,17 +22,53 @@ export const OpenResponseStudent: React.FC<
   studentSessionId,
   studentName,
   onAnswerSubmit,
-  onHelpRequest,
   isTeacherView,
 }) => {
   const { t } = useTranslation();
-  const [responseText, setResponseText] = useState<string>(
-    typeof studentState.response === 'string' ? studentState.response : '',
-  );
+
+  // Support either single prompt or array of prompts for multi-question sections
+  const questionsList = useMemo(() => {
+    if (Array.isArray(config.prompts) && config.prompts.length > 0) {
+      return config.prompts;
+    }
+    if (config.prompt) {
+      return [config.prompt];
+    }
+    return [];
+  }, [config.prompt, config.prompts]);
+
+  const [answers, setAnswers] = useState<Record<number, string>>(() => {
+    if (typeof studentState.response === 'object' && studentState.response !== null) {
+      return studentState.response as Record<number, string>;
+    }
+    if (typeof studentState.response === 'string') {
+      return { 0: studentState.response };
+    }
+    return {};
+  });
+
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
 
+  // Sync state whenever block.id or studentState updates so new blocks get clean text areas
+  useEffect(() => {
+    if (typeof studentState.response === 'object' && studentState.response !== null) {
+      setAnswers(studentState.response as Record<number, string>);
+    } else if (typeof studentState.response === 'string') {
+      setAnswers({ 0: studentState.response });
+    } else {
+      setAnswers({});
+    }
+    setSubmitted(studentState.status === 'completed');
+  }, [block.id, studentState.response, studentState.status]);
+
+  const handleAnswerChange = (index: number, value: string) => {
+    setAnswers((prev) => ({ ...prev, [index]: value }));
+  };
+
+  const hasAnyAnswer = Object.values(answers).some((val) => val && val.trim().length > 0);
+
   const handleSubmit = () => {
-    if (!responseText.trim()) return;
+    if (!hasAnyAnswer) return;
 
     logXApiEvent({
       studentSessionId,
@@ -42,12 +78,12 @@ export const OpenResponseStudent: React.FC<
       activityTitle: block.title || 'Open Response / Reflection',
       blockId: block.id,
       blockType: 'open_response',
-      responsePayload: { prompt: config.prompt, response: responseText.trim() },
+      responsePayload: { prompts: questionsList, responses: answers },
       score: 100,
     });
 
     setSubmitted(true);
-    onAnswerSubmit(responseText.trim(), true, 100);
+    onAnswerSubmit(answers, true, 100);
   };
 
   const handleEditResponse = () => {
@@ -59,65 +95,58 @@ export const OpenResponseStudent: React.FC<
       {block.title && <h3 style={styles.title}>{block.title}</h3>}
       {block.instructions && <p style={styles.instructions}>{block.instructions}</p>}
 
-      <div style={styles.questionBox}>
-        <p style={styles.promptText}>{config.prompt}</p>
+      <div style={styles.questionsContainer}>
+        {questionsList.map((qPrompt, idx) => (
+          <div key={`q-${block.id}-${idx}`} style={styles.questionBox}>
+            <p style={styles.promptText}>
+              {questionsList.length > 1 ? `${idx + 1}. ` : ''}{qPrompt}
+            </p>
 
-        {submitted ? (
-          <div style={styles.submittedBox}>
-            <div style={styles.submittedHeader}>
-              <span style={styles.submittedBadge}>✅ {t('openResponse.submittedResponse', 'Submitted Response')}</span>
-            </div>
-            <p style={styles.submittedText}>{responseText}</p>
+            {submitted ? (
+              <div style={styles.submittedBox}>
+                <div style={styles.submittedHeader}>
+                  <span style={styles.submittedBadge}>
+                    ✅ {t('openResponse.submittedResponse', 'Submitted Response')}
+                  </span>
+                </div>
+                <p style={styles.submittedText}>{answers[idx] || '(No response provided)'}</p>
+              </div>
+            ) : (
+              <div style={styles.inputArea}>
+                <textarea
+                  rows={4}
+                  value={answers[idx] || ''}
+                  onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                  placeholder={
+                    config.placeholder ||
+                    t('openResponse.placeholder', 'Type your reflection or answer here...')
+                  }
+                  style={styles.textarea}
+                  disabled={isTeacherView}
+                />
+              </div>
+            )}
+          </div>
+        ))}
 
-            {!isTeacherView && (
+        {!isTeacherView && (
+          <div style={styles.actionRow}>
+            {submitted ? (
               <button onClick={handleEditResponse} style={styles.secondaryBtn}>
                 ✏️ {t('openResponse.editResponse', 'Edit Response')}
               </button>
-            )}
-          </div>
-        ) : (
-          <div style={styles.inputArea}>
-            <textarea
-              rows={5}
-              value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
-              placeholder={config.placeholder || t('openResponse.placeholder', 'Type your reflection or answer here...')}
-              style={styles.textarea}
-              disabled={isTeacherView}
-            />
-
-            {(!isTeacherView || onHelpRequest) && (
-              <div style={styles.actionRow}>
-                {!isTeacherView && (
-                  <button
-                    onClick={handleSubmit}
-                    disabled={!responseText.trim()}
-                    style={{
-                      ...styles.primaryBtn,
-                      opacity: !responseText.trim() ? 0.6 : 1,
-                      cursor: !responseText.trim() ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {t('openResponse.submitResponse', 'Submit Response')}
-                  </button>
-                )}
-
-                {onHelpRequest && !submitted && (
-                  <button
-                    onClick={() =>
-                      onHelpRequest(
-                        `I need assistance with this reflection prompt: "${(config.prompt || '').substring(
-                          0,
-                          40,
-                        )}..."`,
-                      )
-                    }
-                    style={styles.helpBtn}
-                  >
-                    🙋 {t('openResponse.askHelp', 'Ask Teacher for Help')}
-                  </button>
-                )}
-              </div>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={!hasAnyAnswer}
+                style={{
+                  ...styles.primaryBtn,
+                  opacity: !hasAnyAnswer ? 0.6 : 1,
+                  cursor: !hasAnyAnswer ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {t('openResponse.submitResponse', 'Submit Response')}
+              </button>
             )}
           </div>
         )}
@@ -184,7 +213,7 @@ export const OpenResponseTeacherEditor: React.FC<
 
 export const openResponseDefinition: ActivityComponentDefinition<
   OpenResponseConfig,
-  string
+  string | Record<number, string>
 > = {
   type: 'open_response',
   label: 'Open Response / Reflection',
@@ -192,12 +221,14 @@ export const openResponseDefinition: ActivityComponentDefinition<
   validate(config: unknown): ValidationResult {
     const cfg = config as OpenResponseConfig;
     const errors: string[] = [];
-    if (!cfg?.prompt || typeof cfg.prompt !== 'string' || cfg.prompt.trim().length === 0) {
-      errors.push('Open Response prompt cannot be empty.');
+    const hasPrompt = typeof cfg?.prompt === 'string' && cfg.prompt.trim().length > 0;
+    const hasPrompts = Array.isArray(cfg?.prompts) && cfg.prompts.length > 0;
+    if (!hasPrompt && !hasPrompts) {
+      errors.push('Open Response prompt or prompts array cannot be empty.');
     }
     return { valid: errors.length === 0, errors };
   },
-  renderStudent(props: StudentBlockProps<OpenResponseConfig, string>) {
+  renderStudent(props: StudentBlockProps<OpenResponseConfig, string | Record<number, string>>) {
     return <OpenResponseStudent {...props} />;
   },
   renderTeacherEditor(props: TeacherEditorProps<OpenResponseConfig>) {
@@ -255,6 +286,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.88rem',
     color: '#6b7280',
     margin: 0,
+  },
+  questionsContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
   },
   questionBox: {
     display: 'flex',

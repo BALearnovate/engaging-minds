@@ -105,7 +105,8 @@ export interface ClockDiagramConfig {
 }
 
 export interface OpenResponseConfig {
-  prompt: string;
+  prompt?: string;
+  prompts?: string[];
   placeholder?: string;
   sampleAnswer?: string;
 }

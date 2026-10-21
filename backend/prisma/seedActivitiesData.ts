@@ -15,45 +15,97 @@ const timeUseOptions = [
 ];
 
 export const SEED_ACTIVITIES: ActivityDefinition[] = [
-  // 1. Life Skills - Clock Diagram Time Audit – Reviewing Time Use (Two 24-Hour Clock Diagrams Only)
+  // 1. Life Skills - Time Audit using Clock Diagram (Complete 5-Section Audit)
   {
     schemaVersion: '1.0',
-    title: 'Clock Diagram Time Audit – Reviewing Time Use',
-    description: 'Conduct a 24-hour time audit to record how you currently spend your day versus how you ideally would like to spend your time for personal balance and growth.',
+    title: 'Time Audit using Clock Diagram',
+    description: 'Conduct a 24-hour time audit to record how you currently spend your day versus how you ideally would like to spend your time, with deep reflection questions for personal balance and growth.',
     subject: 'Life Skills',
     gradeLevel: 'Year 8',
-    estimatedDurationMinutes: 20,
+    estimatedDurationMinutes: 25,
     blocks: [
       {
         id: 'ta_current_clock',
         type: 'clock_diagram',
         title: '1. Current 24-Hour Time Use Audit',
-        instructions: 'Record how you currently spend each hour of a typical 24-hour day.',
+        instructions: 'Honestly record how you spend time over the course of a day.',
         config: {
-          prompt: 'Select your current activity for each hour of the 24-hour clock:',
-          instructions: 'Select from suggested activity options for each sector from 00:00 to 23:00.',
+          prompt: 'Record how you spend time over the course of a day:',
+          instructions: 'Honestly record how you spend time over the course of a day.',
           clockType: '24_hour',
           allowedOptions: timeUseOptions,
           hours: Array.from({ length: 24 }, (_, i) => ({
             hour: i,
-            label: `${i.toString().padStart(2, '0')}:00`,
+            label: `${i}`,
           })),
+        },
+      },
+      {
+        id: 'ta_current_questions',
+        type: 'open_response',
+        title: '2. Reflection on Current Time Use',
+        instructions: 'Answer each reflection question about your current routine below.',
+        config: {
+          prompt: 'Reflect on your current daily routine and answer each question:',
+          prompts: [
+            'How much time do I have for myself?',
+            'How much of my day is spent on compulsory activities?',
+            'How much time is spent on activities I choose freely?',
+            'How much sleep do I get?',
+            'How regularly do I eat meals?',
+            'How do I take care of my physical and mental wellbeing?',
+            'Am I satisfied with how my time is currently divided?',
+          ],
+          placeholder: 'Type your reflection answer here...',
         },
       },
       {
         id: 'ta_ideal_clock',
         type: 'clock_diagram',
-        title: '2. Ideal 24-Hour Time Use Schedule',
-        instructions: 'Design how you ideally would like to spend each hour of your day.',
+        title: '3. Ideal 24-Hour Time Use Schedule',
+        instructions: 'Honestly record how would you ideally like to spend time over the course of a day.',
         config: {
-          prompt: 'Select your ideal activity for each hour of the 24-hour clock:',
-          instructions: 'Allocate time for sleep, study, exercise, and relaxation to achieve your ideal routine.',
+          prompt: 'Honestly record how would you ideally like to spend time over the course of a day:',
+          instructions: 'Honestly record how would you ideally like to spend time over the course of a day.',
           clockType: '24_hour',
           allowedOptions: timeUseOptions,
           hours: Array.from({ length: 24 }, (_, i) => ({
             hour: i,
-            label: `${i.toString().padStart(2, '0')}:00`,
+            label: `${i}`,
           })),
+        },
+      },
+      {
+        id: 'ta_ideal_questions',
+        type: 'open_response',
+        title: '4. Questions on Ideal Time Use',
+        instructions: 'Reflect on the adjustments needed to achieve your ideal schedule.',
+        config: {
+          prompt: 'Consider the adjustments needed for your ideal schedule:',
+          prompts: [
+            'What is already working well?',
+            'What would you like to change?',
+            'Which changes feel realistic?',
+            'What small adjustments could you make immediately?',
+          ],
+          placeholder: 'Type your reflection answer here...',
+        },
+      },
+      {
+        id: 'ta_reflection_questions',
+        type: 'open_response',
+        title: '5. Student Reflection Questions',
+        instructions: 'Final reflection on your daily schedule and wellbeing.',
+        config: {
+          prompt: 'Reflect on what you have learned from comparing your current and ideal time audits:',
+          prompts: [
+            'What surprised you about how you currently spend your time?',
+            'Do you have enough time to rest and relax?',
+            'Are there activities that take more time than you expected?',
+            'What changes would improve your wellbeing?',
+            'What is one realistic adjustment you could make this week?',
+          ],
+          placeholder: 'Type your reflection answer here...',
         },
       },
     ],

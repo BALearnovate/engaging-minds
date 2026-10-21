@@ -302,7 +302,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
 
       {/* Main Block Renderer */}
       {currentBlock && compDef ? (
-        <div style={styles.blockWrapper}>
+        <div style={styles.blockWrapper} key={currentBlock.id}>
           {compDef.renderStudent({
             block: currentBlock,
             config: currentBlock.config,

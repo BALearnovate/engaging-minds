@@ -174,9 +174,11 @@ export class ActivityValidator {
 
       case 'open_response': {
         const config = block.config as OpenResponseConfig;
-        if (!config.prompt || typeof config.prompt !== 'string' || config.prompt.trim().length === 0) {
+        const hasSinglePrompt = typeof config.prompt === 'string' && config.prompt.trim().length > 0;
+        const hasPromptsArray = Array.isArray(config.prompts) && config.prompts.length > 0;
+        if (!hasSinglePrompt && !hasPromptsArray) {
           errors.push(
-            `[Tier 2 Deterministic Error] Block #${blockNum} (Open Response): prompt is required and cannot be empty.`,
+            `[Tier 2 Deterministic Error] Block #${blockNum} (Open Response): prompt or prompts array is required and cannot be empty.`,
           );
         }
         break;
