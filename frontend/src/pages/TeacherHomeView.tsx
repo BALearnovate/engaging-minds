@@ -64,7 +64,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
   };
 
   const teacherName = data?.teacher
-    ? `${data.teacher.firstName} ${data.teacher.lastName}`.trim()
+    ? `${data.teacher.firstName} `.trim()
     : '';
 
   return (
@@ -73,7 +73,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
       <div style={styles.greetingHeaderBar}>
         <div style={styles.greetingTextGroup}>
           <h1 style={styles.greetingTitle}>
-            {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`)}
+            {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'}!`)}
           </h1>
           <p style={styles.greetingSubtitle}>
             {t(
