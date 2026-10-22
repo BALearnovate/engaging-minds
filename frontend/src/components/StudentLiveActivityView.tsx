@@ -226,8 +226,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             </h1>
             <p style={styles.subTitleText}>
               Classroom Live Session • Teacher: <strong style={{ color: '#334155' }}>{teacherName}</strong>
-              {rewardMode && <span> • Rewards: <strong>{rewardMode}</strong></span>}
-              {targetScope && <span> • Scope: <strong>{targetScope}</strong></span>}
+              {/* {rewardMode && <span> • Rewards: <strong>{rewardMode}</strong></span>} */}
+              {/* {targetScope && <span> • Scope: <strong>{targetScope}</strong></span>} */}
             </p>
           </div>
 
