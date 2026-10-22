@@ -850,74 +850,44 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
       {/* CLASS ACTIVITY ALREADY IN PROGRESS DIALOG */}
       {classAssignmentDialog?.isOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.publishedDialogCard}>
-            <div style={styles.publishedDialogHeader}>
-              <span style={{ fontSize: '2rem' }}>⚠️</span>
-              <div>
-                <h3 style={styles.publishedDialogTitle}>Activity Already in Progress</h3>
-                <p style={styles.publishedDialogSub}>
-                  Cannot assign another activity to this class.
-                </p>
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.warningModalCard}>
+            {/* Top Icon Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.warningIconCircle}>
+                ⚠️
+              </div>
+              <div style={styles.warningPillBadge}>
+                Activity In Progress
               </div>
             </div>
 
-            <div style={styles.publishedDetailsBox}>
-              <p style={{ margin: 0, fontSize: '0.92rem', color: '#0f172a' }}>
-                Class <strong>"{classAssignmentDialog.className}"</strong> currently has an active activity in progress:
-              </p>
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', padding: '0.75rem', borderRadius: '8px', fontWeight: '700', color: '#0369a1' }}>
-                📖 {classAssignmentDialog.existingActivityTitle}
-              </div>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b', lineHeight: '1.4' }}>
-                {classAssignmentDialog.isSameActivity
-                  ? 'This exact activity is already assigned and in progress for this class. You cannot assign it a second time while a session is active.'
-                  : 'You cannot assign another activity while a session is active for this class.'}
-              </p>
+            {/* Title of Activity in Bold */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {classAssignmentDialog.existingActivityTitle}
+              </h2>
             </div>
 
-            <div style={styles.publishedDialogActions}>
-              <button
-                onClick={handleForceRepublish}
-                style={{
-                  backgroundColor: '#dc2626',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '0.65rem 1.25rem',
-                  borderRadius: '8px',
-                  fontSize: '0.88rem',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 10px rgba(220, 38, 38, 0.25)',
-                }}
-              >
-                🛑 End Existing & Publish New Activity
-              </button>
-              {onNavigateToDashboard && (
-                <button
-                  onClick={() => {
-                    setClassAssignmentDialog(null);
-                    onNavigateToDashboard();
-                  }}
-                  style={{
-                    backgroundColor: '#0284c7',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '0.65rem 1.25rem',
-                    borderRadius: '8px',
-                    fontSize: '0.88rem',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                  }}
-                >
-                  🏫 Go to Dashboard to Manage Live Session ➔
-                </button>
-              )}
+            {/* Subtitle / Details */}
+            <p style={styles.confirmSubTitle}>
+              Class <strong>"{classAssignmentDialog.className}"</strong> already has this active activity in progress.
+            </p>
+
+            {/* Action Buttons */}
+            <div style={styles.confirmActionsRow}>
               <button
                 onClick={() => setClassAssignmentDialog(null)}
-                style={styles.closeDialogBtn}
+                style={styles.warningCancelBtn}
               >
-                Dismiss
+                Cancel
+              </button>
+              <button
+                onClick={handleForceRepublish}
+                disabled={isPublishing}
+                style={styles.warningActionBtn}
+              >
+                {isPublishing ? 'Publishing...' : 'End Existing & Publish New ➔'}
               </button>
             </div>
           </div>
@@ -926,46 +896,49 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
       {/* ACTIVITY ALREADY PUBLISHED DIALOG */}
       {alreadyPublishedDialog?.isOpen && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.publishedDialogCard}>
-            <div style={styles.publishedDialogHeader}>
-              <span style={{ fontSize: '2rem' }}>ℹ️</span>
-              <div>
-                <h3 style={styles.publishedDialogTitle}>Activity Already Published</h3>
-                <p style={styles.publishedDialogSub}>
-                  This activity already has an active published version in the database.
-                </p>
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.confirmModalCard}>
+            {/* Top Icon Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.confirmFireCircle}>
+                ℹ️
+              </div>
+              <div style={styles.confirmPillBadge}>
+                Activity Already Published
               </div>
             </div>
 
-            <div style={styles.publishedDetailsBox}>
-              <p style={{ margin: 0, fontSize: '0.92rem', color: '#0f172a' }}>
-                Join Code: <strong>{alreadyPublishedDialog.shareCode}</strong>
-              </p>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569' }}>
-                Assigned to: <strong>{alreadyPublishedDialog.classLabel}</strong>
-              </p>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
-                Published: {alreadyPublishedDialog.publishedAt}
-              </p>
+            {/* Title of Activity in Bold */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {alreadyPublishedDialog.activityTitle}
+              </h2>
             </div>
 
-            <div style={styles.publishedDialogActions}>
+            {/* Subtitle / Details */}
+            <p style={styles.confirmSubTitle}>
+              Join Code: <strong>{alreadyPublishedDialog.shareCode}</strong>
+              <br />
+              Assigned to: {alreadyPublishedDialog.classLabel}
+            </p>
+
+            {/* Action Buttons */}
+            <div style={styles.confirmActionsRow}>
+              <button
+                onClick={() => setAlreadyPublishedDialog(null)}
+                style={styles.confirmCancelBtn}
+              >
+                Dismiss
+              </button>
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(alreadyPublishedDialog.shareCode);
                   setPublishNotice(`📋 Copied share code "${alreadyPublishedDialog.shareCode}" to clipboard!`);
                   setAlreadyPublishedDialog(null);
                 }}
-                style={styles.closeDialogBtn}
+                style={styles.confirmContinueBtn}
               >
-                Copy Join Code
-              </button>
-              <button
-                onClick={() => setAlreadyPublishedDialog(null)}
-                style={{ ...styles.closeDialogBtn, backgroundColor: '#64748b' }}
-              >
-                Dismiss
+                Copy Join Code 📋
               </button>
             </div>
           </div>
@@ -1472,6 +1445,67 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '900',
     cursor: 'pointer',
     boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+    transition: 'all 0.2s ease',
+  },
+  warningModalCard: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 45%, #dc2626 100%)',
+    borderRadius: '24px',
+    border: '2px solid #fde047',
+    padding: '2.5rem 2rem',
+    maxWidth: '540px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(245, 158, 11, 0.35)',
+    color: '#ffffff',
+  },
+  warningIconCircle: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+  warningPillBadge: {
+    padding: '0.4rem 1rem',
+    borderRadius: '20px',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  warningCancelBtn: {
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    color: '#ffffff',
+    border: '1.5px solid rgba(255, 255, 255, 0.3)',
+    padding: '0.85rem 1.75rem',
+    borderRadius: '24px',
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    transition: 'all 0.2s ease',
+  },
+  warningActionBtn: {
+    backgroundColor: '#ffffff',
+    color: '#c2410c',
+    border: '2px solid #fed7aa',
+    padding: '0.85rem 2rem',
+    borderRadius: '24px',
+    fontSize: '0.95rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
     transition: 'all 0.2s ease',
   },
 };

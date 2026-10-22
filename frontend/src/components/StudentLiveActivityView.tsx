@@ -23,8 +23,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   teacherName = 'Your Teacher',
   activityId,
   timerMode,
-  rewardMode,
-  targetScope,
+  rewardMode: _rewardMode,
+  targetScope: _targetScope,
   activityContent: initialContent,
   onExit,
 }) => {
