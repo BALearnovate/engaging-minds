@@ -54,6 +54,10 @@ export const StudentDashboard: React.FC = () => {
     shareCode?: string;
     teacherName?: string;
     activityId?: string;
+    classroomId?: string;
+    timerMode?: string;
+    rewardMode?: string;
+    targetScope?: string;
   } | null>(null);
 
   const activeToken =
@@ -65,6 +69,7 @@ export const StudentDashboard: React.FC = () => {
   // Listen for Live Activity broadcasts via Socket and check active classroom assignments
   useEffect(() => {
     const socket = getSocket();
+    const studentClassroomId = (user as any)?.classroomId;
 
     const handleActivityPublished = (data: {
       classroomId?: string;
@@ -72,20 +77,31 @@ export const StudentDashboard: React.FC = () => {
       activityTitle: string;
       shareCode?: string;
       teacherName?: string;
+      timerMode?: string;
+      rewardMode?: string;
+      targetScope?: string;
     }) => {
       console.log('Live activity published event received:', data);
+      // Strictly enforce classroom visibility: if published for a classroom, only display if matches student classroom
+      if (data.classroomId && studentClassroomId && data.classroomId !== studentClassroomId) {
+        return;
+      }
+
       setLiveActivityData({
         title: data.activityTitle,
         shareCode: data.shareCode,
         teacherName: data.teacherName || 'Mrs. Sarah Jenkins',
         activityId: data.activityId,
+        classroomId: data.classroomId,
+        timerMode: data.timerMode,
+        rewardMode: data.rewardMode,
+        targetScope: data.targetScope,
       });
       setShowLiveModal(true);
     };
 
     socket.on('activity_published', handleActivityPublished);
 
-    const studentClassroomId = (user as any)?.classroomId;
     if (studentClassroomId) {
       activitiesApi.checkClassActiveAssignment(studentClassroomId, activeToken)
         .then((res: any) => {
@@ -97,6 +113,10 @@ export const StudentDashboard: React.FC = () => {
                 ? `${res.assignment.teacher.firstName} ${res.assignment.teacher.lastName}`.trim()
                 : 'Mrs. Sarah Jenkins',
               activityId: res.assignment?.activityId,
+              classroomId: res.assignment?.classroomId,
+              timerMode: res.assignment?.timerMode,
+              rewardMode: res.assignment?.rewardMode,
+              targetScope: res.assignment?.targetScope,
             });
             setShowLiveModal(true);
           }
@@ -275,6 +295,9 @@ export const StudentDashboard: React.FC = () => {
         shareCode={liveActivityData.shareCode}
         teacherName={liveActivityData.teacherName}
         activityId={liveActivityData.activityId}
+        timerMode={liveActivityData.timerMode}
+        rewardMode={liveActivityData.rewardMode}
+        targetScope={liveActivityData.targetScope}
         onExit={() => setJoinedLiveView(false)}
       />
     );

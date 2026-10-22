@@ -200,6 +200,11 @@ export class ActivitiesService {
         activityVersionId: publishedVersion.id,
         teacherId,
         shareCode,
+        classroomId: classroomId || null,
+        timerMode: timerMode || 'Untimed Practice Session',
+        rewardMode: rewardMode || 'Engagement Points + Stickers',
+        targetScope: targetScope || 'Full Classroom Scope',
+        targetGroupStudents: targetGroupStudents || null,
         status: 'ACTIVE',
       },
     });
@@ -265,6 +270,9 @@ export class ActivitiesService {
         activityTitle: activity.title,
         shareCode,
         teacherName,
+        timerMode: timerMode || 'Untimed Practice Session',
+        rewardMode: rewardMode || 'Engagement Points + Stickers',
+        targetScope: targetScope || 'Full Classroom Scope',
       });
     }
 
@@ -367,6 +375,9 @@ export class ActivitiesService {
       session,
       activityVersion: session.activityVersion,
       definition: session.activityVersion.definition as unknown as ActivityDefinition,
+      timerMode: session.timerMode || 'Untimed Practice Session',
+      rewardMode: session.rewardMode || 'Engagement Points + Stickers',
+      targetScope: session.targetScope || 'Full Classroom Scope',
     };
   }
 

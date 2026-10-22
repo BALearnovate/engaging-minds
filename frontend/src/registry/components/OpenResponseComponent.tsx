@@ -114,7 +114,7 @@ export const OpenResponseStudent: React.FC<
             ) : (
               <div style={styles.inputArea}>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={answers[idx] || ''}
                   onChange={(e) => handleAnswerChange(idx, e.target.value)}
                   placeholder={
@@ -319,7 +319,7 @@ const styles: Record<string, React.CSSProperties> = {
     outline: 'none',
     boxSizing: 'border-box',
     resize: 'vertical',
-    minHeight: '110px',
+    minHeight: '90px',
   },
   submittedBox: {
     backgroundColor: '#f0fdf4',
@@ -374,16 +374,6 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     alignSelf: 'flex-start',
     marginTop: '0.25rem',
-  },
-  helpBtn: {
-    backgroundColor: '#fffbe3',
-    color: '#b45309',
-    border: '1px solid #fde68a',
-    padding: '0.65rem 1rem',
-    borderRadius: '6px',
-    fontWeight: '600',
-    fontSize: '0.88rem',
-    cursor: 'pointer',
   },
   hintBox: {
     backgroundColor: '#fef3c7',

@@ -34,7 +34,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   const [subject] = useState<string>('Science');
   const [gradeLevel] = useState<string>('Grade 6');
   const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
-  const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stickers');
+  const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stars');
   const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
   const [isGroupModalOpen, setIsGroupModalOpen] = useState<boolean>(false);
   const [configuredGroupName, setConfiguredGroupName] = useState<string>('Support Group Alpha');
@@ -711,7 +711,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               onChange={(e) => setRewardMode(e.target.value)}
               style={styles.paramSelect}
             >
-              <option value="Engagement Points + Stickers">Engagement Points + Stars</option>
+              <option value="Engagement Points + Stars">Engagement Points + Stars</option>
               {/* <option value="Points Only">Points Only</option>
               <option value="Pass / Fail Grade">Pass / Fail Grade</option>
               <option value="No Gamification">No Gamification</option> */}

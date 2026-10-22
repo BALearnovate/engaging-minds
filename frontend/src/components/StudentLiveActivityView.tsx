@@ -10,6 +10,9 @@ interface StudentLiveActivityViewProps {
   shareCode?: string;
   teacherName?: string;
   activityId?: string;
+  timerMode?: string;
+  rewardMode?: string;
+  targetScope?: string;
   activityContent?: ActivityDefinition;
   onExit: () => void;
 }
@@ -19,6 +22,9 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   shareCode,
   teacherName = 'Your Teacher',
   activityId,
+  timerMode,
+  rewardMode,
+  targetScope,
   activityContent: initialContent,
   onExit,
 }) => {
@@ -39,6 +45,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   // Session Timer State (Starts at 00:00)
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [activeTimerMode, setActiveTimerMode] = useState<string | undefined>(timerMode);
   const [loadedContent, setLoadedContent] = useState<ActivityDefinition | null>(initialContent || null);
   const [isLoading, setIsLoading] = useState<boolean>(!initialContent);
 
@@ -80,6 +87,9 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         if (shareCode) {
           const sessionData: any = await activitiesApi.getPublishedSessionByCode(shareCode, activeToken);
           if (sessionData && sessionData.activityVersion?.definition) {
+            if (sessionData.timerMode) {
+              setActiveTimerMode(sessionData.timerMode);
+            }
             setLoadedContent(sessionData.activityVersion.definition);
             const blocks = sessionData.activityVersion.definition.blocks || [];
             setTotalSteps(blocks.length || 1);
@@ -111,6 +121,24 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     const secs = totalSecs % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const getTimedMinutes = (mode?: string): number | null => {
+    if (!mode) return null;
+    const lower = mode.toLowerCase();
+    if (lower.includes('unlimited') || lower.includes('untimed')) return null;
+    const match = mode.match(/(\d+)/);
+    if (match && match[1]) {
+      const mins = parseInt(match[1], 10);
+      return mins > 0 ? mins : null;
+    }
+    return null;
+  };
+
+  const timedMinutes = getTimedMinutes(activeTimerMode || timerMode);
+  const targetSeconds = timedMinutes ? timedMinutes * 60 : null;
+  const remainingSeconds = targetSeconds !== null ? Math.max(0, targetSeconds - elapsedSeconds) : null;
+  const isLowTime = remainingSeconds !== null && remainingSeconds > 0 && remainingSeconds <= 120;
+  const isTimeUp = remainingSeconds !== null && remainingSeconds === 0;
 
   const progressPct = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
@@ -198,15 +226,40 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             </h1>
             <p style={styles.subTitleText}>
               Classroom Live Session • Teacher: <strong style={{ color: '#334155' }}>{teacherName}</strong>
+              {rewardMode && <span> • Rewards: <strong>{rewardMode}</strong></span>}
+              {targetScope && <span> • Scope: <strong>{targetScope}</strong></span>}
             </p>
           </div>
 
           <div style={styles.headerControlsRight}>
-            {/* Session Timer Pill starting at 00:00 */}
-            <div style={styles.timerPill}>
-              <span style={{ fontSize: '1.1rem' }}>⏱</span>
-              <span>Session Time: <strong>{formatTime(elapsedSeconds)}</strong></span>
-            </div>
+            {/* Session Timer Pill */}
+            {targetSeconds !== null ? (
+              <div
+                style={{
+                  ...styles.timerPill,
+                  ...(isLowTime ? styles.timerPillWarning : {}),
+                  ...(isTimeUp ? styles.timerPillDanger : {}),
+                }}
+              >
+                <span style={{ fontSize: '1.1rem' }}>{isTimeUp ? '⏰' : '⏳'}</span>
+                <span>
+                  {isTimeUp ? (
+                    <strong style={{ color: '#dc2626' }}>Time's Up (00:00)</strong>
+                  ) : (
+                    <>
+                      Time Remaining: <strong style={{ color: isLowTime ? '#b91c1c' : '#0284c7' }}>{formatTime(remainingSeconds!)}</strong>
+                    </>
+                  )}
+                </span>
+              </div>
+            ) : (
+              <div style={styles.timerPill}>
+                <span style={{ fontSize: '1.1rem' }}>⏱️</span>
+                <span>
+                  Unlimited Practice Session • <strong>{formatTime(elapsedSeconds)}</strong>
+                </span>
+              </div>
+            )}
 
             {/* Exit Session Button */}
             <button
@@ -440,6 +493,16 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.4rem',
+  },
+  timerPillWarning: {
+    border: '1.5px solid #f59e0b',
+    backgroundColor: '#fffbeb',
+    color: '#b45309',
+  },
+  timerPillDanger: {
+    border: '1.5px solid #ef4444',
+    backgroundColor: '#fef2f2',
+    color: '#dc2626',
   },
   exitButton: {
     backgroundColor: '#f87171',
