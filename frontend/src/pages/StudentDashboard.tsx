@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { ActivityRuntime } from '../components/ActivityRuntime';
 import { LiveActivityPopupModal } from '../components/LiveActivityPopupModal';
 import { StudentLiveActivityView } from '../components/StudentLiveActivityView';
+import { CelebrationAwardModal } from '../components/CelebrationAwardModal';
 import { getSocket } from '../services/socket';
 import { activitiesApi } from '../api/activities';
 import type { ActivityDefinition } from '../types/activityDsl';
@@ -49,6 +50,11 @@ export const StudentDashboard: React.FC = () => {
 
   const [showLiveModal, setShowLiveModal] = useState<boolean>(false);
   const [joinedLiveView, setJoinedLiveView] = useState<boolean>(false);
+  const [awardCelebration, setAwardCelebration] = useState<{
+    studentName: string;
+    category: string;
+    reward: string;
+  } | null>(null);
   const [liveActivityData, setLiveActivityData] = useState<{
     title: string;
     shareCode?: string;
@@ -128,6 +134,41 @@ export const StudentDashboard: React.FC = () => {
       socket.off('activity_published', handleActivityPublished);
     };
   }, [(user as any)?.classroomId, activeToken]);
+
+  // Listen for real-time awards issued to the student
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleAwardIssued = (data: {
+      studentId?: string | null;
+      studentName: string;
+      category: string;
+      reward: string;
+      deliveryMode?: string;
+    }) => {
+      if (data.deliveryMode === 'Silent Archive') return;
+
+      const currentUserId = user?.id;
+      const currentUserName = (user as any)?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '');
+
+      const isMatch =
+        (data.studentId && currentUserId && String(data.studentId) === String(currentUserId)) ||
+        (data.studentName && currentUserName && data.studentName.trim().toLowerCase() === currentUserName.trim().toLowerCase());
+
+      if (isMatch) {
+        setAwardCelebration({
+          studentName: data.studentName,
+          category: data.category,
+          reward: data.reward,
+        });
+      }
+    };
+
+    socket.on('award_issued', handleAwardIssued);
+    return () => {
+      socket.off('award_issued', handleAwardIssued);
+    };
+  }, [user]);
 
   // Fetch Database Activities
   useEffect(() => {
@@ -517,6 +558,17 @@ export const StudentDashboard: React.FC = () => {
         }}
         onClose={() => setShowLiveModal(false)}
       />
+
+      {/* Award Celebration Pop-Up for Student */}
+      {awardCelebration && (
+        <CelebrationAwardModal
+          studentName={awardCelebration.studentName}
+          category={awardCelebration.category}
+          reward={awardCelebration.reward}
+          onDismiss={() => setAwardCelebration(null)}
+          showDismissButton={true}
+        />
+      )}
     </div>
   );
 };

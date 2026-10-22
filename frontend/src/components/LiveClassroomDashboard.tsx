@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { activitiesApi } from '../api';
 import { getSocket } from '../services/socket';
 import { useTranslation } from '../i18n/useTranslation';
+import { CelebrationAwardModal } from './CelebrationAwardModal';
 
 interface LiveClassroomDashboardProps {
   shareCode: string;
@@ -184,7 +185,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     if (!selectedStudent) return;
     try {
       const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
-      await activitiesApi.issueAward(selectedStudent.id, awardCategory, selectedAward, activeToken);
+      await activitiesApi.issueAward(selectedStudent.id, awardCategory, selectedAward, deliveryMode, activeToken);
 
       // Trigger Asana-style 2.5 second animation overlay
       setAwardOverlay({
@@ -394,46 +395,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       `}</style>
 
       {awardOverlay && (
-        <div style={styles.celebrationBackdrop}>
-          <div style={styles.celebrationCard}>
-            <div style={{ ...styles.sparkleParticle, top: '20px', left: '30px', animation: 'floatParticle1 2s ease-out infinite' }}>✨</div>
-            <div style={{ ...styles.sparkleParticle, top: '15px', right: '40px', animation: 'floatParticle2 2.2s ease-out infinite' }}>🌟</div>
-            <div style={{ ...styles.sparkleParticle, bottom: '25px', left: '50px', animation: 'floatParticle3 1.8s ease-out infinite' }}>🎉</div>
-
-            {awardOverlay.reward.includes('1 Star') && (
-              <div style={{ ...styles.singleStarGraphic, animation: 'popScaleGlow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
-                ⭐
-              </div>
-            )}
-            {awardOverlay.reward.includes('3 Stars') && (
-              <div style={{ ...styles.tripleStarGraphic, animation: 'popScaleGlow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards' }}>
-                <span style={{ fontSize: '4.5rem' }}>⭐</span>
-                <span style={{ fontSize: '6rem', margin: '0 -0.5rem' }}>⭐</span>
-                <span style={{ fontSize: '4.5rem' }}>⭐</span>
-              </div>
-            )}
-            {awardOverlay.reward.includes('50 Pts') && (
-              <div style={{ ...styles.pointsBadgeGraphic, animation: 'spinCoin 1s ease-out forwards' }}>
-                🏆
-                <div style={styles.pointsTextPlus}>+50 PTS</div>
-              </div>
-            )}
-
-            <h2 style={styles.celebrationTitle}>
-              {awardOverlay.reward.includes('1 Star')
-                ? '⭐ 1 STAR AWARDED!'
-                : awardOverlay.reward.includes('3 Stars')
-                ? '🌟 3 STARS AWARDED!'
-                : '🏆 +50 POINTS AWARDED!'}
-            </h2>
-            <div style={styles.celebrationStudentName}>
-              Student: <strong>{awardOverlay.studentName}</strong>
-            </div>
-            <div style={styles.celebrationCategoryTag}>
-              {awardOverlay.category} Category
-            </div>
-          </div>
-        </div>
+        <CelebrationAwardModal
+          studentName={awardOverlay.studentName}
+          category={awardOverlay.category}
+          reward={awardOverlay.reward}
+          onDismiss={() => setAwardOverlay(null)}
+          showDismissButton={false}
+        />
       )}
 
       {feedbackMessage && (

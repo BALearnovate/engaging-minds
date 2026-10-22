@@ -81,5 +81,16 @@
     "mostEngagedSchoolActivities": "MOST ENGAGED ACTIVITIES IN SCHOOL",
     "engagementScore": "{{score}}% Engagement",
     "noSchoolActivitiesYet": "No engaged activities recorded in the school yet."
+  },
+  "awards": {
+    "star1Title": "⭐ 1 STAR AWARDED!",
+    "stars3Title": "🌟 3 STARS AWARDED!",
+    "points50Title": "🏆 +50 POINTS AWARDED!",
+    "pointsAwardedGeneric": "🏆 POINTS AWARDED!",
+    "studentLabel": "Student:",
+    "categorySuffix": "{{category}} Category",
+    "awesomeButton": "Awesome! 🎉",
+    "dismissButton": "Dismiss",
+    "issuedToast": "🎉 Award \"{{reward}}\" ({{category}}) issued to {{studentName}}!"
   }
 }

@@ -136,9 +136,9 @@ export class ActivitiesController {
   @Roles(Role.TEACHER, Role.ADMIN)
   async issueAward(
     @Param('id') studentSessionId: string,
-    @Body() body: { category: string; reward: string },
+    @Body() body: { category: string; reward: string; deliveryMode?: string },
   ) {
-    return this.activitiesService.issueAward(studentSessionId, body.category, body.reward);
+    return this.activitiesService.issueAward(studentSessionId, body.category, body.reward, body.deliveryMode);
   }
 
   // Teacher Live Dashboard State Endpoint

@@ -606,9 +606,17 @@ export class ActivitiesService {
     studentSessionId: string,
     category: string,
     reward: string,
+    deliveryMode: string = 'Instant Pop-Up',
   ) {
     const studentSession = await this.prisma.studentSession.findUnique({
       where: { id: studentSessionId },
+      include: {
+        activitySession: {
+          include: {
+            activityVersion: true,
+          },
+        },
+      },
     });
 
     if (!studentSession) {
@@ -646,6 +654,7 @@ export class ActivitiesService {
         payload: {
           category,
           reward,
+          deliveryMode,
           addStars,
           addPoints,
           totalAcademicStars: updatedSession.academicStars,
@@ -655,6 +664,24 @@ export class ActivitiesService {
         },
       },
     });
+
+    // If delivery mode is 'Instant Pop-Up' (or not explicitly Silent Archive), emit websocket event to student
+    if (deliveryMode !== 'Silent Archive') {
+      this.activitiesGateway.emitAwardIssued({
+        studentSessionId,
+        studentId: updatedSession.studentId,
+        studentName: updatedSession.studentName,
+        category,
+        reward,
+        deliveryMode,
+        shareCode: studentSession.activitySession?.shareCode,
+        activityId: studentSession.activitySession?.activityVersion?.activityId,
+        totalAcademicStars: updatedSession.academicStars,
+        totalAcademicPoints: updatedSession.academicPoints,
+        totalBehavioralStars: updatedSession.behavioralStars,
+        totalBehavioralPoints: updatedSession.behavioralPoints,
+      });
+    }
 
     return {
       message: `Successfully issued ${reward} (${category}) to ${updatedSession.studentName}`,

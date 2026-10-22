@@ -4,6 +4,7 @@ import { ActivityRuntime } from './ActivityRuntime';
 import { activitiesApi } from '../api/activities';
 import { getSocket } from '../services/socket';
 import { useAuth } from '../context/AuthContext';
+import { CelebrationAwardModal } from './CelebrationAwardModal';
 
 interface StudentLiveActivityViewProps {
   activityTitle: string;
@@ -57,6 +58,11 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   const [helpRequested, setHelpRequested] = useState<boolean>(false);
   const [aiTutorOpen, setAiTutorOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [awardCelebration, setAwardCelebration] = useState<{
+    studentName: string;
+    category: string;
+    reward: string;
+  } | null>(null);
 
   // Timer Interval starting from 00:00
   useEffect(() => {
@@ -176,6 +182,41 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
     });
   }, [progressPct, shareCode, currentUser]);
+
+  // Listen for real-time awards issued by teacher
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleAwardIssued = (data: {
+      studentId?: string | null;
+      studentName: string;
+      category: string;
+      reward: string;
+      deliveryMode?: string;
+    }) => {
+      if (data.deliveryMode === 'Silent Archive') return;
+
+      const currentUserId = currentUser?.id;
+      const currentUserName = currentUser?.name || (currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : '');
+
+      const isMatch =
+        (data.studentId && currentUserId && String(data.studentId) === String(currentUserId)) ||
+        (data.studentName && currentUserName && data.studentName.trim().toLowerCase() === currentUserName.trim().toLowerCase());
+
+      if (isMatch) {
+        setAwardCelebration({
+          studentName: data.studentName,
+          category: data.category,
+          reward: data.reward,
+        });
+      }
+    };
+
+    socket.on('award_issued', handleAwardIssued);
+    return () => {
+      socket.off('award_issued', handleAwardIssued);
+    };
+  }, [currentUser]);
 
   const handleAskTeacher = () => {
     setHelpRequested(true);
@@ -415,6 +456,17 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             </button>
           </div>
         </div>
+      )}
+
+      {/* Real-time Award Celebration Pop-Up */}
+      {awardCelebration && (
+        <CelebrationAwardModal
+          studentName={awardCelebration.studentName}
+          category={awardCelebration.category}
+          reward={awardCelebration.reward}
+          onDismiss={() => setAwardCelebration(null)}
+          showDismissButton={true}
+        />
       )}
     </div>
   );

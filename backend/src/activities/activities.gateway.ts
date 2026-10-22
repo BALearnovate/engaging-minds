@@ -271,6 +271,31 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
+  emitAwardIssued(data: {
+    studentSessionId: string;
+    studentId?: string | null;
+    studentName: string;
+    category: string;
+    reward: string;
+    deliveryMode?: string;
+    shareCode?: string;
+    activityId?: string;
+    totalAcademicStars?: number;
+    totalAcademicPoints?: number;
+    totalBehavioralStars?: number;
+    totalBehavioralPoints?: number;
+  }) {
+    if (this.server) {
+      this.server.emit('award_issued', data);
+      if (data.shareCode) {
+        this.server.to(`activity_${data.shareCode}`).emit('award_issued', data);
+      }
+      if (data.activityId) {
+        this.server.to(`activity_${data.activityId}`).emit('award_issued', data);
+      }
+    }
+  }
+
   private async persistStudentProgress(
     payload: {
       activityId: string;

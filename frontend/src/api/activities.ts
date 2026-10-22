@@ -277,10 +277,16 @@ export const activitiesApi = {
   },
 
   // Issue award to a student session
-  async issueAward(studentSessionId: string, category: string, reward: string, token?: string): Promise<any> {
+  async issueAward(
+    studentSessionId: string,
+    category: string,
+    reward: string,
+    deliveryMode?: string,
+    token?: string,
+  ): Promise<any> {
     return apiFetch<any>(`/activities/student-session/${studentSessionId}/award`, {
       method: 'POST',
-      body: JSON.stringify({ category, reward }),
+      body: JSON.stringify({ category, reward, deliveryMode }),
       token,
     });
   },
