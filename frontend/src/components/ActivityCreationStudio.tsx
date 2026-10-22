@@ -38,7 +38,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
   const [isGroupModalOpen, setIsGroupModalOpen] = useState<boolean>(false);
   const [configuredGroupName, setConfiguredGroupName] = useState<string>('Support Group Alpha');
-  const [configuredStudents, setConfiguredStudents] = useState<string[]>(['Leo Vance', 'Tommy Miller']);
+  const [configuredStudents, setConfiguredStudents] = useState<string[]>([]);
   const [groupAssignmentNotice, setGroupAssignmentNotice] = useState<string | null>(null);
   const [publishNotice, setPublishNotice] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
@@ -60,6 +60,19 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
     isSameActivity?: boolean;
     actId?: string;
   } | null>(null);
+
+  // Keep configuredStudents synchronized with selected classroom students when full classroom scope is active
+  useEffect(() => {
+    if (targetScope === 'Full Classroom Scope' && selectedClassId) {
+      const selectedClass = classrooms.find((c) => c.id === selectedClassId);
+      if (selectedClass && Array.isArray(selectedClass.students)) {
+        const allClassStudents = selectedClass.students.map((s) =>
+          `${s.firstName} ${s.lastName}`.trim(),
+        );
+        setConfiguredStudents(allClassStudents);
+      }
+    }
+  }, [targetScope, selectedClassId, classrooms]);
 
   const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
     setConfiguredGroupName(groupName);
@@ -116,7 +129,10 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
             timerMode,
             rewardMode,
             targetScope,
-            targetGroupStudents: configuredStudents,
+            targetGroupStudents:
+              targetScope === 'Full Classroom Scope'
+                ? classrooms.find((c) => c.id === selectedClassId)?.students?.map((s) => `${s.firstName} ${s.lastName}`.trim()) || configuredStudents
+                : configuredStudents,
           },
           activeToken,
         );
@@ -197,7 +213,10 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           timerMode,
           rewardMode,
           targetScope,
-          targetGroupStudents: configuredStudents,
+          targetGroupStudents:
+            targetScope === 'Full Classroom Scope'
+              ? classrooms.find((c) => c.id === selectedClassId)?.students?.map((s) => `${s.firstName} ${s.lastName}`.trim()) || configuredStudents
+              : configuredStudents,
           forceRepublish: true,
         },
         activeToken,

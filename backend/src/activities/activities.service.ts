@@ -194,6 +194,18 @@ export class ActivitiesService {
       },
     });
 
+    // Ensure targetGroupStudents contains all enrolled classroom students when full classroom scope is selected
+    let finalTargetGroupStudents = targetGroupStudents;
+    if (classroomId && (!finalTargetGroupStudents || (Array.isArray(finalTargetGroupStudents) && finalTargetGroupStudents.length === 0) || targetScope === 'Full Classroom Scope')) {
+      const classroomRecord = await this.prisma.classroom.findUnique({
+        where: { id: classroomId },
+        include: { students: true },
+      });
+      if (classroomRecord?.students && classroomRecord.students.length > 0) {
+        finalTargetGroupStudents = classroomRecord.students.map((s) => `${s.firstName} ${s.lastName}`.trim());
+      }
+    }
+
     // Create live ActivitySession for classroom join
     const session = await this.prisma.activitySession.create({
       data: {
@@ -204,7 +216,7 @@ export class ActivitiesService {
         timerMode: timerMode || 'Untimed Practice Session',
         rewardMode: rewardMode || 'Engagement Points + Stickers',
         targetScope: targetScope || 'Full Classroom Scope',
-        targetGroupStudents: targetGroupStudents || null,
+        targetGroupStudents: finalTargetGroupStudents || null,
         status: 'ACTIVE',
       },
     });
@@ -221,7 +233,7 @@ export class ActivitiesService {
           timerMode: timerMode || 'Untimed Practice Session',
           rewardMode: rewardMode || 'Engagement Points + Stickers',
           targetScope: targetScope || 'Full Classroom Scope',
-          targetGroupStudents: targetGroupStudents || null,
+          targetGroupStudents: finalTargetGroupStudents || null,
           dueAt: dueAt || null,
           status: 'ACTIVE',
         },
