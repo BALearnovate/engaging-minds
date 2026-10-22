@@ -88,8 +88,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
                 studentName: st.studentName,
                 status: (st.status as any) || 'NOT_STARTED',
                 progress: st.progress || 0,
-                engagementScore: st.engagementScore || 0,
-                performanceScore: st.performanceScore || 0,
+                engagementScore: 0,
+                performanceScore: st.score || 0,
                 progressText: `${st.progress || 0}% completed`,
                 score: st.score || 0,
                 lastUpdated: st.lastSeenAt ? st.lastSeenAt.toISOString() : new Date().toISOString(),
@@ -350,8 +350,6 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           data: {
             status: effectiveStatus,
             progress: progress,
-            engagementScore: engagementScore,
-            performanceScore: performanceScore,
             score: payload.score ?? performanceScore ?? studentSession.score,
             lastSeenAt: new Date(),
           },
@@ -367,8 +365,6 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
             studentName: trimmedName || 'Student',
             status: effectiveStatus,
             progress: progress,
-            engagementScore: engagementScore,
-            performanceScore: performanceScore,
             score: payload.score ?? performanceScore ?? 0,
           },
         });

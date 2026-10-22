@@ -145,7 +145,7 @@ export class ActivitiesService {
     }
 
     if (classroomId && forceRepublish) {
-      // Complete existing active assignments and sessions for this class/teacher
+      // Complete existing active assignments for this specific class
       await this.prisma.activityAssignment.updateMany({
         where: {
           classroomId,
@@ -156,15 +156,31 @@ export class ActivitiesService {
         },
       });
 
-      await this.prisma.activitySession.updateMany({
+      // Find active sessions belonging to this classroom and complete them
+      const teacherActiveSessions = await this.prisma.activitySession.findMany({
         where: {
           teacherId,
           status: 'ACTIVE',
         },
-        data: {
-          status: 'COMPLETED',
+        include: {
+          studentSessions: {
+            select: { studentId: true, studentName: true },
+          },
+          activityVersion: {
+            include: { activity: true },
+          },
         },
       });
+
+      for (const sess of teacherActiveSessions) {
+        const sessClassroom = await this.resolveClassroomForSession(sess);
+        if (sessClassroom && sessClassroom.id === classroomId) {
+          await this.prisma.activitySession.update({
+            where: { id: sess.id },
+            data: { status: 'COMPLETED' },
+          });
+        }
+      }
     }
 
     const activity = await this.prisma.activity.findUnique({
@@ -212,11 +228,6 @@ export class ActivitiesService {
         activityVersionId: publishedVersion.id,
         teacherId,
         shareCode,
-        classroomId: classroomId || null,
-        timerMode: timerMode || 'Untimed Practice Session',
-        rewardMode: rewardMode || 'Engagement Points + Stickers',
-        targetScope: targetScope || 'Full Classroom Scope',
-        targetGroupStudents: finalTargetGroupStudents || null,
         status: 'ACTIVE',
       },
     });
@@ -373,7 +384,14 @@ export class ActivitiesService {
       include: {
         activityVersion: {
           include: {
-            activity: true,
+            activity: {
+              include: {
+                assignments: {
+                  where: { status: 'ACTIVE' },
+                  orderBy: { assignedAt: 'desc' },
+                },
+              },
+            },
           },
         },
       },
@@ -383,13 +401,15 @@ export class ActivitiesService {
       throw new NotFoundException(`Classroom session with join code "${shareCode}" not found.`);
     }
 
+    const latestAssignment = session.activityVersion?.activity?.assignments?.[0];
+
     return {
       session,
       activityVersion: session.activityVersion,
       definition: session.activityVersion.definition as unknown as ActivityDefinition,
-      timerMode: session.timerMode || 'Untimed Practice Session',
-      rewardMode: session.rewardMode || 'Engagement Points + Stickers',
-      targetScope: session.targetScope || 'Full Classroom Scope',
+      timerMode: latestAssignment?.timerMode || 'Untimed Practice Session',
+      rewardMode: latestAssignment?.rewardMode || 'Engagement Points + Stickers',
+      targetScope: latestAssignment?.targetScope || 'Full Classroom Scope',
     };
   }
 
@@ -589,8 +609,6 @@ export class ActivitiesService {
         status: updatedStatus,
         progress: updatedProgress,
         score: calculatedPerformanceScore,
-        performanceScore: calculatedPerformanceScore,
-        engagementScore: calculatedEngagementScore,
         currentBlockId: blockId || studentSession.currentBlockId,
         lastSeenAt: new Date(),
       },
@@ -690,6 +708,92 @@ export class ActivitiesService {
     };
   }
 
+  private async resolveClassroomForSession(session: {
+    id: string;
+    createdAt: Date;
+    activityVersion?: { activityId?: string; activity?: { id?: string; assignments?: any[] } } | null;
+    studentSessions?: { studentId?: string | null; studentName?: string }[];
+  }) {
+    // 1. Try resolving via studentId in studentSessions
+    const studentIds = (session.studentSessions || [])
+      .map((s) => s.studentId)
+      .filter((id): id is string => Boolean(id));
+
+    if (studentIds.length > 0) {
+      const student = await this.prisma.student.findFirst({
+        where: { id: { in: studentIds } },
+        include: {
+          classroom: {
+            include: {
+              students: true,
+            },
+          },
+        },
+      });
+      if (student?.classroom) {
+        return student.classroom;
+      }
+    }
+
+    // 2. Try matching by studentName in students table
+    const studentNames = (session.studentSessions || [])
+      .map((s) => s.studentName?.toLowerCase().trim())
+      .filter(Boolean);
+
+    if (studentNames.length > 0) {
+      const allStudents = await this.prisma.student.findMany({
+        include: {
+          classroom: {
+            include: {
+              students: true,
+            },
+          },
+        },
+      });
+      const matchingStudent = allStudents.find((s) =>
+        studentNames.includes(`${s.firstName} ${s.lastName}`.toLowerCase().trim()),
+      );
+      if (matchingStudent?.classroom) {
+        return matchingStudent.classroom;
+      }
+    }
+
+    // 3. Match active assignment for the activity closest in time to session creation
+    const activityId = session.activityVersion?.activityId || session.activityVersion?.activity?.id;
+    if (activityId) {
+      const assignments = await this.prisma.activityAssignment.findMany({
+        where: { activityId, status: 'ACTIVE' },
+        include: {
+          classroom: {
+            include: {
+              students: true,
+            },
+          },
+        },
+        orderBy: { assignedAt: 'desc' },
+      });
+
+      if (assignments.length > 0) {
+        const sessionTime = new Date(session.createdAt).getTime();
+        let closest = assignments[0];
+        let minDiff = Math.abs(new Date(closest.assignedAt).getTime() - sessionTime);
+
+        for (const a of assignments) {
+          const diff = Math.abs(new Date(a.assignedAt).getTime() - sessionTime);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = a;
+          }
+        }
+        if (closest?.classroom) {
+          return closest.classroom;
+        }
+      }
+    }
+
+    return null;
+  }
+
   async getTeacherDashboardState(shareCode: string) {
     const session = await this.prisma.activitySession.findUnique({
       where: { shareCode: shareCode.toUpperCase() },
@@ -732,11 +836,10 @@ export class ActivitiesService {
       (session.activityVersion?.definition as any)?.title ||
       'Interactive Activity';
 
-    const assignments = session.activityVersion?.activity?.assignments || [];
-    const activeAssignment = assignments.find((a) => a.status === 'ACTIVE') || assignments[0];
+    const resolvedClassroom = await this.resolveClassroomForSession(session);
 
     // Ensure all enrolled classroom students are auto-provisioned into this session
-    if (activeAssignment?.classroom?.students?.length) {
+    if (resolvedClassroom?.students?.length) {
       const existingStudentIds = new Set(
         session.studentSessions.map((st) => st.studentId).filter(Boolean),
       );
@@ -744,7 +847,7 @@ export class ActivitiesService {
         session.studentSessions.map((st) => st.studentName.toLowerCase().trim()),
       );
 
-      for (const student of activeAssignment.classroom.students) {
+      for (const student of resolvedClassroom.students) {
         const studentFullName = `${student.firstName} ${student.lastName}`.trim();
         if (
           !existingStudentIds.has(student.id) &&
@@ -759,8 +862,6 @@ export class ActivitiesService {
                 status: 'NOT_STARTED',
                 progress: 0,
                 score: 0,
-                performanceScore: 0,
-                engagementScore: 0,
               },
             });
             existingStudentIds.add(student.id);
@@ -787,12 +888,12 @@ export class ActivitiesService {
       ],
     });
 
-    const classroomInfo = activeAssignment?.classroom
+    const classroomInfo = resolvedClassroom
       ? {
-          id: activeAssignment.classroom.id,
-          subject: activeAssignment.classroom.subject,
-          grade: activeAssignment.classroom.grade,
-          year: activeAssignment.classroom.year,
+          id: resolvedClassroom.id,
+          subject: resolvedClassroom.subject,
+          grade: resolvedClassroom.grade,
+          year: resolvedClassroom.year,
         }
       : null;
 
@@ -809,6 +910,9 @@ export class ActivitiesService {
     const session = await this.prisma.activitySession.findUnique({
       where: { shareCode: shareCode.toUpperCase() },
       include: {
+        studentSessions: {
+          select: { studentId: true, studentName: true },
+        },
         activityVersion: {
           include: {
             activity: {
@@ -832,16 +936,36 @@ export class ActivitiesService {
       data: { status: 'COMPLETED' },
     });
 
-    // Update active assignments for this activity / teacher to COMPLETED
-    await this.prisma.activityAssignment.updateMany({
-      where: {
-        assignedByTeacherId: teacherId,
-        status: 'ACTIVE',
-      },
-      data: {
-        status: 'COMPLETED',
-      },
-    });
+    const resolvedClassroom = await this.resolveClassroomForSession(session);
+
+    if (resolvedClassroom) {
+      // Update active assignment ONLY for this specific classroom to COMPLETED
+      await this.prisma.activityAssignment.updateMany({
+        where: {
+          classroomId: resolvedClassroom.id,
+          assignedByTeacherId: teacherId,
+          status: 'ACTIVE',
+        },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+    } else {
+      // Fallback: update active assignments for this specific activity to COMPLETED
+      const actId = session.activityVersion?.activityId || session.activityVersion?.activity?.id;
+      if (actId) {
+        await this.prisma.activityAssignment.updateMany({
+          where: {
+            activityId: actId,
+            assignedByTeacherId: teacherId,
+            status: 'ACTIVE',
+          },
+          data: {
+            status: 'COMPLETED',
+          },
+        });
+      }
+    }
 
     return {
       message: `Session "${shareCode}" stopped successfully. Class is now free for new activity publishing.`,
@@ -878,24 +1002,47 @@ export class ActivitiesService {
           },
         },
         studentSessions: {
-          select: { id: true },
+          select: { id: true, studentId: true, studentName: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return sessions.map((s) => {
-      const activeAssignment = s.activityVersion?.activity?.assignments?.[0];
-      return {
+    const results: Array<{
+      id: string;
+      shareCode: string;
+      status: string;
+      createdAt: Date;
+      activityTitle: string;
+      classroom: {
+        id: string;
+        subject: string;
+        grade: string;
+        year: string;
+      } | null;
+      studentCount: number;
+    }> = [];
+    for (const s of sessions) {
+      const resolvedClassroom = await this.resolveClassroomForSession(s);
+      results.push({
         id: s.id,
         shareCode: s.shareCode,
         status: s.status,
         createdAt: s.createdAt,
         activityTitle: s.activityVersion?.activity?.title || 'Interactive Activity',
-        classroom: activeAssignment?.classroom || null,
+        classroom: resolvedClassroom
+          ? {
+              id: resolvedClassroom.id,
+              subject: resolvedClassroom.subject,
+              grade: resolvedClassroom.grade,
+              year: resolvedClassroom.year,
+            }
+          : null,
         studentCount: s.studentSessions.length,
-      };
-    });
+      });
+    }
+
+    return results;
   }
 
   private generateShareCode(): string {
