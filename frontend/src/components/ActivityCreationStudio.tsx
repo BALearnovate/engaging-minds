@@ -665,7 +665,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
         {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
         <div style={styles.sidebarCard}>
-          <h2 style={styles.sidebarTitle}>DEPLOYMENT PARAMETERS</h2>
+          <h2 style={styles.sidebarTitle}>Activity Session Settings</h2>
 
           {/* SELECT CLASS (Teacher-Created Classes Only) */}
           <div style={styles.sidebarSection}>
@@ -684,7 +684,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               </option>
               {classrooms.map((cls) => (
                 <option key={cls.id} value={cls.id}>
-                  {cls.subject} - {cls.grade} ({cls.year}) [{cls.students?.length || 0} Students]
+                  {cls.subject} - {cls.grade} ({cls.year})
                 </option>
               ))}
             </select>
@@ -698,9 +698,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               style={styles.paramSelect}
             >
               <option value="Untimed Practice Session">Untimed Practice Session</option>
-              <option value="Timed 15 Minutes">Timed (15 Minutes)</option>
-              <option value="Timed 30 Minutes">Timed (30 Minutes)</option>
-              <option value="Timed 45 Minutes">Timed (45 Minutes)</option>
+              <option value="Timed 15 Minutes">15 Minutes</option>
+              <option value="Timed 30 Minutes">30 Minutes</option>
+              <option value="Timed 45 Minutes">45 Minutes</option>
             </select>
           </div>
 
@@ -711,10 +711,10 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               onChange={(e) => setRewardMode(e.target.value)}
               style={styles.paramSelect}
             >
-              <option value="Engagement Points + Stickers">Engagement Points + Stickers</option>
-              <option value="Points Only">Points Only</option>
+              <option value="Engagement Points + Stickers">Engagement Points + Stars</option>
+              {/* <option value="Points Only">Points Only</option>
               <option value="Pass / Fail Grade">Pass / Fail Grade</option>
-              <option value="No Gamification">No Gamification</option>
+              <option value="No Gamification">No Gamification</option> */}
             </select>
           </div>
 
