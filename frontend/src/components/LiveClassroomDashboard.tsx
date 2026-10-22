@@ -46,7 +46,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   } | null>(null);
 
   // Interactive UI state with sample data
-  const [activeScope, setActiveScope] = useState<string>('Individual Student');
+  const [activeScope, setActiveScope] = useState<string>('Class Level');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null); // Default null
   const [selectedIntervention, setSelectedIntervention] = useState<string>('desk_checkin');
   const [awardCategory, setAwardCategory] = useState<'Academic Effort' | 'Behavioral'>('Academic Effort');
@@ -55,6 +55,49 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
+
+  // Computed Class Status Monitor Metrics
+  const totalStudentsCount = students.length;
+
+  const classEngagedPct = totalStudentsCount > 0
+    ? Math.round(students.reduce((acc, s) => acc + (s.engagementScore || 0), 0) / totalStudentsCount)
+    : 20;
+
+  const classInProgressCount = students.filter((s) => s.progress > 0 && s.progress < 100).length;
+  const classInProgressPct = totalStudentsCount > 0
+    ? Math.round((classInProgressCount / totalStudentsCount) * 100)
+    : 80;
+
+  const classCompletedCount = students.filter((s) => s.progress >= 100 || (s.status === 'OPTIMAL' && s.progress === 100)).length;
+  const classCompletedPct = totalStudentsCount > 0
+    ? Math.round((classCompletedCount / totalStudentsCount) * 100)
+    : 20;
+
+  const classNeedAttentionCount = totalStudentsCount > 0
+    ? students.filter((s) => s.status === 'ALERT FLAG' || s.status === 'AT RISK' || s.subtext?.toLowerCase().includes('blocked') || s.subtext?.toLowerCase().includes('assistance')).length
+    : 3;
+
+  // 5 Progress distribution buckets: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%
+  const distributionBuckets = [
+    { label: '0-20%', range: '0 - 20%', color: '#f97316', count: totalStudentsCount > 0 ? students.filter((s) => s.progress >= 0 && s.progress <= 20).length : 1 },
+    { label: '20-40%', range: '20 - 40%', color: '#38bdf8', count: totalStudentsCount > 0 ? students.filter((s) => s.progress > 20 && s.progress <= 40).length : 2 },
+    { label: '40-60%', range: '40 - 60%', color: '#6366f1', count: totalStudentsCount > 0 ? students.filter((s) => s.progress > 40 && s.progress <= 60).length : 4 },
+    { label: '60-80%', range: '60 - 80%', color: '#0d9488', count: totalStudentsCount > 0 ? students.filter((s) => s.progress > 60 && s.progress <= 80).length : 3 },
+    { label: '80-100%', range: '80 - 100%', color: '#22c55e', count: totalStudentsCount > 0 ? students.filter((s) => s.progress > 80 && s.progress <= 100).length : 2 },
+  ];
+
+  const maxBucketCount = Math.max(1, ...distributionBuckets.map((b) => b.count));
+
+  // Timeline points for Progress Over Time (0m to 30m)
+  const timePoints = [
+    { time: '0m', label: '0m', pct: 0, milestone: 'Start' },
+    { time: '5m', label: '5m', pct: Math.min(25, classEngagedPct > 0 ? 20 : 15), milestone: 'Intro' },
+    { time: '10m', label: '10m', pct: Math.min(50, Math.round(classEngagedPct * 0.55)), milestone: 'Core Task' },
+    { time: '15m', label: '15m', pct: Math.min(75, Math.round(classInProgressPct * 0.75)), milestone: 'Step 2' },
+    { time: '20m', label: '20m', pct: Math.min(90, Math.max(classInProgressPct, 70)), milestone: 'Review' },
+    { time: '25m', label: '25m', pct: Math.min(98, Math.max(classCompletedPct + 65, 85)), milestone: 'Wrap Up' },
+    { time: '30m', label: '30m', pct: Math.min(100, Math.max(classCompletedPct + 80, 95)), milestone: 'Finished' },
+  ];
 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {
@@ -459,7 +502,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         <div style={styles.leftMainColumn}>
           {/* METRICS SCOPE SELECTOR */}
           <div style={styles.cardScopeSelectorLeft}>
-            <h3 style={styles.sectionHeaderTitle}>METRICS SCOPE SELECTOR</h3>
+            <h3 style={styles.sectionHeaderTitle}>
+              {t('liveDashboard.metricsScope', 'METRICS SCOPE SELECTOR')}
+            </h3>
             <div style={styles.scopeButtonsRowLeft}>
               {['Class Level', 'Group Level', 'Individual Student', 'Student Help Request (5)'].map((scope) => {
                 const isActive = activeScope === scope;
@@ -480,10 +525,261 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             </div>
           </div>
 
-          {/* INDIVIDUAL STATUS MONITOR */}
-          <div style={styles.cardStatusMonitor}>
-            <div style={styles.cardHeaderRow}>
-              <h3 style={styles.sectionHeaderTitle}>INDIVIDUAL STATUS MONITOR</h3>
+          {activeScope === 'Class Level' ? (
+            /* CLASS STATUS MONITOR */
+            <div style={styles.cardStatusMonitor}>
+              <div style={styles.cardHeaderRow}>
+                <h3 style={styles.sectionHeaderTitle}>
+                  {t('liveDashboard.classStatusMonitor', 'CLASS STATUS MONITOR')}
+                </h3>
+                <span style={styles.classStatusSubBadge}>
+                  👥 {totalStudentsCount} {t('liveDashboard.studentsCount', 'Students')}
+                </span>
+              </div>
+
+              <hr style={styles.fullHrLineTop} />
+
+              {/* 1. Title: High level overview */}
+              <div style={styles.classSectionBox}>
+                <h4 style={styles.classSectionHeading}>
+                  {t('liveDashboard.highLevelOverview', 'High level overview')}
+                </h4>
+                <div style={styles.overviewGrid2x2}>
+                  {/* Card 1: Engaged */}
+                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #2563eb', backgroundColor: '#f0f9ff' }}>
+                    <div style={styles.metricCardLabel}>
+                      <span>🎯</span> {t('liveDashboard.engaged', 'Engaged')}
+                    </div>
+                    <div style={{ ...styles.metricCardValue, color: '#1d4ed8' }}>
+                      {classEngagedPct}%
+                    </div>
+                  </div>
+
+                  {/* Card 2: In Progress */}
+                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #f59e0b', backgroundColor: '#fffbeb' }}>
+                    <div style={styles.metricCardLabel}>
+                      <span>⏳</span> {t('liveDashboard.inProgress', 'In Progress')}
+                    </div>
+                    <div style={{ ...styles.metricCardValue, color: '#d97706' }}>
+                      {classInProgressPct}%
+                    </div>
+                  </div>
+
+                  {/* Card 3: Completed */}
+                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #16a34a', backgroundColor: '#f0fdf4' }}>
+                    <div style={styles.metricCardLabel}>
+                      <span>✅</span> {t('liveDashboard.completed', 'Completed')}
+                    </div>
+                    <div style={{ ...styles.metricCardValue, color: '#15803d' }}>
+                      {classCompletedPct}%
+                    </div>
+                  </div>
+
+                  {/* Card 4: Need Attention */}
+                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #ef4444', backgroundColor: '#fef2f2' }}>
+                    <div style={styles.metricCardLabel}>
+                      <span>⚠️</span> {t('liveDashboard.needAttention', 'Need Attention')}
+                    </div>
+                    <div style={{ ...styles.metricCardValue, color: '#dc2626' }}>
+                      {classNeedAttentionCount}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Title: Student Progress Distribution */}
+              <div style={styles.classSectionBox}>
+                <h4 style={styles.classSectionHeading}>
+                  {t('liveDashboard.studentProgressDistribution', 'Student Progress Distribution')}
+                </h4>
+                <div style={styles.chartWrapper}>
+                  <svg viewBox="0 0 620 220" style={styles.chartSvg}>
+                    {/* Background Grid Lines */}
+                    {[0, 25, 50, 75, 100].map((pct, idx) => {
+                      const y = 170 - (pct / 100) * 130;
+                      return (
+                        <g key={idx}>
+                          <line x1="50" y1={y} x2="590" y2={y} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth="1" />
+                          <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="600">
+                            {Math.round((pct / 100) * maxBucketCount)}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Bars */}
+                    {distributionBuckets.map((bucket, idx) => {
+                      const barWidth = 62;
+                      const gap = 44;
+                      const startX = 75;
+                      const x = startX + idx * (barWidth + gap);
+                      const barHeight = maxBucketCount > 0 ? (bucket.count / maxBucketCount) * 130 : 0;
+                      const y = 170 - barHeight;
+
+                      return (
+                        <g key={bucket.label}>
+                          {/* Bar Background Track */}
+                          <rect
+                            x={x}
+                            y="40"
+                            width={barWidth}
+                            height="130"
+                            rx="8"
+                            fill="#f8fafc"
+                            stroke="#e2e8f0"
+                            strokeWidth="1"
+                          />
+                          {/* Active Bar */}
+                          <rect
+                            x={x}
+                            y={y}
+                            width={barWidth}
+                            height={Math.max(barHeight, 6)}
+                            rx="8"
+                            fill={bucket.color}
+                            style={{ transition: 'all 0.5s ease' }}
+                          />
+                          {/* Student Count Badge on Top */}
+                          <g transform={`translate(${x + barWidth / 2}, ${Math.max(22, y - 12)})`}>
+                            <rect
+                              x="-18"
+                              y="-12"
+                              width="36"
+                              height="18"
+                              rx="9"
+                              fill="#1e293b"
+                            />
+                            <text
+                              x="0"
+                              y="1"
+                              textAnchor="middle"
+                              alignmentBaseline="middle"
+                              fill="#ffffff"
+                              fontSize="11"
+                              fontWeight="800"
+                            >
+                              {bucket.count}
+                            </text>
+                          </g>
+                          {/* X Axis Range Label */}
+                          <text
+                            x={x + barWidth / 2}
+                            y="195"
+                            textAnchor="middle"
+                            fontSize="11"
+                            fontWeight="800"
+                            fill="#334155"
+                          >
+                            {bucket.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Bottom Base Line */}
+                    <line x1="50" y1="170" x2="590" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* 3. Title: Progress Over time */}
+              <div style={styles.classSectionBox}>
+                <h4 style={styles.classSectionHeading}>
+                  {t('liveDashboard.progressOverTime', 'Progress Over time')}
+                </h4>
+                <div style={styles.chartWrapper}>
+                  <svg viewBox="0 0 620 220" style={styles.chartSvg}>
+                    <defs>
+                      <linearGradient id="progressAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#16a34a" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Y Axis Grid Lines */}
+                    {[0, 25, 50, 75, 100].map((pct, idx) => {
+                      const y = 170 - (pct / 100) * 130;
+                      return (
+                        <g key={idx}>
+                          <line x1="50" y1={y} x2="590" y2={y} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth="1" />
+                          <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="600">
+                            {pct}%
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Line & Area Points */}
+                    {(() => {
+                      const points = timePoints.map((pt, i) => {
+                        const x = 75 + (i * 495) / (timePoints.length - 1);
+                        const y = 170 - (pt.pct / 100) * 130;
+                        return { x, y, ...pt };
+                      });
+
+                      const pathData = points.reduce((acc, pt, i) => {
+                        if (i === 0) return `M ${pt.x} ${pt.y}`;
+                        const prev = points[i - 1];
+                        const cx1 = prev.x + (pt.x - prev.x) / 2;
+                        const cy1 = prev.y;
+                        const cx2 = prev.x + (pt.x - prev.x) / 2;
+                        const cy2 = pt.y;
+                        return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
+                      }, '');
+
+                      const areaData = `${pathData} L ${points[points.length - 1].x} 170 L ${points[0].x} 170 Z`;
+
+                      return (
+                        <>
+                          {/* Gradient Area Fill */}
+                          <path d={areaData} fill="url(#progressAreaGradient)" />
+
+                          {/* Smooth Line Path */}
+                          <path
+                            d={pathData}
+                            fill="none"
+                            stroke="#16a34a"
+                            strokeWidth="3.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+
+                          {/* Data Points with Glow Rings */}
+                          {points.map((pt, idx) => (
+                            <g key={idx}>
+                              {/* Outer Pulse Ring */}
+                              <circle cx={pt.x} cy={pt.y} r="8" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
+                              {/* Center Dot */}
+                              <circle cx={pt.x} cy={pt.y} r="4" fill="#15803d" />
+
+                              {/* Progress Percent Badge on top */}
+                              <text x={pt.x} y={pt.y - 13} textAnchor="middle" fontSize="10" fontWeight="800" fill="#15803d">
+                                {pt.pct}%
+                              </text>
+
+                              {/* X Axis Time Label */}
+                              <text x={pt.x} y="195" textAnchor="middle" fontSize="11" fontWeight="700" fill="#475569">
+                                {pt.time}
+                              </text>
+                            </g>
+                          ))}
+                        </>
+                      );
+                    })()}
+
+                    {/* Bottom Base Line */}
+                    <line x1="50" y1="170" x2="590" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* INDIVIDUAL STATUS MONITOR */
+            <div style={styles.cardStatusMonitor}>
+              <div style={styles.cardHeaderRow}>
+                <h3 style={styles.sectionHeaderTitle}>
+                  {t('liveDashboard.individualStatusMonitor', 'INDIVIDUAL STATUS MONITOR')}
+                </h3>
               <div style={styles.legendRow}>
                 <span style={styles.legendItem}>
                   <span className="vibrating-dot-green" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
@@ -562,11 +858,12 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               </div>
             )}
           </div>
+        )}
         </div>
 
         {/* RIGHT COLUMN */}
         <div style={styles.rightActionsColumn}>
-          {selectedStudent ? (
+          {activeScope !== 'Class Level' && selectedStudent ? (
             <>
               {/* STUDENT TRI-DIMENSION ANALYTICS (ENGAGEMENT, PROGRESS, PERFORMANCE) */}
               <div style={styles.cardProgress}>
@@ -786,11 +1083,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               </div>
             </>
           ) : (
-            /* DEFAULT 1 SINGLE LONG SECTION WHEN NO STUDENT IS SELECTED */
+            /* DEFAULT 1 SINGLE LONG SECTION WHEN NO STUDENT IS SELECTED OR CLASS LEVEL */
             <div style={styles.singleLongRightPlaceholder}>
               <div style={styles.placeholderHandIcon}>👈</div>
               <p style={styles.placeholderTextLong}>
-                Select a student to view progress, support and award.
+                {activeScope === 'Class Level'
+                  ? t('liveDashboard.classLevelPlaceholder', 'Switch to Individual Student scope to view progress, support and award.')
+                  : t('liveDashboard.selectStudentPlaceholder', 'Select a student to view progress, support and award.')}
               </p>
             </div>
           )}
@@ -803,6 +1102,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 const styles: Record<string, React.CSSProperties> = {
   outerWrapper: {
     maxWidth: '1200px',
+    width: '100%',
+    boxSizing: 'border-box',
     margin: '0 auto',
     display: 'flex',
     flexDirection: 'column',
@@ -880,14 +1181,19 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '16px',
     padding: '1.25rem',
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
+    gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
     gap: '1.25rem',
     border: '1px solid #b4d5d2',
+    boxSizing: 'border-box',
+    width: '100%',
   },
   leftMainColumn: {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
   },
   cardScopeSelectorLeft: {
     backgroundColor: '#ffffff',
@@ -983,6 +1289,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1rem',
     border: '1px solid #cbd5e1',
     flex: 1,
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
   },
   emptyStudentsBox: {
     padding: '2.5rem 1rem',
@@ -1055,6 +1364,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
   },
   singleLongRightPlaceholder: {
     backgroundColor: '#ffffff',
@@ -1322,6 +1634,80 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     borderTop: '1px solid #e2e8f0',
     margin: '0.6rem 0',
+  },
+  classStatusSubBadge: {
+    backgroundColor: '#dbeafe',
+    color: '#1e40af',
+    fontSize: '0.78rem',
+    fontWeight: '800',
+    padding: '0.3rem 0.75rem',
+    borderRadius: '20px',
+  },
+  classSectionBox: {
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    padding: '1.25rem',
+    border: '1px solid #e2e8f0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+  },
+  classSectionHeading: {
+    fontSize: '0.92rem',
+    fontWeight: '800',
+    color: '#1e3a8a',
+    margin: 0,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  overviewGrid2x2: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '0.85rem',
+  },
+  metricCard: {
+    borderRadius: '10px',
+    padding: '1rem 1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+  },
+  metricCardLabel: {
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    color: '#475569',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+  },
+  metricCardValue: {
+    fontSize: '1.85rem',
+    fontWeight: '900',
+    letterSpacing: '-0.02em',
+  },
+  chartWrapper: {
+    backgroundColor: '#ffffff',
+    borderRadius: '10px',
+    padding: '1rem',
+    border: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+  },
+  chartSvg: {
+    width: '100%',
+    height: 'auto',
+    maxHeight: '220px',
+    display: 'block',
   },
 };
 
