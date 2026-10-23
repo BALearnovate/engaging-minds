@@ -101,12 +101,12 @@ export const TeacherDashboard: React.FC = () => {
         <div style={styles.emptySessionCard}>
           <div style={styles.emptyIcon}>📡</div>
           <h2 style={styles.emptyTitle}>
-            {t('teacherDashboard.noActiveSession', 'No Active Classroom Session')}
+            {t('teacherDashboard.noActiveSession', 'No active live sessions.')}
           </h2>
           <p style={styles.emptySubtext}>
             {t(
               'teacherDashboard.noActiveSessionSubtext',
-              'There are currently no active live activity sessions running. Publish an activity from Activity Studio or enter a join code below to monitor.',
+              'No live activities are running right now. Launch an activity from the Activity Creation menu in sidebar, or enter an activity code below to see what happened during that activity.',
             )}
           </p>
 
@@ -191,9 +191,9 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '3.5rem 2rem',
     textAlign: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+    borderRadius: '12px',
+    border: '2px solid #7dd3fc',
+    boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -203,17 +203,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '3rem',
   },
   emptyTitle: {
-    fontSize: '1.5rem',
+    fontSize: '1.15rem',
     fontWeight: '800',
-    color: '#0f172a',
-    margin: 0,
+    color: '#0055a5',
+    margin: 0.5,
+    letterSpacing: '0.03em',
+    textTransform: 'uppercase',
+    padding: '0.5rem 0rem'
   },
   emptySubtext: {
-    fontSize: '0.95rem',
+    fontSize: '1rem',
     color: '#64748b',
-    maxWidth: '520px',
     margin: 0,
-    lineHeight: 1.5,
   },
   manualCodeForm: {
     display: 'flex',

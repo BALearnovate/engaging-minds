@@ -25,8 +25,8 @@
   },
   "teacherDashboard": {
     "title": "Teacher Live Classroom",
-    "noActiveSession": "No Active Classroom Session",
-    "noActiveSessionSubtext": "There are currently no active live activity sessions running. Publish an activity from Activity Studio or select a session below.",
+    "noActiveSession": "No active live sessions.",
+    "noActiveSessionSubtext": "No live activities are running right now. Launch an activity from the Activity Creation menu in sidebar, or enter an activity code below to see what happened during that activity.",
     "selectActiveSession": "Select Active Session:",
     "launchActivity": "Launch New Activity",
     "viewClassrooms": "Classroom Setup",
