@@ -470,7 +470,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 : `🏁 ${t('liveDashboard.completedStatus', 'COMPLETED')}`}
             </span>
             <span style={styles.codeTag}>
-              {t('liveDashboard.joinCode', 'Join Code')}: {shareCode}
+              {t('liveDashboard.joinCode', 'Activity Code')}: {shareCode}
             </span>
             {classroomInfo && (
               <span style={styles.classroomBadge}>

@@ -78,7 +78,7 @@ export const TeacherDashboard: React.FC = () => {
                     borderColor: isSelected ? '#1d4ed8' : '#cbd5e1',
                   }}
                 >
-                  <span style={styles.chipCode}>{s.shareCode}</span>
+                  {/* <span style={styles.chipCode}>{s.shareCode}</span> */}
                   <span style={styles.chipTitle}>{classLabel}</span>
                 </button>
               );
@@ -162,7 +162,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    padding: '0.45rem 0.85rem',
+    padding: '1.0rem 1.5rem',
     borderRadius: '8px',
     border: '1px solid',
     cursor: 'pointer',
