@@ -506,7 +506,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               {t('liveDashboard.metricsScope', 'METRICS SCOPE SELECTOR')}
             </h3>
             <div style={styles.scopeButtonsRowLeft}>
-              {['Class Level', 'Group Level', 'Individual Student', 'Student Help Request (5)'].map((scope) => {
+              {['Class Level', 'Individual Student'].map((scope) => {
                 const isActive = activeScope === scope;
                 return (
                   <button
