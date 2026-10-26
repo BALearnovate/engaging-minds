@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 import { ActivityRuntime } from '../components/ActivityRuntime';
 import { LiveActivityPopupModal } from '../components/LiveActivityPopupModal';
 import { StudentLiveActivityView } from '../components/StudentLiveActivityView';
@@ -37,6 +38,7 @@ interface StudentActivityItem {
 }
 
 export const StudentDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { user, token: authContextToken } = useAuth();
 
   const [dbActivities, setDbActivities] = useState<DatabaseActivity[]>([]);
@@ -352,10 +354,10 @@ export const StudentDashboard: React.FC = () => {
             onClick={() => setActivePlayingActivity(null)}
             style={styles.backBtn}
           >
-            ← Back to My Assigned Activities
+            {t('studentPortal.backToAssigned', '← Back to My Assigned Activities')}
           </button>
           <div style={styles.runtimeTitleBadge}>
-            📖 Playing: <strong>{activePlayingTitle}</strong>
+            {t('studentPortal.playing', '📖 Playing:')} <strong>{activePlayingTitle}</strong>
           </div>
         </div>
 
@@ -364,7 +366,7 @@ export const StudentDashboard: React.FC = () => {
             definition={activePlayingActivity}
             studentName={user ? `${user.firstName} ${user.lastName}` : 'Student'}
             onCompleted={() => {
-              alert('🎉 Activity completed successfully! Great work!');
+              alert(t('studentPortal.activityCompletedAlert', '🎉 Activity completed successfully! Great work!'));
               setActivePlayingActivity(null);
             }}
           />
@@ -391,12 +393,12 @@ export const StudentDashboard: React.FC = () => {
               {displayAvatar}
             </div>
             <div>
-              <div style={styles.portalBadge}>🎓 STUDENT LEARNING PORTAL</div>
+              <div style={styles.portalBadge}>🎓 {t('studentPortal.portalTitle', 'STUDENT LEARNING PORTAL')}</div>
               <h1 style={styles.welcomeTitle}>
-                Welcome back, {user?.firstName || 'Student'}! 👋
+                {t('studentPortal.welcomeBack', 'Welcome back, {{name}}! 👋', { name: user?.firstName || 'Student' })}
               </h1>
               <p style={styles.welcomeSubtitle}>
-                Here are the interactive learning activities assigned to you by your teacher from the database.
+                {t('studentPortal.assignedSubtitle', 'Here are the interactive learning activities assigned to you by your teacher from the database.')}
               </p>
             </div>
           </div>
@@ -407,7 +409,7 @@ export const StudentDashboard: React.FC = () => {
               <span style={styles.statIcon}>📋</span>
               <div>
                 <div style={styles.statNumber}>{totalAssigned}</div>
-                <div style={styles.statLabel}>Assigned</div>
+                <div style={styles.statLabel}>{t('studentPortal.assigned', 'Assigned')}</div>
               </div>
             </div>
 
@@ -415,7 +417,7 @@ export const StudentDashboard: React.FC = () => {
               <span style={styles.statIcon}>⏳</span>
               <div>
                 <div style={styles.statNumber}>{inProgressCount}</div>
-                <div style={styles.statLabel}>In Progress</div>
+                <div style={styles.statLabel}>{t('studentPortal.inProgress', 'In Progress')}</div>
               </div>
             </div>
 
@@ -423,7 +425,7 @@ export const StudentDashboard: React.FC = () => {
               <span style={styles.statIcon}>✅</span>
               <div>
                 <div style={styles.statNumber}>{completedCount}</div>
-                <div style={styles.statLabel}>Completed</div>
+                <div style={styles.statLabel}>{t('studentPortal.completed', 'Completed')}</div>
               </div>
             </div>
           </div>
@@ -435,7 +437,7 @@ export const StudentDashboard: React.FC = () => {
             <span style={styles.searchIcon}>🔍</span>
             <input
               type="text"
-              placeholder="Search assigned activities by title or subject..."
+              placeholder={t('studentPortal.searchPlaceholder', 'Search assigned activities by title or subject...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
@@ -444,56 +446,48 @@ export const StudentDashboard: React.FC = () => {
 
           <div style={styles.filterRow}>
             <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>Subject:</span>
+              <span style={styles.filterLabel}>{t('studentPortal.subject', 'Subject:')}</span>
               <button
                 onClick={() => setSubjectFilter('all')}
                 style={{
                   ...styles.filterTab,
                   ...(subjectFilter === 'all' ? styles.filterTabActive : {}),
                 }}
-              >
-                All
-              </button>
+              >{t('studentPortal.all', 'All')}</button>
               <button
                 onClick={() => setSubjectFilter('science')}
                 style={{
                   ...styles.filterTab,
                   ...(subjectFilter === 'science' ? styles.filterTabActive : {}),
                 }}
-              >
-                🌿 Science
-              </button>
+              >{t('studentPortal.science', '🌿 Science')}</button>
               <button
                 onClick={() => setSubjectFilter('math')}
                 style={{
                   ...styles.filterTab,
                   ...(subjectFilter === 'math' ? styles.filterTabActive : {}),
                 }}
-              >
-                📐 Math
-              </button>
+              >{t('studentPortal.math', '📐 Math')}</button>
               <button
                 onClick={() => setSubjectFilter('general')}
                 style={{
                   ...styles.filterTab,
                   ...(subjectFilter === 'general' ? styles.filterTabActive : {}),
                 }}
-              >
-                📖 General
-              </button>
+              >{t('studentPortal.general', '📖 General')}</button>
             </div>
 
             <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>Status:</span>
+              <span style={styles.filterLabel}>{t('studentPortal.status', 'Status:')}</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 style={styles.statusSelect}
               >
-                <option value="all">All Statuses</option>
-                <option value="assigned">🟢 Assigned</option>
-                <option value="in_progress">🟡 In Progress</option>
-                <option value="completed">✅ Completed</option>
+                <option value="all">{t('studentPortal.allStatuses', 'All Statuses')}</option>
+                <option value="assigned">{t('studentPortal.statusAssigned', '🟢 Assigned')}</option>
+                <option value="in_progress">{t('studentPortal.statusInProgress', '🟡 In Progress')}</option>
+                <option value="completed">{t('studentPortal.statusCompleted', '✅ Completed')}</option>
               </select>
             </div>
           </div>
@@ -502,13 +496,13 @@ export const StudentDashboard: React.FC = () => {
         {/* Activity Cards List */}
         {isLoading ? (
           <div style={styles.loadingBox}>
-            <p>⏳ Loading assigned activities from database...</p>
+            <p>{t('studentPortal.loadingActivities', '⏳ Loading assigned activities from database...')}</p>
           </div>
         ) : filteredActivities.length === 0 ? (
           <div style={styles.emptyStateBox}>
             <div style={{ fontSize: '2.5rem' }}>📚</div>
-            <h3>No assigned activities found</h3>
-            <p>Try clearing your search query or filters.</p>
+            <h3>{t('studentPortal.noActivitiesFound', 'No assigned activities found')}</h3>
+            <p>{t('studentPortal.tryClearingFilters', 'Try clearing your search query or filters.')}</p>
           </div>
         ) : (
           <div style={styles.activityGrid}>
@@ -525,19 +519,19 @@ export const StudentDashboard: React.FC = () => {
                 <div style={styles.cardMetaRow}>
                   <span style={styles.metaItem}>👨‍🏫 {item.teacherName}</span>
                   <span style={styles.metaItem}>⏱️ {item.estimatedTime}</span>
-                  <span style={styles.metaItem}>🧩 {item.blockCount} Exercises</span>
+                  <span style={styles.metaItem}>{t('studentPortal.exercisesCount', '🧩 {{count}} Exercises', { count: item.blockCount })}</span>
                 </div>
 
                 <div style={styles.cardFooterRow}>
                   <div style={styles.dueDateBadge}>
-                    📅 Due: {item.dueDate}
+                    {t('studentPortal.dueLabel', '📅 Due: {{due}}', { due: item.dueDate || 'N/A' })}
                   </div>
 
                   <button
                     onClick={() => handleStartActivity(item)}
                     style={styles.startBtn}
                   >
-                    🚀 Start Activity
+                    {t('studentPortal.startActivity', '🚀 Start Activity')}
                   </button>
                 </div>
               </div>

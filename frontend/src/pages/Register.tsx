@@ -8,6 +8,7 @@ import cloudBubbleLogo from '../assets/cloud-logo-bubble.png';
 import { EuFooter } from '../components/EuFooter';
 import { ProjectPartnerBar } from '../components/ProjectPartnerBar';
 import { authApi } from '../api/auth';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface RegisterProps {
   onSuccess: (role: string) => void;
@@ -15,6 +16,7 @@ interface RegisterProps {
 }
 
 export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin }) => {
+  const { t } = useTranslation();
   const { register, setSession } = useAuth();
   const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('TEACHER');
 
@@ -235,68 +237,68 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     onClick={() => setPortal('TEACHER')}
                     style={{ ...styles.toggleBtn, ...styles.toggleBtnActive }}
                   >
-                    Teacher Portal
+                    {t('login.teacherPortal', 'Teacher Portal')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setPortal('STUDENT')}
                     style={{ ...styles.toggleBtn, ...styles.toggleBtnInactive }}
                   >
-                    Student Portal
+                    {t('login.studentPortal', 'Student Portal')}
                   </button>
                 </div>
 
-                <h2 style={styles.formTitle}>Teacher Registration</h2>
+                <h2 style={styles.formTitle}>{t('register.teacherRegistrationTitle', 'Teacher Registration')}</h2>
 
                 {error && <div style={styles.errorBox}>{error}</div>}
 
                 <form onSubmit={handleTeacherSubmit} style={styles.form}>
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Email:</label>
+                    <label style={styles.label}>{t('login.emailLabel', 'Email:')}</label>
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your log in email"
+                      placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
                       style={styles.input}
                     />
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Password:</label>
+                    <label style={styles.label}>{t('login.passwordLabel', 'Password:')}</label>
                     <input
                       type="password"
                       required
                       minLength={6}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter password"
+                      placeholder={t('login.passwordPlaceholder', 'Enter password')}
                       style={styles.input}
                     />
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Confirm Password:</label>
+                    <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password:')}</label>
                     <input
                       type="password"
                       required
                       minLength={6}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm password"
+                      placeholder={t('register.confirmPasswordPlaceholder', 'Confirm password')}
                       style={styles.input}
                     />
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>School / Organization:</label>
+                    <label style={styles.label}>{t('register.schoolLabel', 'School / Organization:')}</label>
                     <input
                       type="text"
                       required
                       value={school}
                       onChange={(e) => setSchool(e.target.value)}
-                      placeholder="Enter school name"
+                      placeholder={t('register.schoolPlaceholder', 'Enter school name')}
                       style={styles.input}
                     />
                   </div>
@@ -306,26 +308,26 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     disabled={isSubmitting}
                     style={{ ...styles.submitBtn, opacity: isSubmitting ? 0.8 : 1 }}
                   >
-                    {isSubmitting ? 'Registering...' : 'Register as Teacher'}
+                    {isSubmitting ? t('register.registering', 'Registering...') : t('register.registerAsTeacher', 'Register as Teacher')}
                   </button>
                 </form>
 
                 <div style={styles.loginRedirect}>
-                  Already have an account?{' '}
+                  {t('register.alreadyHaveAccount', 'Already have an account?')}{' '}
                   <span onClick={onNavigateToLogin} style={styles.loginLink}>
-                    Login now
+                    {t('register.loginNow', 'Login now')}
                   </span>
                 </div>
               </div>
 
               <div style={styles.footer}>
                 <a href="#privacy" style={styles.footerLink} onClick={(e) => e.preventDefault()}>
-                  Privacy
+                  {t('register.privacy', 'Privacy')}
                 </a>
                 <a href="#terms" style={styles.footerLink} onClick={(e) => e.preventDefault()}>
-                  Terms & condition
+                  {t('register.terms', 'Terms & condition')}
                 </a>
-                <span style={styles.copyright}>© Engaging Minds 2026</span>
+                <span style={styles.copyright}>{t('register.copyright', '© Engaging Minds 2026')}</span>
               </div>
             </div>
           </div>
@@ -344,16 +346,16 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         <header style={{ position: 'relative', width: '100%' }}>
           {/* Top Green Bar */}
           <div style={styles.greenHeaderBar}>
-            <h1 style={styles.onboardingTitleHeader}>Onboarding</h1>
+            <h1 style={styles.onboardingTitleHeader}>{t('register.onboarding', 'Onboarding')}</h1>
             <div style={styles.headerRightGroup}>
               <button
                 type="button"
                 onClick={() => setPortal('TEACHER')}
                 style={styles.teacherSwitchBtn}
               >
-                Teacher Portal
+                {t('login.teacherPortal', 'Teacher Portal')}
               </button>
-              <div style={styles.studentBadgePill}>Student Portal</div>
+              <div style={styles.studentBadgePill}>{t('login.studentPortal', 'Student Portal')}</div>
             </div>
           </div>
 
@@ -371,8 +373,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   {step > 1 ? '✓' : '1'}
                 </div>
                 <div style={styles.stepLabelCol}>
-                  <span style={styles.stepNumberLabel}>Step 1</span>
-                  <span style={styles.stepTitleLabel}>Linking School</span>
+                  <span style={styles.stepNumberLabel}>{t('register.step1', 'Step 1')}</span>
+                  <span style={styles.stepTitleLabel}>{t('register.linkingSchool', 'Linking School')}</span>
                 </div>
               </div>
 
@@ -389,8 +391,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   {step > 2 ? '✓' : '2'}
                 </div>
                 <div style={styles.stepLabelCol}>
-                  <span style={styles.stepNumberLabel}>Step 2</span>
-                  <span style={styles.stepTitleLabel}>Choose Avatar</span>
+                  <span style={styles.stepNumberLabel}>{t('register.step2', 'Step 2')}</span>
+                  <span style={styles.stepTitleLabel}>{t('register.chooseAvatar', 'Choose Avatar')}</span>
                 </div>
               </div>
 
@@ -407,8 +409,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   3
                 </div>
                 <div style={styles.stepLabelCol}>
-                  <span style={styles.stepNumberLabel}>Step 3</span>
-                  <span style={styles.stepTitleLabel}>Set Quick Pin</span>
+                  <span style={styles.stepNumberLabel}>{t('register.step3', 'Step 3')}</span>
+                  <span style={styles.stepTitleLabel}>{t('register.setQuickPin', 'Set Quick Pin')}</span>
                 </div>
               </div>
             </div>
@@ -430,14 +432,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
             {/* Card Main Title */}
             <div style={styles.cardHeaderArea}>
               <h2 style={styles.cardHeaderTitle}>
-                {step === 1 && 'Connect to Your School & Class Space'}
-                {step === 2 && 'Personalize Your Student Profile'}
-                {step === 3 && 'Setup Your Quick Access PIN'}
+                {step === 1 && t('register.step1CardTitle', 'Connect to Your School & Class Space')}
+                {step === 2 && t('register.step2CardTitle', 'Personalize Your Student Profile')}
+                {step === 3 && t('register.step3CardTitle', 'Setup Your Quick Access PIN')}
               </h2>
               <p style={styles.cardHeaderSubtitle}>
-                {step === 1 && 'Enter the unique join code provided by your teacher to connect your profile.'}
-                {step === 2 && 'Confirm your display name and choose your profile badge or custom initials avatar.'}
-                {step === 3 && 'Pick a secret 4-digit PIN for quick logins on your school laptop or tablet.'}
+                {step === 1 && t('register.step1CardSub', 'Enter the unique join code provided by your teacher to connect your profile.')}
+                {step === 2 && t('register.step2CardSub', 'Confirm your display name and choose your profile badge or custom initials avatar.')}
+                {step === 3 && t('register.step3CardSub', 'Pick a secret 4-digit PIN for quick logins on your school laptop or tablet.')}
               </p>
             </div>
 
@@ -459,30 +461,30 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     {step > 1 ? '✓' : '1'}
                   </span>
                   <span style={styles.colTitle}>
-                    {step > 1 ? 'SCHOOL LINKED' : 'LINK YOUR SCHOOL'}
+                    {step > 1 ? t('register.schoolLinked', 'SCHOOL LINKED') : t('register.linkYourSchool', 'LINK YOUR SCHOOL')}
                   </span>
                 </div>
 
                 {step === 1 ? (
                   <div style={styles.colContent}>
                     <div style={styles.inputGroup}>
-                      <label style={styles.inputLabel}>CLASS / SCHOOL JOIN CODE</label>
+                      <label style={styles.inputLabel}>{t('register.joinCodeLabel', 'CLASS / SCHOOL JOIN CODE')}</label>
                       <input
                         type="text"
                         value={joinCode}
                         onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                        placeholder="E.G. WEST-10M"
+                        placeholder={t('register.joinCodePlaceholder', 'E.G. WEST-10M')}
                         style={styles.studentInput}
                       />
                     </div>
 
                     <div style={styles.inputGroup}>
-                      <label style={styles.inputLabel}>STUDENT ID / SCHOOL EMAIL (OPTIONAL)</label>
+                      <label style={styles.inputLabel}>{t('register.studentOptionalEmailLabel', 'STUDENT ID / SCHOOL EMAIL (OPTIONAL)')}</label>
                       <input
                         type="text"
                         value={studentOptionalEmail}
                         onChange={(e) => setStudentOptionalEmail(e.target.value)}
-                        placeholder="e.g. STU-84920 or name@school.edu"
+                        placeholder={t('register.studentOptionalEmailPlaceholder', 'e.g. STU-84920 or name@school.edu')}
                         style={styles.studentInput}
                       />
                     </div>
@@ -493,15 +495,15 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       onClick={handleVerifyJoinCode}
                       style={styles.verifyBtn}
                     >
-                      {isVerifyingCode ? 'VERIFYING...' : 'VERIFY JOIN CODE'}
+                      {isVerifyingCode ? t('register.verifying', 'VERIFYING...') : t('register.verifyCodeBtn', 'VERIFY JOIN CODE')}
                     </button>
 
-                    <div style={styles.orDivider}>— OR —</div>
+                    <div style={styles.orDivider}>{t('register.or', '— OR —')}</div>
 
                     <div style={styles.dashedBox}>
                       <span style={{ fontSize: '1.4rem' }}>📷</span>
                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>
-                        Scan Student ID / Pass Card
+                        {t('register.scanPassCard', 'Scan Student ID / Pass Card')}
                       </span>
                     </div>
                   </div>
@@ -509,7 +511,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                     <div style={styles.completedBox}>
                       <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.95rem' }}>
-                        ✓ School Connected
+                        {t('register.schoolConnected', '✓ School Connected')}
                       </div>
                       <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', marginTop: '0.3rem' }}>
                         {verifiedClassroom?.schoolName || 'Westbridge High School'}
@@ -523,7 +525,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                         onClick={() => setStep(1)}
                         style={styles.changeCodeLink}
                       >
-                        Change School / Code
+                        {t('register.changeSchoolCode', 'Change School / Code')}
                       </button>
                     </div>
                   </div>
@@ -544,13 +546,13 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   }}>
                     {step > 2 ? '✓' : '2'}
                   </span>
-                  <span style={styles.colTitle}>PROFILE & AVATAR</span>
+                  <span style={styles.colTitle}>{t('register.profileAvatar', 'PROFILE & AVATAR')}</span>
                 </div>
 
                 {step === 1 && (
                   <div style={styles.placeholderColContent}>
                     <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', marginBottom: '1rem' }}>
-                      Student Profile Details
+                      {t('register.studentProfileDetails', 'Student Profile Details')}
                     </div>
                     <div style={styles.avatarGridPlaceholder}>
                       <span style={styles.miniChip}>🎓</span>
@@ -560,7 +562,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     </div>
                     <div style={styles.initialsPreviewPlaceholder}>
                       <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                        Initials Badge Preview
+                        {t('register.initialsBadgePreview', 'Initials Badge Preview')}
                       </div>
                       <div style={styles.initialsCirclePlaceholder}>AM</div>
                     </div>
@@ -570,7 +572,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 {step === 2 && (
                   <div style={styles.colContent}>
                     <div style={styles.inputGroup}>
-                      <label style={styles.inputLabel}>PREFERRED DISPLAY NAME</label>
+                      <label style={styles.inputLabel}>{t('register.preferredDisplayName', 'PREFERRED DISPLAY NAME')}</label>
                       <input
                         type="text"
                         value={customDisplayName}
@@ -581,13 +583,13 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     </div>
 
                     <div style={styles.autoDetectBanner}>
-                      ✨ <strong>Auto-Detected Class & Year Group:</strong>
+                      ✨ <strong>{t('register.autoDetectedClass', 'Auto-Detected Class & Year Group:')}</strong>
                       <br />
                       {verifiedClassroom?.title || 'Year 10 / Grade 10 • Mathematics'}
                     </div>
 
                     <div style={{ marginTop: '0.75rem' }}>
-                      <label style={styles.inputLabel}>SELECT PROFILE ICON OR BADGE</label>
+                      <label style={styles.inputLabel}>{t('register.selectProfileIcon', 'SELECT PROFILE ICON OR BADGE')}</label>
                       <div style={styles.avatarGrid}>
                         {avatarOptions.map((emoji) => (
                           <button
@@ -622,10 +624,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>
-                          Use Name Monogram
+                          {t('register.useNameMonogram', 'Use Name Monogram')}
                         </div>
                         <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                          Student Initials Badge
+                          {t('register.studentInitialsBadge', 'Student Initials Badge')}
                         </div>
                       </div>
                       <button
@@ -635,14 +637,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                           backgroundColor: useMonogram ? '#16a34a' : '#cbd5e1',
                         }}
                       >
-                        {useMonogram ? 'SELECTED' : 'SELECT'}
+                        {useMonogram ? t('register.selected', 'SELECTED') : t('register.select', 'SELECT')}
                       </button>
                     </div>
 
                     <div style={styles.dashedBox}>
                       <span style={{ fontSize: '1.2rem' }}>☁️</span>
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369a1' }}>
-                        Upload ID Photo or Badge (.PNG / .JPG)
+                        {t('register.uploadPhoto', 'Upload ID Photo or Badge (.PNG / .JPG)')}
                       </span>
                     </div>
                   </div>
@@ -681,13 +683,13 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   }}>
                     3
                   </span>
-                  <span style={styles.colTitle}>QUICK SECURITY PIN</span>
+                  <span style={styles.colTitle}>{t('register.quickSecurityPin', 'QUICK SECURITY PIN')}</span>
                   {step === 3 && (
                     <span
                       onClick={() => setIsMasked(!isMasked)}
                       style={styles.maskToggleBtn}
                     >
-                      {isMasked ? '👁 Unmask' : '🙈 Mask'}
+                      {isMasked ? t('login.unmaskPin', '👁 Unmask') : t('login.maskPin', '🙈 Mask')}
                     </span>
                   )}
                 </div>
@@ -718,7 +720,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                           ...(keyVal === 'SET' ? styles.setKeyBtn : {}),
                         }}
                       >
-                        {keyVal}
+                        {keyVal === 'CLEAR' ? t('login.clear', 'CLEAR') : keyVal === 'SET' ? t('common.confirm', 'SET') : keyVal}
                       </button>
                     ))}
                   </div>
@@ -732,11 +734,11 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                           onChange={(e) => setRememberLaptop(e.target.checked)}
                           style={{ marginRight: '0.4rem' }}
                         />
-                        Trust & remember this laptop for 30 days
+                        {t('register.trustLaptop', 'Trust & remember this laptop for 30 days')}
                       </label>
 
                       <div style={styles.numpadNote}>
-                        * You can also use physical keyboard numpad to type PIN.
+                        {t('register.numpadNote', '* You can also use physical keyboard numpad to type PIN.')}
                       </div>
                     </>
                   )}
@@ -749,20 +751,20 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
               <div>
                 {step === 1 && (
                   <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                    Already registered?{' '}
+                    {t('register.alreadyRegistered', 'Already registered?')}{' '}
                     <span onClick={onNavigateToLogin} style={styles.signInLink}>
-                      Sign In Here
+                      {t('register.signInHere', 'Sign In Here')}
                     </span>
                   </div>
                 )}
                 {step === 2 && (
                   <button type="button" onClick={() => setStep(1)} style={styles.backStepBtn}>
-                    ← Back to Step 1
+                    {t('register.backToStep1', '← Back to Step 1')}
                   </button>
                 )}
                 {step === 3 && (
                   <button type="button" onClick={() => setStep(2)} style={styles.backStepBtn}>
-                    ← Back to Step 2
+                    {t('register.backToStep2', '← Back to Step 2')}
                   </button>
                 )}
               </div>
@@ -779,7 +781,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       cursor: verifiedStudent ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    Next: Customise Profile →
+                    {t('register.nextCustomizeProfile', 'Next: Customise Profile →')}
                   </button>
                 )}
 
@@ -789,7 +791,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                     onClick={() => setStep(3)}
                     style={styles.primaryActionBtn}
                   >
-                    CONTINUE TO SECURITY SETUP →
+                    {t('register.continueToSecuritySetup', 'CONTINUE TO SECURITY SETUP →')}
                   </button>
                 )}
 
@@ -803,7 +805,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       opacity: pin.length === 4 && !isSubmitting ? 1 : 0.6,
                     }}
                   >
-                    {isSubmitting ? 'ENTERING PORTAL...' : 'ENTER STUDENT PORTAL →'}
+                    {isSubmitting ? t('register.enteringPortal', 'ENTERING PORTAL...') : t('register.enterStudentPortal', 'ENTER STUDENT PORTAL →')}
                   </button>
                 )}
               </div>

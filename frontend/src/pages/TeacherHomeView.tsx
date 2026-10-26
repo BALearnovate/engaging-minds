@@ -52,10 +52,10 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
       return t('teacherHome.justNow', 'Just now');
     }
     if (diffMinutes < 60) {
-      return t('teacherHome.minutesAgo', `${diffMinutes} min ago`);
+      return t('teacherHome.minutesAgo', `${diffMinutes} min ago`, { min: diffMinutes });
     }
     const hrs = Math.floor(diffHours);
-    return t('teacherHome.hoursAgo', `${hrs} hrs ago`);
+    return t('teacherHome.hoursAgo', `${hrs} hrs ago`, { hrs });
   };
 
   const formatNumber = (num: number | undefined) => {
@@ -67,18 +67,21 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
     ? `${data.teacher.firstName} `.trim()
     : '';
 
+ 
+
   return (
     <div style={styles.container}>
       {/* Header Bar with Greeting & Subtitle on Left & Create Activity Button on Right */}
       <div style={styles.greetingHeaderBar}>
         <div style={styles.greetingTextGroup}>
           <h1 style={styles.greetingTitle}>
-            {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'}!`)}
+            {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`, { name: teacherName || 'Teacher' })}
           </h1>
           <p style={styles.greetingSubtitle}>
             {t(
               'teacherHome.subtitle',
-              ` You currently manage ${data?.stats.totalClasses ?? 0} active classes and ${data?.stats.totalActivities ?? 0} total activities. Ready to inspire learning today? Create another activity now!`
+              `Ready to inspire learning today? You currently manage ${data?.stats.totalClasses ?? 0} active classes and ${data?.stats.totalActivities ?? 0} total activities.`,
+              { totalClasses: data?.stats.totalClasses ?? 0, totalActivities: data?.stats.totalActivities ?? 0 }
             )}
           </p>
         </div>
@@ -188,7 +191,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                               </svg>
                             </div>
                             <span style={styles.metricText}>
-                              {t('teacherHome.studentsCount', `${cls.studentCount} Students`)}
+                              {t('teacherHome.studentsCount', `${cls.studentCount} Students`, { count: cls.studentCount })}
                             </span>
                           </div>
 
@@ -200,7 +203,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                               </svg>
                             </div>
                             <span style={styles.metricText}>
-                              {t('teacherHome.activeActivitiesCount', `${cls.activeActivitiesCount} Active Activities`)}
+                              {t('teacherHome.activeActivitiesCount', `${cls.activeActivitiesCount} Active Activities`, { count: cls.activeActivitiesCount })}
                             </span>
                           </div>
 
@@ -213,7 +216,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                               </svg>
                             </div>
                             <span style={styles.metricText}>
-                              {t('teacherHome.avgCompletionRate', `${cls.averageCompletionRate}% Average Completion`)}
+                              {t('teacherHome.avgCompletionRate', `${cls.averageCompletionRate}% Average Completion`, { rate: cls.averageCompletionRate })}
                             </span>
                           </div>
                         </div>
@@ -249,7 +252,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                           <div style={styles.chartItemHeader}>
                             <span style={styles.chartItemTitle}>{act.title}</span>
                             <span style={styles.chartItemBadge}>
-                              {t('teacherHome.engagementScore', `${act.engagementScore}% Engagement`)}
+                              {t('teacherHome.engagementScore', `${act.engagementScore}% Engagement`, { score: act.engagementScore })}
                             </span>
                           </div>
 
@@ -302,7 +305,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                             {act.title}
                           </div>
                           <div style={styles.usagePillBadge}>
-                            {t('teacherHome.timesUsed', `${act.usageCount} times`)}
+                            {t('teacherHome.timesUsed', `${act.usageCount} times`, { count: act.usageCount })}
                           </div>
                         </div>
                       ))

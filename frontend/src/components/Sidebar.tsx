@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface SidebarProps {
   currentTab: string;
@@ -8,21 +9,22 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
 
   const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
 
   const menuItems = isTeacher
     ? [
-        { id: 'home', label: 'Home', icon: 'home' },
-        { id: 'teacher_dashboard', label: 'Activity Review', icon: 'dashboard' },
-        { id: 'classroom_setup', label: 'Classroom Setup', icon: 'classroom' },
-        { id: 'activity_creation', label: 'Activity Creation', icon: 'activity' },
-        { id: 'student_support', label: 'Student Support', icon: 'support' },
+        { id: 'home', label: t('nav.home', 'Home'), icon: 'home' },
+        { id: 'teacher_dashboard', label: t('nav.activityReview', 'Activity Review'), icon: 'dashboard' },
+        { id: 'classroom_setup', label: t('classroomSetup.bannerTitle', 'Classroom Setup'), icon: 'classroom' },
+        { id: 'activity_creation', label: t('nav.activityCreation', 'Activity Creation'), icon: 'activity' },
+        { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
       ]
     : [
-        { id: 'student_home', label: 'Student Dashboard', icon: 'dashboard' },
-        { id: 'student_support', label: 'Student Support', icon: 'support' },
+        { id: 'student_home', label: t('nav.studentDashboard', 'Student Dashboard'), icon: 'dashboard' },
+        { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
       ];
 
   const renderIcon = (type: string, isActive: boolean) => {
@@ -93,22 +95,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
       <button
         onClick={() => setCollapsed(!collapsed)}
         style={styles.toggleBtn}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        title={collapsed ? t('common.expandSidebar', 'Expand sidebar') : t('common.collapseSidebar', 'Collapse sidebar')}
       >
         <span style={{ transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>
           ❮
         </span>
       </button>
 
-      {/* Top Badge ("Teacher Portal") */}
+      {/* Top Badge ("Teacher Portal" / "Student Portal") */}
       <div style={styles.topSection}>
         {!collapsed ? (
           <div style={styles.portalBadge}>
-            Teacher Portal
+            {isTeacher ? t('login.teacherPortalTag', 'Teacher Portal') : t('login.studentPortal', 'Student Portal')}
           </div>
         ) : (
           <div style={styles.portalBadgeCollapsed}>
-            TP
+            {isTeacher ? 'TP' : 'SP'}
           </div>
         )}
       </div>
@@ -250,5 +252,3 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
   },
 };
-
-

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 import logoImg from '../assets/logo.png';
 
 interface NavbarProps {
@@ -9,25 +10,26 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const getPageTitle = (tab: string) => {
     switch (tab) {
       case 'classroom_setup':
-        return 'Classroom & Roster Setup';
+        return t('nav.classroomSetup', 'Classroom & Roster Setup');
       case 'activity_creation':
-        return 'Activity Creation Studio';
+        return t('nav.activityCreation', 'Activity Creation Studio');
       case 'teacher_dashboard':
       case 'dashboard':
-        return 'Activity Review';
+        return t('nav.activityReview', 'Activity Review');
       case 'home':
-        return 'Home';
+        return t('nav.home', 'Home');
       case 'student_support':
-        return 'Student Support';
+        return t('nav.studentSupport', 'Student Support');
       case 'student_home':
       case 'student':
-        return 'Student Portal';
+        return t('nav.studentPortal', 'Student Portal');
       default:
-        return 'Classroom & Roster Setup';
+        return t('nav.classroomSetup', 'Classroom & Roster Setup');
     }
   };
 
@@ -35,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     <header style={styles.header}>
       {/* Left: Brand Logo */}
       <div style={styles.logoContainer} onClick={() => onSelectTab('home')}>
-        <img src={logoImg} alt="Engaging Minds Logo" style={styles.logoImage} />
+        <img src={logoImg} alt={t('common.appName', 'Engaging Minds Logo')} style={styles.logoImage} />
       </div>
 
       {/* Center: Page Title in Green */}
@@ -61,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            <span>Log-out</span>
+            <span>{t('nav.logout', 'Log-out')}</span>
           </button>
         )}
       </div>

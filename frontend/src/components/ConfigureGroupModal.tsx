@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export interface ConfigureGroupModalProps {
   isOpen: boolean;
@@ -18,12 +19,11 @@ const DEFAULT_ROSTER = [
 ];
 
 export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  initialGroupName = 'Support Group Alpha',
-  initialStudents = ['Leo Vance', 'Tommy Miller'],
+  ...props
 }) => {
+  const { t } = useTranslation();
+  const { isOpen, onClose, onConfirm, initialGroupName = 'Support Group Alpha', initialStudents = ['Leo Vance', 'Tommy Miller'] } = props;
+
   const [groupName, setGroupName] = useState<string>(initialGroupName);
   const [selectedStudents, setSelectedStudents] = useState<string[]>(initialStudents);
 
@@ -48,11 +48,9 @@ export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
         {/* Header */}
         <div style={styles.headerRow}>
           <div style={styles.headerTitle}>
-            <span style={styles.headerIcon}>👥</span> CONFIGURE SPECIFIC GROUP
+            <span style={styles.headerIcon}>👥</span> {t('teacherDashboard.configureGroup', 'CONFIGURE SPECIFIC GROUP')}
           </div>
-          <button onClick={onClose} style={styles.closeBtn}>
-            ✕ Close
-          </button>
+          <button onClick={onClose} style={styles.closeBtn}>{t('common.close', '✕ Close')}</button>
         </div>
 
         <div style={styles.divider} />
@@ -61,19 +59,19 @@ export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
         <div style={styles.bodyContent}>
           {/* Group Name Input */}
           <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>GROUP NAME *</label>
+            <label style={styles.fieldLabel}>{t('teacherDashboard.groupName', 'GROUP NAME *')}</label>
             <input
               type="text"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              placeholder="e.g. Support Group Alpha"
+              placeholder={t('teacherDashboard.groupNamePlaceholder', 'e.g. Support Group Alpha')}
               style={styles.textInput}
             />
           </div>
 
           {/* Students Roster Selection */}
           <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>CHECK/UNCHECK STUDENTS ROSTER:</label>
+            <label style={styles.fieldLabel}>{t('teacherDashboard.checkRoster', 'CHECK/UNCHECK STUDENTS ROSTER:')}</label>
             <div style={styles.rosterCard}>
               {DEFAULT_ROSTER.map((st) => {
                 const isChecked = selectedStudents.includes(st.name);
@@ -113,9 +111,7 @@ export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
 
         {/* Footer Actions */}
         <div style={styles.footerRow}>
-          <button onClick={onClose} style={styles.cancelBtn}>
-            Cancel
-          </button>
+          <button onClick={onClose} style={styles.cancelBtn}>{t('common.cancel', 'Cancel')}</button>
           <button
             disabled={!groupName.trim() || selectedStudents.length === 0}
             onClick={handleConfirm}
@@ -124,7 +120,7 @@ export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
               ...(!groupName.trim() || selectedStudents.length === 0 ? styles.confirmBtnDisabled : {}),
             }}
           >
-            Confirm Group Selection
+            {t('teacherDashboard.confirmGroup', 'Confirm Group Selection')}
           </button>
         </div>
       </div>

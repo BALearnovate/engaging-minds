@@ -4,6 +4,7 @@ import { ActivityRuntime } from './ActivityRuntime';
 import { activitiesApi } from '../api/activities';
 import { getSocket } from '../services/socket';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 import { CelebrationAwardModal } from './CelebrationAwardModal';
 
 interface StudentLiveActivityViewProps {
@@ -19,16 +20,11 @@ interface StudentLiveActivityViewProps {
 }
 
 export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = ({
-  activityTitle,
-  shareCode,
-  teacherName = 'Your Teacher',
-  activityId,
-  timerMode,
-  rewardMode: _rewardMode,
-  targetScope: _targetScope,
-  activityContent: initialContent,
-  onExit,
+  ...props
 }) => {
+  const { t } = useTranslation();
+  const { activityTitle, shareCode, teacherName = 'Your Teacher', activityId, timerMode, rewardMode: _rewardMode, targetScope: _targetScope, activityContent: initialContent, onExit } = props;
+
   let contextToken = '';
   let currentUser: any = null;
   try {
@@ -285,10 +281,10 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                 <span style={{ fontSize: '1.1rem' }}>{isTimeUp ? '⏰' : '⏳'}</span>
                 <span>
                   {isTimeUp ? (
-                    <strong style={{ color: '#dc2626' }}>Time's Up (00:00)</strong>
+                    <strong style={{ color: '#dc2626' }}>{t('studentPortal.timesUp', "Time's Up (00:00)")}</strong>
                   ) : (
                     <>
-                      Time Remaining: <strong style={{ color: isLowTime ? '#b91c1c' : '#0284c7' }}>{formatTime(remainingSeconds!)}</strong>
+                      {t('studentPortal.timeRemaining', 'Time Remaining: {{time}}', { time: formatTime(remainingSeconds!) })}
                     </>
                   )}
                 </span>
@@ -297,7 +293,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
               <div style={styles.timerPill}>
                 <span style={{ fontSize: '1.1rem' }}>⏱️</span>
                 <span>
-                  Unlimited Practice Session • <strong>{formatTime(elapsedSeconds)}</strong>
+                  {t('studentPortal.unlimitedPractice', 'Unlimited Practice Session • {{time}}', { time: formatTime(elapsedSeconds) })}
                 </span>
               </div>
             )}
@@ -307,7 +303,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
               onClick={onExit}
               style={styles.exitButton}
             >
-              ✕ Exit Session
+              {t('studentPortal.exitSession', '✕ Exit Session')}
             </button>
           </div>
         </div>
@@ -352,7 +348,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   {activityTitle || 'Interactive Classroom Lesson'}
                 </h3>
                 <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                  Please follow your teacher's guidance on screen. Your answers and responses will be updated in real-time.
+                  {t('studentPortal.followTeacherGuidance', "Please follow your teacher's guidance on screen. Your answers and responses will be updated in real-time.")}
                 </p>
               </div>
             )}
@@ -362,7 +358,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           <div style={styles.rightColumn}>
             {/* Activity Progress Card */}
             <div style={styles.progressCard}>
-              <div style={styles.progressHeaderTitle}>YOUR ACTIVITY PROGRESS</div>
+              <div style={styles.progressHeaderTitle}>{t('studentPortal.progressTitle', 'YOUR ACTIVITY PROGRESS')}</div>
 
               {/* Circular Gauge */}
               <div style={styles.circularGaugeContainer}>
@@ -371,17 +367,15 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                 </div>
                 <div style={styles.gaugeStatsColumn}>
                   <div style={styles.stepTitleText}>
-                    {completedSteps >= totalSteps && totalSteps > 0
-                      ? `All ${totalSteps} Steps Completed`
-                      : `Step ${stepIndex} of ${totalSteps} in Progress`}
+                    {completedSteps >= totalSteps && totalSteps > 0 ? t('studentPortal.allStepsCompleted', 'All {{count}} Steps Completed', { count: totalSteps }) : t('studentPortal.stepOfSteps', 'Step {{step}} of {{total}} in Progress', { step: stepIndex, total: totalSteps })}
                   </div>
-                  <div style={styles.correctSubText}>Questions Correct: {questionsCorrect}/{totalSteps}</div>
+                  <div style={styles.correctSubText}>{t('studentPortal.questionsCorrect', 'Questions Correct: {{correct}}/{{total}}', { correct: questionsCorrect, total: totalSteps })}</div>
                 </div>
               </div>
 
               {/* Progress Fill Bar */}
               <div style={styles.progressBarWrapper}>
-                <div style={styles.progressBarLabel}>{progressPct}% COMPLETED</div>
+                <div style={styles.progressBarLabel}>{t('studentPortal.pctCompleted', '{{pct}}% COMPLETED', { pct: progressPct })}</div>
                 <div style={styles.barTrack}>
                   <div
                     style={{
@@ -402,21 +396,21 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                 onClick={handleSubmitAnswer}
                 style={styles.submitBtn}
               >
-                SUBMIT ANSWER
+                {t('studentPortal.submitAnswer', 'SUBMIT ANSWER')}
               </button>
 
               <button
                 onClick={handleAskTeacher}
                 style={styles.askTeacherBtn}
               >
-                {helpRequested ? 'HELP REQUESTED ⏳' : 'ASK HELP FROM TEACHER'}
+                {helpRequested ? t('studentPortal.helpRequested', 'HELP REQUESTED ⏳') : t('studentPortal.askHelpTeacher', 'ASK HELP FROM TEACHER')}
               </button>
 
               <button
                 onClick={handleAskAiTutor}
                 style={styles.askEmbotBtn}
               >
-                ASK EMBOT AI TUTOR
+                {t('studentPortal.askAiTutor', 'ASK EMBOT AI TUTOR')}
               </button>
             </div>
           </div>
@@ -431,7 +425,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
               <span style={{ fontSize: '1.8rem' }}>🤖</span>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#0284c7' }}>
-                  EMBOT AI Tutor Guidance
+                  {t('studentPortal.tutorTitle', 'EMBOT AI Tutor Guidance')}
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
                   {activityTitle || 'Live Activity Support'}
@@ -441,10 +435,10 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
             <div style={styles.tutorBodyText}>
               <p style={{ margin: '0 0 0.75rem 0' }}>
-                <strong>AI Hint:</strong> Read the question carefully, review each option or task step, and select your best answer!
+                {t('studentPortal.tutorHint', 'AI Hint: Read the question carefully, review each option or task step, and select your best answer!')}
               </p>
               <p style={{ margin: 0 }}>
-                If you feel stuck, click "ASK HELP FROM TEACHER" to send an instant notification to {teacherName}.
+                {t('studentPortal.tutorTeacherNote', 'If you feel stuck, click "ASK HELP FROM TEACHER" to send an instant notification to {{teacher}}.', { teacher: teacherName })}
               </p>
             </div>
 
@@ -452,7 +446,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
               onClick={() => setAiTutorOpen(false)}
               style={styles.tutorCloseBtn}
             >
-              Got it! Thanks EMBOT
+              {t('studentPortal.tutorGotIt', 'Got it! Thanks EMBOT')}
             </button>
           </div>
         </div>

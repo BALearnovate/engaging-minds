@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LanguageProvider } from './i18n/LanguageContext';
+import { LanguageTopBar } from './components/LanguageTopBar';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ActivityCreationStudio } from './components/ActivityCreationStudio';
@@ -99,14 +101,17 @@ const MainApp: React.FC = () => {
   };
 
   return (
-    <div style={styles.appWrapper}>
-      {user && <Sidebar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+    <div style={styles.appContainer}>
+      <LanguageTopBar />
+      <div style={styles.appWrapper}>
+        {user && <Sidebar currentTab={currentTab} onSelectTab={setCurrentTab} />}
 
-      <div style={styles.mainLayout}>
-        {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
-        <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
-          {renderContent()}
-        </main>
+        <div style={styles.mainLayout}>
+          {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+          <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
+            {renderContent()}
+          </main>
+        </div>
       </div>
     </div>
   );
@@ -114,18 +119,27 @@ const MainApp: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
+    </LanguageProvider>
   );
 };
 
 export default App;
 
 const styles: Record<string, React.CSSProperties> = {
+  appContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    width: '100%',
+  },
   appWrapper: {
     display: 'flex',
-    minHeight: '100vh',
+    flex: 1,
+    minHeight: 0,
     backgroundColor: '#f3f4f6',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },

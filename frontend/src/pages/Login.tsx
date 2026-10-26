@@ -6,6 +6,7 @@ import studentBgImage from '../assets/student_reg_bg.png';
 import logoImage from '../assets/logo.png';
 import cloudBubbleLogo from '../assets/cloud-logo-bubble.png';
 import { EuFooter } from '../components/EuFooter';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface LoginProps {
   onSuccess: (role: string) => void;
@@ -14,6 +15,7 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, initialPortal = 'TEACHER' }) => {
+  const { t } = useTranslation();
   const { login, setSession } = useAuth();
   const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>(initialPortal);
 
@@ -139,16 +141,16 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
             />
           </div>
           <div style={styles.studentHeaderCenter}>
-            <h1 style={styles.studentHeaderTitle}>Sign In</h1>
+            <h1 style={styles.studentHeaderTitle}>{t('login.signIn', 'Sign In')}</h1>
           </div>
           <div style={styles.studentHeaderRight}>
-            <div style={styles.studentBadgePill}>Student Portal</div>
+            <div style={styles.studentBadgePill}>{t('login.studentPortal', 'Student Portal')}</div>
             <button
               type="button"
               onClick={() => setPortal('TEACHER')}
               style={styles.switchPortalBtn}
             >
-              Teacher Login →
+              {t('login.teacherLogin', 'Teacher Login →')}
             </button>
           </div>
         </div>
@@ -158,12 +160,12 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
           <div style={styles.studentModalCard}>
             {/* Header Tag */}
             <div style={styles.badgeContainer}>
-              <span style={styles.returningStudentTag}>RETURNING STUDENT</span>
+              <span style={styles.returningStudentTag}>{t('login.returningStudent', 'RETURNING STUDENT')}</span>
             </div>
 
-            <h2 style={styles.cardTitle}>Sign In to Your Portal</h2>
+            <h2 style={styles.cardTitle}>{t('login.signInToPortal', 'Sign In to Your Portal')}</h2>
             <p style={styles.cardSubtitle}>
-              Enter your Student ID or Class Code and 4-digit PIN to access your dashboard.
+              {t('login.studentSubtitle', 'Enter your Student ID or Class Code and 4-digit PIN to access your dashboard.')}
             </p>
 
             {studentError && (
@@ -175,7 +177,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
               <div style={styles.fieldWrapper}>
                 <div style={styles.labelRow}>
                   <label style={styles.fieldLabel}>
-                    STUDENT ID / SCHOOL EMAIL, OR CLASS CODE
+                    {t('login.studentIdLabel', 'STUDENT ID / SCHOOL EMAIL, OR CLASS CODE')}
                   </label>
                 </div>
                 <input
@@ -183,7 +185,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                   required
                   value={studentCode}
                   onChange={(e) => setStudentCode(e.target.value)}
-                  placeholder="e.g. STU123 or CLASS101"
+                  placeholder={t('login.studentIdPlaceholder', 'e.g. STU123 or CLASS101')}
                   style={styles.studentInput}
                 />
               </div>
@@ -191,13 +193,13 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
               {/* Field 2: 4-Digit Security PIN */}
               <div style={styles.fieldWrapper}>
                 <div style={styles.labelRow}>
-                  <label style={styles.fieldLabel}>4-DIGIT SECURITY PIN</label>
+                  <label style={styles.fieldLabel}>{t('login.pinLabel', '4-DIGIT SECURITY PIN')}</label>
                   <button
                     type="button"
                     onClick={() => setIsPinMasked(!isPinMasked)}
                     style={styles.maskToggleBtn}
                   >
-                    {isPinMasked ? '👁 Unmask PIN' : '🔒 Mask PIN'}
+                    {isPinMasked ? t('login.unmaskPin', '👁 Unmask PIN') : t('login.maskPin', '🔒 Mask PIN')}
                   </button>
                 </div>
 
@@ -236,7 +238,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                         ...(btnVal === 'CLEAR' ? styles.numpadClearBtn : {}),
                       }}
                     >
-                      {btnVal}
+                      {btnVal === 'CLEAR' ? t('login.clear', 'CLEAR') : btnVal === 'GO' ? t('login.go', 'GO') : btnVal}
                     </button>
                   )
                 )}
@@ -251,17 +253,17 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     onChange={(e) => setKeepMeSignedIn(e.target.checked)}
                     style={{ marginRight: '6px' }}
                   />
-                  Keep me signed in
+                  {t('login.keepSignedIn', 'Keep me signed in')}
                 </label>
 
                 <button
                   type="button"
                   onClick={() =>
-                    alert('Please ask your teacher or school administrator to look up or reset your 4-digit PIN!')
+                    alert(t('login.forgotPinNotice', 'Please ask your teacher or school administrator to look up or reset your 4-digit PIN!'))
                   }
                   style={styles.forgotPinLink}
                 >
-                  Forgot PIN?
+                  {t('login.forgotPin', 'Forgot PIN?')}
                 </button>
               </div>
 
@@ -274,19 +276,19 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                   opacity: isStudentSubmitting ? 0.8 : 1,
                 }}
               >
-                {isStudentSubmitting ? 'SIGNING IN...' : 'SIGN IN TO STUDENT PORTAL →'}
+                {isStudentSubmitting ? t('login.signingIn', 'SIGNING IN...') : t('login.signInToStudentPortal', 'SIGN IN TO STUDENT PORTAL →')}
               </button>
             </form>
 
             {/* Bottom Redirect Link */}
             <div style={styles.studentRedirectRow}>
-              <span>First time here? </span>
+              <span>{t('login.firstTimeHere', 'First time here?')} </span>
               <button
                 type="button"
                 onClick={onNavigateToRegister}
                 style={styles.joinCodeLink}
               >
-                Join Class with Code →
+                {t('login.joinClassWithCode', 'Join Class with Code →')}
               </button>
             </div>
           </div>
@@ -342,7 +344,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     ...styles.toggleBtnActive,
                   }}
                 >
-                  Teacher Portal
+                  {t('login.teacherPortal', 'Teacher Portal')}
                 </button>
                 <button
                   type="button"
@@ -352,35 +354,35 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     ...styles.toggleBtnInactive,
                   }}
                 >
-                  Student Portal
+                  {t('login.studentPortal', 'Student Portal')}
                 </button>
               </div>
 
-              <h2 style={styles.formTitle}>Teacher Login</h2>
+              <h2 style={styles.formTitle}>{t('login.teacherLoginTitle', 'Teacher Login')}</h2>
 
               {teacherError && <div style={styles.errorBox}>{teacherError}</div>}
 
               <form onSubmit={handleTeacherSubmit} style={styles.form}>
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Email:</label>
+                  <label style={styles.label}>{t('login.emailLabel', 'Email:')}</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your log in email"
+                    placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
                     style={styles.input}
                   />
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Password:</label>
+                  <label style={styles.label}>{t('login.passwordLabel', 'Password:')}</label>
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
+                    placeholder={t('login.passwordPlaceholder', 'Enter password')}
                     style={styles.input}
                   />
                 </div>
@@ -390,11 +392,11 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     href="#forgot"
                     onClick={(e) => {
                       e.preventDefault();
-                      alert('Please contact your school administrator or teacher to reset your password.');
+                      alert(t('login.forgotPasswordNotice', 'Please contact your school administrator or teacher to reset your password.'));
                     }}
                     style={styles.forgotPasswordLink}
                   >
-                    Forget your password?
+                    {t('login.forgotPasswordPrompt', 'Forget your password?')}
                   </a>
                 </div>
 
@@ -406,20 +408,20 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     opacity: isTeacherSubmitting ? 0.8 : 1,
                   }}
                 >
-                  {isTeacherSubmitting ? 'Logging in...' : 'Login as Teacher'}
+                  {isTeacherSubmitting ? t('login.loggingIn', 'Logging in...') : t('login.loginAsTeacher', 'Login as Teacher')}
                 </button>
               </form>
 
               <div style={styles.registerRedirect}>
-                Don't have an account?{' '}
+                {t('login.dontHaveAccount', "Don't have an account?")}{' '}
                 <span onClick={onNavigateToRegister} style={styles.registerLink}>
-                  Register here
+                  {t('login.registerHere', 'Register here')}
                 </span>
               </div>
 
               {/* Quick Account Switcher Chips */}
               <div style={styles.quickAccountsSection}>
-                <div style={styles.quickAccountsTitle}>⚡ Quick Demo Login:</div>
+                <div style={styles.quickAccountsTitle}>{t('login.quickDemoLogin', '⚡ Quick Demo Login:')}</div>
                 <div style={styles.quickChipsGrid}>
                   <button
                     type="button"
@@ -460,7 +462,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                 style={styles.footerLink}
                 onClick={(e) => e.preventDefault()}
               >
-                Privacy
+                {t('register.privacy', 'Privacy')}
               </a>
 
               <a
@@ -468,16 +470,16 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                 style={styles.footerLink}
                 onClick={(e) => e.preventDefault()}
               >
-                Terms & condition
+                {t('register.terms', 'Terms & condition')}
               </a>
 
-              <span style={styles.copyright}>© Engaging Minds 2026</span>
+              <span style={styles.copyright}>{t('register.copyright', '© Engaging Minds 2026')}</span>
             </div>
           </div>
 
           {/* Right Section - Hero Image */}
           <div style={styles.rightSection}>
-            <div style={styles.portalPillBadge}>Teacher Portal</div>
+            <div style={styles.portalPillBadge}>{t('login.teacherPortal', 'Teacher Portal')}</div>
           </div>
         </div>
 

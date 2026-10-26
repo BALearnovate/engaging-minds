@@ -1,14 +1,20 @@
-import { useCallback } from 'react';
+import { useLanguage } from './LanguageContext';
 
 /**
- * Lightweight translation hook conforming to AGENTS.md rule:
- * `useTranslation()` hook and `t('key', 'Fallback String')` pattern.
+ * Standard translation hook conforming to AGENTS.md rule:
+ * `useTranslation()` hook and `t('key', 'Fallback String', options)` pattern.
  */
 export function useTranslation() {
-  const t = useCallback((key: string, fallback?: string): string => {
-    // Return fallback if provided, otherwise the key itself
-    return fallback !== undefined ? fallback : key;
-  }, []);
+  const { t, language, setLanguage, languages } = useLanguage();
 
-  return { t };
+  return {
+    t,
+    language,
+    setLanguage,
+    languages,
+    i18n: {
+      language,
+      changeLanguage: setLanguage,
+    },
+  };
 }

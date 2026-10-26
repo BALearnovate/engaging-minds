@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { classroomsApi } from '../api/classrooms';
 import type { ClassroomProfile, StudentRecord } from '../api/classrooms';
+import { useTranslation } from '../i18n/useTranslation';
 
 export type { StudentRecord, ClassroomProfile };
 
 export const ClassroomSetupComponent: React.FC = () => {
+  const { t } = useTranslation();
   const { token: authContextToken } = useAuth();
   const activeToken =
     authContextToken ||
@@ -317,12 +319,12 @@ export const ClassroomSetupComponent: React.FC = () => {
         {/* Header */}
         <div style={styles.headerBox}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 style={styles.bannerTitle}>CLASSROOM SETUP</h1>
-            {isLoading && <span style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: '700' }}>⚡ Syncing Database...</span>}
-            {isSaving && <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>💾 Saving Changes...</span>}
+            <h1 style={styles.bannerTitle}>{t('classroomSetup.bannerTitle', 'CLASSROOM SETUP')}</h1>
+            {isLoading && <span style={{ fontSize: '0.8rem', color: '#0284c7', fontWeight: '700' }}>{t('classroomSetup.syncingDb', '⚡ Syncing Database...')}</span>}
+            {isSaving && <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700' }}>{t('classroomSetup.savingChanges', '💾 Saving Changes...')}</span>}
           </div>
           <p style={styles.bannerSubtitle}>
-            Configure classrooms and student access credentials.
+            {t('classroomSetup.bannerSubtitle', 'Configure classrooms and student access credentials.')}
           </p>
         </div>
 
@@ -332,15 +334,15 @@ export const ClassroomSetupComponent: React.FC = () => {
         <div style={styles.leftColumn}>
           <div style={styles.leftHeaderRow}>
             <div>
-              <h2 style={styles.leftTitle}>ACTIVE CLASSROOMS</h2>
-              <p style={styles.leftSubtitle}>Choose a class profile or create a new class using Create + button</p>
+              <h2 style={styles.leftTitle}>{t('classroomSetup.activeClassrooms', 'ACTIVE CLASSROOMS')}</h2>
+              <p style={styles.leftSubtitle}>{t('classroomSetup.activeClassroomsSub', 'Choose a class profile or create a new class using Create + button')}</p>
             </div>
             {!isCreatingClass && (
               <button
                 onClick={() => setIsCreatingClass(true)}
                 style={styles.createClassBtn}
               >
-                + CREATE
+                {t('classroomSetup.createBtn', '+ CREATE')}
               </button>
             )}
           </div>
@@ -349,22 +351,22 @@ export const ClassroomSetupComponent: React.FC = () => {
           {isCreatingClass && (
             <div style={styles.createCard}>
               <div style={styles.createCardHeader}>
-                <span style={styles.createCardTitle}>NEW CLASSROOM PROFILE</span>
+                <span style={styles.createCardTitle}>{t('classroomSetup.newProfile', 'NEW CLASSROOM PROFILE')}</span>
                 <button
                   onClick={() => setIsCreatingClass(false)}
                   style={styles.closeBtn}
                 >
-                  ✕ Close
+                  {t('classroomSetup.closeBtn', '✕ Close')}
                 </button>
               </div>
 
               <form onSubmit={handleCreateClassroom} style={styles.createForm}>
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>SUBJECT *</label>
+                  <label style={styles.label}>{t('classroomSetup.subjectLabel', 'SUBJECT *')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Mathematics, Science"
+                    placeholder={t('classroomSetup.subjectPlaceholder', 'e.g. Mathematics, Science')}
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
                     style={styles.input}
@@ -372,7 +374,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>GRADE *</label>
+                  <label style={styles.label}>{t('classroomSetup.gradeLabel', 'GRADE *')}</label>
                   <select
                     value={newGrade}
                     onChange={(e) => setNewGrade(e.target.value)}
@@ -388,7 +390,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>YEAR *</label>
+                  <label style={styles.label}>{t('classroomSetup.yearLabel', 'YEAR *')}</label>
                   <input
                     type="text"
                     required
@@ -400,7 +402,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                 </div>
 
                 <button type="submit" style={styles.submitCreateBtn}>
-                  CONFIRM & INSTANTIATE CLASSROOM
+                  {t('classroomSetup.confirmInstantiate', 'CONFIRM & INSTANTIATE CLASSROOM')}
                 </button>
               </form>
             </div>
@@ -428,12 +430,14 @@ export const ClassroomSetupComponent: React.FC = () => {
                       {cls.subject} - {cls.grade}
                     </h3>
                     <p style={styles.classCardMeta}>
-                      {count} {count === 1 ? 'student' : 'students'}
+                      {count === 1
+                        ? t('classroomSetup.studentCount_one', '1 student')
+                        : t('classroomSetup.studentCount_other', '{{count}} students', { count })}
                     </p>
                   </div>
                   <button
                     onClick={(e) => handleDeleteClassroom(e, cls.id)}
-                    title="Delete Classroom"
+                    title={t('classroomSetup.deleteClassroom', 'Delete Classroom')}
                     style={styles.deleteClassBtn}
                   >
                     <svg
@@ -482,7 +486,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(entryMode === 'manual' ? styles.tabBtnActive : {}),
                   }}
                 >
-                  👤 Manual Entry
+                  {t('classroomSetup.manualEntryTab', '👤 Manual Entry')}
                 </button>
                 <button
                   onClick={() => setEntryMode('bulk')}
@@ -491,18 +495,18 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(entryMode === 'bulk' ? styles.tabBtnActive : {}),
                   }}
                 >
-                  📋 Bulk CSV Paste
+                  {t('classroomSetup.bulkEntryTab', '📋 Bulk CSV Paste')}
                 </button>
               </div>
 
               {/* Manual Entry Form */}
               {entryMode === 'manual' ? (
                 <div style={styles.entryBox}>
-                  <h3 style={styles.boxTitle}>ADD INDIVIDUAL STUDENT RECORD</h3>
+                  <h3 style={styles.boxTitle}>{t('classroomSetup.addIndividual', 'ADD INDIVIDUAL STUDENT RECORD')}</h3>
                   <form onSubmit={handleAddManualStudent} style={styles.manualForm}>
                     <div style={styles.twoColRow}>
                       <div style={styles.fieldGroup}>
-                        <label style={styles.label}>FIRST NAME *</label>
+                        <label style={styles.label}>{t('classroomSetup.firstNameLabel', 'FIRST NAME *')}</label>
                         <input
                           type="text"
                           required
@@ -513,7 +517,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                         />
                       </div>
                       <div style={styles.fieldGroup}>
-                        <label style={styles.label}>LAST NAME / INITIAL</label>
+                        <label style={styles.label}>{t('classroomSetup.lastNameLabel', 'LAST NAME / INITIAL')}</label>
                         <input
                           type="text"
                           placeholder="e.g. Vance"
@@ -524,16 +528,16 @@ export const ClassroomSetupComponent: React.FC = () => {
                       </div>
                     </div>
                     <button type="submit" style={styles.actionBtn}>
-                      ➕ ADD STUDENT TO ROSTER
+                      {t('classroomSetup.addStudentBtn', '➕ ADD STUDENT TO ROSTER')}
                     </button>
                   </form>
                 </div>
               ) : (
                 /* Bulk CSV Paste Box */
                 <div style={styles.entryBox}>
-                  <h3 style={styles.boxTitle}>PASTE CSV STUDENT REGISTRY ROWS</h3>
+                  <h3 style={styles.boxTitle}>{t('classroomSetup.bulkCsvTitle', 'PASTE CSV STUDENT REGISTRY ROWS')}</h3>
                   <p style={styles.boxSub}>
-                    Input student rows as custom comma-separated lines matching: <code>[First Name, Last Surname Initial]</code>
+                    {t('classroomSetup.bulkCsvSub', 'Input student rows as custom comma-separated lines matching: [First Name, Last Surname Initial]')}
                   </p>
                   <textarea
                     rows={6}
@@ -543,7 +547,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     style={styles.textarea}
                   />
                   <button onClick={handleParseBulkCsv} style={styles.actionBtn}>
-                    VALIDATE & PARSE BULK ROWS
+                    {t('classroomSetup.parseBulkBtn', 'VALIDATE & PARSE BULK ROWS')}
                   </button>
                 </div>
               )}
@@ -551,23 +555,23 @@ export const ClassroomSetupComponent: React.FC = () => {
               {/* Enrollment Passes Banner */}
               <div style={styles.passesCard}>
                 <div style={styles.passesHeader}>
-                  <span style={styles.passesTitle}>ENROLLMENT PASSES</span>
-                  <span style={styles.passesBadge}>PRINTABLE SLIPS</span>
+                  <span style={styles.passesTitle}>{t('classroomSetup.enrollmentPasses', 'ENROLLMENT PASSES')}</span>
+                  <span style={styles.passesBadge}>{t('classroomSetup.printableSlips', 'PRINTABLE SLIPS')}</span>
                 </div>
                 <p style={styles.passesSub}>
-                  Generate cuttable student pass slips with individual names and 4-digit passcodes for secure classroom distribution.
+                  {t('classroomSetup.passesSub', 'Generate cuttable student pass slips with individual names and 4-digit passcodes for secure classroom distribution.')}
                 </p>
                 <button
                   onClick={() => {
                     if (!selectedClassroom || selectedClassroom.students.length === 0) {
-                      alert('⚠️ Roster is empty! Add students first to generate printable passes.');
+                      alert(t('classroomSetup.emptyRosterAlert', '⚠️ Roster is empty! Add students first to generate printable passes.'));
                       return;
                     }
                     setShowPrintModal(true);
                   }}
                   style={styles.passesBtn}
                 >
-                  🖨️ GENERATE PRINTABLE STUDENT LOGIN PASSES
+                  {t('classroomSetup.generatePassesBtn', '🖨️ GENERATE PRINTABLE STUDENT LOGIN PASSES')}
                 </button>
               </div>
             </div>
@@ -575,22 +579,22 @@ export const ClassroomSetupComponent: React.FC = () => {
             {/* Far Right Column: Roster Preview List */}
             <div style={styles.previewColumn}>
               <div style={styles.previewHeaderRow}>
-                <h3 style={styles.previewTitle}>ROSTER PREVIEW</h3>
+                <h3 style={styles.previewTitle}>{t('classroomSetup.rosterPreview', 'ROSTER PREVIEW')}</h3>
                 <button
                   onClick={() => setRevealAll(!revealAll)}
                   style={styles.revealAllBtn}
                   title="Toggle show/hide passcodes on screen"
                 >
-                  {revealAll ? '🙈 Hide All' : '👁️ Reveal All'}
+                  {revealAll ? `🙈 ${t('classroomSetup.hidePasscodes', 'Hide All')}` : `👁️ ${t('classroomSetup.revealPasscodes', 'Reveal All')}`}
                 </button>
               </div>
 
               {selectedClassroom.students.length === 0 ? (
                 <div style={styles.emptyPreviewBox}>
                   <div style={{ fontSize: '2.5rem', opacity: 0.6 }}>👤</div>
-                  <strong style={{ color: '#0f172a', marginTop: '0.5rem' }}>ROSTER IS EMPTY</strong>
+                  <strong style={{ color: '#0f172a', marginTop: '0.5rem' }}>{t('classroomSetup.rosterEmpty', 'ROSTER IS EMPTY')}</strong>
                   <p style={{ color: '#64748b', fontSize: '0.8rem', textAlign: 'center' }}>
-                    Add names in the form on the left
+                    {t('classroomSetup.addNamesPrompt', 'Add names in the form on the left')}
                   </p>
                 </div>
               ) : (
@@ -607,7 +611,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                             {st.firstName} {st.lastName}
                           </div>
                           <div style={styles.codeTag}>
-                            Code:{' '}
+                            {t('classroomSetup.codeLabel', 'Code:')}{' '}
                             <strong>
                               {isCodeRevealed ? st.loginCode : '••••'}
                             </strong>
@@ -652,7 +656,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(printMode === 'slips' ? styles.modalTabBtnActive : {}),
                   }}
                 >
-                  ✂️ Cuttable Student Slips (Grid Cards)
+                  {t('classroomSetup.cuttableSlipsTab', '✂️ Cuttable Student Slips (Grid Cards)')}
                 </button>
                 <button
                   onClick={() => setPrintMode('master')}
@@ -661,16 +665,16 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(printMode === 'master' ? styles.modalTabBtnActive : {}),
                   }}
                 >
-                  📄 Master Teacher Roster (Binder Table)
+                  {t('classroomSetup.masterRosterTab', '📄 Master Teacher Roster (Binder Table)')}
                 </button>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                 <button onClick={handleTriggerPrint} style={styles.printActionBtn}>
-                  🖨️ PRINT PASSES NOW
+                  {t('classroomSetup.printPassesNow', '🖨️ PRINT PASSES NOW')}
                 </button>
                 <button onClick={() => setShowPrintModal(false)} style={styles.closeModalBtn}>
-                  ✕ Close
+                  {t('classroomSetup.closeBtn', '✕ Close')}
                 </button>
               </div>
             </div>
@@ -682,7 +686,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                   {selectedClassroom.subject} - {selectedClassroom.grade} ({selectedClassroom.year})
                 </h2>
                 <p style={styles.printHeaderSub}>
-                  Student Access Credentials • Total Enrolled: {selectedClassroom.students.length} Students
+                  {t('classroomSetup.totalEnrolled', 'Student Access Credentials • Total Enrolled: {{count}} Students', { count: selectedClassroom.students.length })}
                 </p>
               </div>
 
@@ -693,7 +697,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     <div key={st.id} style={styles.slipCard} className="slipCard">
                       <div style={styles.slipHeader}>
                         <span style={styles.slipBrand}>🎓 ENGAGING MINDS</span>
-                        <span style={styles.slipBadge}>STUDENT PASS</span>
+                        <span style={styles.slipBadge}>{t('classroomSetup.studentPass', 'STUDENT PASS')}</span>
                       </div>
 
                       <div style={styles.slipBody}>
@@ -701,17 +705,17 @@ export const ClassroomSetupComponent: React.FC = () => {
                           {st.firstName} {st.lastName}
                         </div>
                         <div style={styles.slipClassMeta}>
-                          Class: {selectedClassroom.subject} ({selectedClassroom.grade})
+                          {t('classroomSetup.classProfile', 'Class Profile')}: {selectedClassroom.subject} ({selectedClassroom.grade})
                         </div>
 
                         <div style={styles.slipCodeBox}>
-                          <span style={styles.slipCodeLabel}>YOUR 4-DIGIT PASSCODE:</span>
+                          <span style={styles.slipCodeLabel}>{t('classroomSetup.passcodeLabel', 'YOUR 4-DIGIT PASSCODE:')}</span>
                           <span style={styles.slipCodeValue}>{st.loginCode}</span>
                         </div>
                       </div>
 
                       <div style={styles.slipFooter}>
-                        <span>✂ Cut along line • Keep in student notebook</span>
+                        <span>{t('classroomSetup.cutLine', '✂ Cut along line • Keep in student notebook')}</span>
                       </div>
                     </div>
                   ))}
@@ -722,10 +726,10 @@ export const ClassroomSetupComponent: React.FC = () => {
                   <thead>
                     <tr style={styles.tableHeaderRow}>
                       <th style={styles.th}>#</th>
-                      <th style={styles.th}>Student Name</th>
-                      <th style={styles.th}>Class Profile</th>
-                      <th style={styles.th}>Year</th>
-                      <th style={styles.th}>Assigned 4-Digit Passcode</th>
+                      <th style={styles.th}>{t('classroomSetup.studentName', 'Student Name')}</th>
+                      <th style={styles.th}>{t('classroomSetup.classProfile', 'Class Profile')}</th>
+                      <th style={styles.th}>{t('classroomSetup.year', 'Year')}</th>
+                      <th style={styles.th}>{t('classroomSetup.assignedPasscode', 'Assigned 4-Digit Passcode')}</th>
                     </tr>
                   </thead>
                   <tbody>

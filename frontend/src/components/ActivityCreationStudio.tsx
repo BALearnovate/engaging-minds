@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../i18n/useTranslation';
 import { ActivityRuntime } from './ActivityRuntime';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
 import { classroomsApi } from '../api/classrooms';
@@ -22,6 +23,7 @@ interface ActivityCreationStudioProps {
 }
 
 export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ onNavigateToDashboard }) => {
+  const { t } = useTranslation();
   const { token: authContextToken } = useAuth();
 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
@@ -420,9 +422,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
         <div style={styles.mainStudioCard}>
           {/* Header */}
           <div style={styles.headerBox}>
-            <h1 style={styles.studioTitle}>ACTIVITY GENERATION STUDIO</h1>
+            <h1 style={styles.studioTitle}>{t('activityCreation.bannerTitle', 'ACTIVITY GENERATION STUDIO')}</h1>
             <p style={styles.studioSubtitle}>
-              Pick a baseline setup pathway to draft interactive student activities.
+              {t('activityCreation.bannerSubtitle', 'Pick a baseline setup pathway to draft interactive student activities.')}
             </p>
           </div>
 
@@ -435,7 +437,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ...(activePathway === 'ai' ? styles.pathwayBtnActive : {}),
               }}
             >
-              🤖 AI Assisted
+              {t('activityCreation.aiAssisted', '🤖 AI Assisted')}
             </button>
             <button
               onClick={() => setActivePathway('templates')}
@@ -444,16 +446,16 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ...(activePathway === 'templates' ? styles.pathwayBtnActive : {}),
               }}
             >
-              🔲 Select Existing Templates
+              {t('activityCreation.selectTemplates', '🔲 Select Existing Templates')}
             </button>
             <button
-              onClick={() => alert('Start From Scratch feature will be available in the next version!')}
+              onClick={() => alert(t('activityCreation.scratchNotice', 'Start From Scratch feature will be available in the next version!'))}
               style={{
                 ...styles.pathwayBtn,
                 ...(activePathway === 'scratch' ? styles.pathwayBtnActive : {}),
               }}
             >
-              ✏️ Start From Scratch
+              {t('activityCreation.startScratch', '✏️ Start From Scratch')}
             </button>
           </div>
 
@@ -461,14 +463,14 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           {activePathway === 'ai' && (
             <>
               <div style={styles.promptSection}>
-                <label style={styles.promptLabel}>PROMPT INSTRUCTIONS FOR AI GENERATOR</label>
+                <label style={styles.promptLabel}>{t('activityCreation.promptLabel', 'PROMPT INSTRUCTIONS FOR AI GENERATOR')}</label>
                 {error && <div style={styles.errorBox}>⚠️ {error}</div>}
 
                 <textarea
                   rows={4}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Enter instructional details here..."
+                  placeholder={t('activityCreation.promptPlaceholder', 'Enter instructional details here...')}
                   style={styles.promptTextarea}
                 />
 
@@ -481,7 +483,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                       ...(isGenerating ? styles.runDraftBtnDisabled : {}),
                     }}
                   >
-                    {isGenerating ? '⚡ Generating AI Activity Draft...' : 'Run AI Generator Draft'}
+                    {isGenerating ? t('activityCreation.generatingDraft', '⚡ Generating AI Activity Draft...') : t('activityCreation.runDraft', 'Run AI Generator Draft')}
                   </button>
                 </div>
               </div>
@@ -494,9 +496,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                       <div style={styles.spinnerRing} />
                       <span style={styles.robotLoaderIcon}>🤖</span>
                     </div>
-                    <h3 style={styles.loaderTitle}>Generating AI Activity Blueprint...</h3>
+                    <h3 style={styles.loaderTitle}>{t('activityCreation.generatingBlueprint', 'Generating AI Activity Blueprint...')}</h3>
                     <p style={styles.loaderText}>
-                      Analyzing prompt instructions, composing interactive exercise blocks (MCQs, Flashcards, Fill-in-blanks, Drag & Drop, Hotspots, Clock Diagrams), and validating DSL schema...
+                      {t('activityCreation.generatingBlueprintDesc', 'Analyzing prompt instructions, composing interactive exercise blocks (MCQs, Flashcards, Fill-in-blanks, Drag & Drop, Hotspots, Clock Diagrams), and validating DSL schema...')}
                     </p>
                     <div style={styles.shimmerTrack}>
                       <div style={styles.shimmerBar} />
@@ -511,10 +513,10 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <span style={styles.blocksBadge}>
-                          💾 Saved to Database
+                          {t('activityCreation.savedToDb', '💾 Saved to Database')}
                         </span>
                         <span style={styles.blocksBadge}>
-                          🧩 {activity.blocks.length} Interactive Exercises
+                          {t('activityCreation.exercisesCount', '🧩 {{count}} Interactive Exercises', { count: activity.blocks.length })}
                         </span>
                       </div>
                     </div>
@@ -525,12 +527,12 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                   <div style={styles.emptyBlueprint}>
                     <div style={styles.robotIcon}>🤖</div>
                     <h3 style={styles.emptyBlueprintTitle}>
-                      {error ? 'Authentication Required' : 'AI Draft Blueprint Empty'}
+                      {error ? t('activityCreation.authRequired', 'Authentication Required') : t('activityCreation.emptyBlueprintTitle', 'AI Draft Blueprint Empty')}
                     </h3>
                     <p style={styles.emptyBlueprintText}>
                       {error
                         ? error
-                        : 'Enter parameters inside the prompt field above and execute to review real-time graphic block previews.'}
+                        : t('activityCreation.emptyBlueprintText', 'Enter parameters inside the prompt field above and execute to review real-time graphic block previews.')}
                     </p>
                   </div>
                 )}
@@ -543,13 +545,13 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
             <div style={styles.templatesContainer}>
               <div style={styles.filterGrid}>
                 <div>
-                  <label style={styles.promptLabel}>SUBJECT FILTER</label>
+                  <label style={styles.promptLabel}>{t('activityCreation.subjectFilter', 'SUBJECT FILTER')}</label>
                   <select
                     value={subjectFilter}
                     onChange={(e) => setSubjectFilter(e.target.value)}
                     style={styles.paramSelect}
                   >
-                    <option value="all">All Subjects</option>
+                    <option value="all">{t('activityCreation.allSubjects', 'All Subjects')}</option>
                     <option value="Science">Science</option>
                     <option value="Mathematics">Mathematics</option>
                     <option value="English">English</option>
@@ -564,13 +566,13 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 </div>
 
                 <div>
-                  <label style={styles.promptLabel}>YEAR GROUP FILTER</label>
+                  <label style={styles.promptLabel}>{t('activityCreation.yearGroupFilter', 'YEAR GROUP FILTER')}</label>
                   <select
                     value={gradeFilter}
                     onChange={(e) => setGradeFilter(e.target.value)}
                     style={styles.paramSelect}
                   >
-                    <option value="all">All Year Groups</option>
+                    <option value="all">{t('activityCreation.allYearGroups', 'All Year Groups')}</option>
                     <option value="Year 7">Year 7</option>
                     <option value="Year 8">Year 8</option>
                     <option value="Year 9">Year 9</option>
@@ -580,13 +582,13 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 </div>
 
                 <div>
-                  <label style={styles.promptLabel}>ACTIVITY TYPE FILTER</label>
+                  <label style={styles.promptLabel}>{t('activityCreation.activityTypeFilter', 'ACTIVITY TYPE FILTER')}</label>
                   <select
                     value={blockTypeFilter}
                     onChange={(e) => setBlockTypeFilter(e.target.value)}
                     style={styles.paramSelect}
                   >
-                    <option value="all">All Activity Types</option>
+                    <option value="all">{t('activityCreation.allActivityTypes', 'All Activity Types')}</option>
                     <option value="multiple_choice">Multiple Choice</option>
                     <option value="fill_blank">Fill in the Blanks</option>
                     <option value="flashcards">Flashcards</option>
@@ -600,12 +602,12 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 </div>
 
                 <div>
-                  <label style={styles.promptLabel}>SEARCH TEMPLATES</label>
+                  <label style={styles.promptLabel}>{t('activityCreation.searchTemplates', 'SEARCH TEMPLATES')}</label>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by topic or title..."
+                    placeholder={t('activityCreation.searchPlaceholder', 'Search by topic or title...')}
                     style={styles.searchInput}
                   />
                 </div>
@@ -614,14 +616,14 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               {/* SELECT ONE MENU DROPDOWN */}
               <div style={styles.selectMenuWrapper}>
                 <label style={styles.promptLabel}>
-                  📂 SELECT EXISTING ACTIVITY ({filteredActivities.length} MATCHING IN DATABASE)
+                  {t('activityCreation.selectExisting', '📂 SELECT EXISTING ACTIVITY ({{count}} MATCHING IN DATABASE)', { count: filteredActivities.length })}
                 </label>
                 <select
                   value={selectedActivityId}
                   onChange={(e) => setSelectedActivityId(e.target.value)}
                   style={styles.selectOneMenu}
                 >
-                  <option value="">-- Choose an activity from database to load preview --</option>
+                  <option value="">{t('activityCreation.chooseActivityPrompt', '-- Choose an activity from database to load preview --')}</option>
                   {filteredActivities.map((act) => {
                     const content = act.content || {};
                     const subjectStr = content.subject || 'General';
@@ -640,7 +642,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               <div style={styles.blueprintBox}>
                 {isLoadingTemplates ? (
                   <div style={styles.loaderContainer}>
-                    <p style={styles.loaderTitle}>Loading Database Templates...</p>
+                    <p style={styles.loaderTitle}>{t('activityCreation.loadingTemplates', 'Loading Database Templates...')}</p>
                   </div>
                 ) : selectedTemplateActivity?.content ? (
                   <div style={styles.blueprintContent}>
@@ -660,9 +662,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ) : (
                   <div style={styles.emptyBlueprint}>
                     <div style={styles.robotIcon}>📂</div>
-                    <h3 style={styles.emptyBlueprintTitle}>No Activity Selected</h3>
+                    <h3 style={styles.emptyBlueprintTitle}>{t('activityCreation.noActivitySelected', 'No Activity Selected')}</h3>
                     <p style={styles.emptyBlueprintText}>
-                      Choose an activity from the dropdown menu above to render its interactive student preview below.
+                      {t('activityCreation.noActivitySelectedDesc', 'Choose an activity from the dropdown menu above to render its interactive student preview below.')}
                     </p>
                   </div>
                 )}
@@ -674,9 +676,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           {activePathway === 'scratch' && (
             <div style={styles.emptyBlueprint}>
               <div style={styles.robotIcon}>✏️</div>
-              <h3 style={styles.emptyBlueprintTitle}>Blank Slate Editor</h3>
+              <h3 style={styles.emptyBlueprintTitle}>{t('activityCreation.blankSlateTitle', 'Blank Slate Editor')}</h3>
               <p style={styles.emptyBlueprintText}>
-                Custom manual block authoring canvas. Add your own Multiple Choice, Flashcard, Fill-in-blank, Hotspot, and Clock Diagram blocks.
+                {t('activityCreation.blankSlateDesc', 'Custom manual block authoring canvas. Add your own Multiple Choice, Flashcard, Fill-in-blank, Hotspot, and Clock Diagram blocks.')}
               </p>
             </div>
           )}
@@ -684,22 +686,18 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
         {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
         <div style={styles.sidebarCard}>
-          <h2 style={styles.sidebarTitle}>Activity Session Settings</h2>
+          <h2 style={styles.sidebarTitle}>{t('activityCreation.sessionSettings', 'Activity Session Settings')}</h2>
 
           {/* SELECT CLASS (Teacher-Created Classes Only) */}
           <div style={styles.sidebarSection}>
-            <label style={styles.paramLabel}>SELECT CLASS</label>
+            <label style={styles.paramLabel}>{t('activityCreation.selectClass', 'SELECT CLASS')}</label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
               style={styles.paramSelect}
             >
               <option value="">
-                {isLoadingClassrooms
-                  ? 'Loading your created classes...'
-                  : classrooms.length === 0
-                  ? '-- No Classes Created Yet --'
-                  : '-- Choose a Class --'}
+                {isLoadingClassrooms ? t('activityCreation.loadingClasses', 'Loading your created classes...') : classrooms.length === 0 ? t('activityCreation.noClassesYet', '-- No Classes Created Yet --') : t('activityCreation.chooseClass', '-- Choose a Class --')}
               </option>
               {classrooms.map((cls) => (
                 <option key={cls.id} value={cls.id}>
@@ -710,27 +708,27 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           </div>
 
           <div style={styles.sidebarSection}>
-            <label style={styles.paramLabel}>SET TIMER</label>
+            <label style={styles.paramLabel}>{t('activityCreation.setTimer', 'SET TIMER')}</label>
             <select
               value={timerMode}
               onChange={(e) => setTimerMode(e.target.value)}
               style={styles.paramSelect}
             >
-              <option value="Untimed Practice Session">Untimed Practice Session</option>
-              <option value="Timed 15 Minutes">15 Minutes</option>
-              <option value="Timed 30 Minutes">30 Minutes</option>
-              <option value="Timed 45 Minutes">45 Minutes</option>
+              <option value="Untimed Practice Session">{t('activityCreation.untimed', 'Untimed Practice Session')}</option>
+              <option value="Timed 15 Minutes">{t('activityCreation.timed15', '15 Minutes')}</option>
+              <option value="Timed 30 Minutes">{t('activityCreation.timed30', '30 Minutes')}</option>
+              <option value="Timed 45 Minutes">{t('activityCreation.timed45', '45 Minutes')}</option>
             </select>
           </div>
 
           <div style={styles.sidebarSection}>
-            <label style={styles.paramLabel}>INCENTIVE REWARD MODE</label>
+            <label style={styles.paramLabel}>{t('activityCreation.incentiveMode', 'INCENTIVE REWARD MODE')}</label>
             <select
               value={rewardMode}
               onChange={(e) => setRewardMode(e.target.value)}
               style={styles.paramSelect}
             >
-              <option value="Engagement Points + Stars">Engagement Points + Stars</option>
+              <option value="Engagement Points + Stars">{t('activityCreation.pointsStars', 'Engagement Points + Stars')}</option>
               {/* <option value="Points Only">Points Only</option>
               <option value="Pass / Fail Grade">Pass / Fail Grade</option>
               <option value="No Gamification">No Gamification</option> */}
@@ -738,7 +736,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           </div>
 
           <div style={styles.sidebarSection}>
-            <label style={styles.paramLabel}>ASSIGN TARGET SCOPE</label>
+            <label style={styles.paramLabel}>{t('activityCreation.targetScope', 'ASSIGN TARGET SCOPE')}</label>
             <select
               value={targetScope}
               onChange={(e) => {
@@ -750,7 +748,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               }}
               style={styles.paramSelect}
             >
-              <option value="Full Classroom Scope">Full Classroom Scope</option>
+              <option value="Full Classroom Scope">{t('activityCreation.fullClassroomScope', 'Full Classroom Scope')}</option>
               {/* Remove individual students and small focus groups now */}
               {/* <option value="Individual Students">Individual Students</option>
               <option value="Small Focus Groups">Small Focus Groups</option> */}
@@ -781,7 +779,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ...(isPublishing ? styles.publishBtnDisabled : {}),
               }}
             >
-              {isPublishing ? '⏳ Publishing Activity...' : '🚀 Publish Activity'}
+              {isPublishing ? t('activityCreation.publishingActivity', '⏳ Publishing Activity...') : t('activityCreation.publishActivity', '🚀 Publish Activity')}
             </button>
 
             {publishNotice && (
@@ -812,7 +810,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 🔥
               </div>
               <div style={styles.confirmPillBadge}>
-                Ready to publish this activity
+                {t('activityCreation.readyToPublish', 'Ready to publish this activity')}
               </div>
             </div>
 
@@ -825,23 +823,18 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
             {/* Subtitle */}
             <p style={styles.confirmSubTitle}>
-              You are going to share this activity with {selectedClassroom ? `${selectedClassroom.subject} - ${selectedClassroom.grade}` : 'Selected Class'}
+              {t('activityCreation.shareSubtitle', 'You are going to share this activity with {{class}}', { class: selectedClassroom ? `${selectedClassroom.subject} - ${selectedClassroom.grade}` : 'Selected Class' })}
             </p>
 
             {/* Action Buttons */}
             <div style={styles.confirmActionsRow}>
-              <button
-                onClick={() => setIsConfirmPublishOpen(false)}
-                style={styles.confirmCancelBtn}
-              >
-                Cancel
-              </button>
+              <button onClick={() => setIsConfirmPublishOpen(false)} style={styles.confirmCancelBtn}>{t('activityCreation.cancel', 'Cancel')}</button>
               <button
                 onClick={handleConfirmPublish}
                 disabled={isPublishing}
                 style={styles.confirmContinueBtn}
               >
-                {isPublishing ? 'Publishing...' : 'Continue ➔'}
+                {isPublishing ? t('activityCreation.publishingActivity', 'Publishing...') : t('activityCreation.continue', 'Continue ➔')}
               </button>
             </div>
           </div>
@@ -858,7 +851,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ⚠️
               </div>
               <div style={styles.warningPillBadge}>
-                Activity In Progress
+                {t('activityCreation.activityInProgress', 'Activity In Progress')}
               </div>
             </div>
 
@@ -871,23 +864,18 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
             {/* Subtitle / Details */}
             <p style={styles.confirmSubTitle}>
-              Class <strong>"{classAssignmentDialog.className}"</strong> already has this active activity in progress.
+              {t('activityCreation.classAlreadyActive', 'Class "{{className}}" already has this active activity in progress.', { className: classAssignmentDialog.className })}
             </p>
 
             {/* Action Buttons */}
             <div style={styles.confirmActionsRow}>
-              <button
-                onClick={() => setClassAssignmentDialog(null)}
-                style={styles.warningCancelBtn}
-              >
-                Cancel
-              </button>
+              <button onClick={() => setClassAssignmentDialog(null)} style={styles.warningCancelBtn}>{t('activityCreation.cancel', 'Cancel')}</button>
               <button
                 onClick={handleForceRepublish}
                 disabled={isPublishing}
                 style={styles.warningActionBtn}
               >
-                {isPublishing ? 'Publishing...' : 'End Existing & Publish New ➔'}
+                {isPublishing ? t('activityCreation.publishingActivity', 'Publishing...') : t('activityCreation.endAndPublish', 'End Existing & Publish New ➔')}
               </button>
             </div>
           </div>
@@ -904,7 +892,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                 ℹ️
               </div>
               <div style={styles.confirmPillBadge}>
-                Activity Already Published
+                {t('activityCreation.alreadyPublished', 'Activity Already Published')}
               </div>
             </div>
 
@@ -917,28 +905,23 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
             {/* Subtitle / Details */}
             <p style={styles.confirmSubTitle}>
-              Join Code: <strong>{alreadyPublishedDialog.shareCode}</strong>
+              {t('activityCreation.joinCodeLabel', 'Join Code:')} <strong>{alreadyPublishedDialog.shareCode}</strong>
               <br />
-              Assigned to: {alreadyPublishedDialog.classLabel}
+              {t('activityCreation.assignedToLabel', 'Assigned to:')} {alreadyPublishedDialog.classLabel}
             </p>
 
             {/* Action Buttons */}
             <div style={styles.confirmActionsRow}>
-              <button
-                onClick={() => setAlreadyPublishedDialog(null)}
-                style={styles.confirmCancelBtn}
-              >
-                Dismiss
-              </button>
+              <button onClick={() => setAlreadyPublishedDialog(null)} style={styles.confirmCancelBtn}>{t('activityCreation.dismiss', 'Dismiss')}</button>
               <button
                 onClick={() => {
                   navigator.clipboard?.writeText(alreadyPublishedDialog.shareCode);
-                  setPublishNotice(`📋 Copied share code "${alreadyPublishedDialog.shareCode}" to clipboard!`);
+                  setPublishNotice(t('activityCreation.copiedCodeNotice', '📋 Copied share code "{{code}}" to clipboard!', { code: alreadyPublishedDialog.shareCode }));
                   setAlreadyPublishedDialog(null);
                 }}
                 style={styles.confirmContinueBtn}
               >
-                Copy Join Code 📋
+                {t('activityCreation.copyJoinCode', 'Copy Join Code 📋')}
               </button>
             </div>
           </div>

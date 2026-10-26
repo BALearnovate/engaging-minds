@@ -1,6 +1,9 @@
 import React from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 export const EuFooter: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <footer style={styles.footerContainer}>
       {/* Left: EU Flag + Co-funded Text */}
@@ -25,16 +28,14 @@ export const EuFooter: React.FC = () => {
         </svg>
 
         <div style={styles.cofundedText}>
-          <span>Co-funded by</span>
-          <span>the European Union</span>
+          <span>{t('footer.cofunded', 'Co-funded by')}</span>
+          <span>{t('footer.eu', 'the European Union')}</span>
         </div>
       </div>
 
       {/* Right: EU Disclaimer Text */}
       <div style={styles.disclaimerText}>
-        Funded by the European Union. Views and opinions expressed are however those of the author(s) only
-        and do not necessarily reflect those of the European Union or the European Education and Culture
-        Executive Agency (EACEA). Neither the European Union nor EACEA can be held responsible for them.
+        {t('footer.disclaimer', 'Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Education and Culture Executive Agency (EACEA). Neither the European Union nor EACEA can be held responsible for them.')}
       </div>
     </footer>
   );

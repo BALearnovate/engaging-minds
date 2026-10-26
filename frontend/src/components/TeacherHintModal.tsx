@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface TeacherHintModalProps {
   studentName: string;
@@ -9,11 +10,11 @@ interface TeacherHintModalProps {
 }
 
 export const TeacherHintModal: React.FC<TeacherHintModalProps> = ({
-  studentName,
-  helpMessage,
-  onSendHint,
-  onClose,
+  ...props
 }) => {
+  const { t } = useTranslation();
+  const { studentName, helpMessage, onSendHint, onClose } = props;
+
   const [hintText, setHintText] = useState('');
 
   const quickHints = [
@@ -34,7 +35,7 @@ export const TeacherHintModal: React.FC<TeacherHintModalProps> = ({
     <div style={styles.overlay}>
       <div style={styles.modalCard}>
         <div style={styles.header}>
-          <h2>💡 Live Intervention & Hint to {studentName}</h2>
+          <h2>💡 {t('teacherDashboard.liveIntervention', 'Live Intervention & Hint to {{name}}', { name: studentName })}</h2>
           <button style={styles.closeBtn} onClick={onClose}>
             ✕
           </button>
@@ -42,14 +43,14 @@ export const TeacherHintModal: React.FC<TeacherHintModalProps> = ({
 
         {helpMessage && (
           <div style={styles.studentNoteBox}>
-            <span style={styles.noteTitle}>📩 Student Help Request Note:</span>
+            <span style={styles.noteTitle}>📩 {t('teacherDashboard.studentHelpNote', 'Student Help Request Note:')}</span>
             <p style={styles.noteText}>"{helpMessage}"</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
-            <label style={styles.label}>Select Quick Hint Preset:</label>
+            <label style={styles.label}>{t('teacherDashboard.selectQuickHint', 'Select Quick Hint Preset:')}</label>
             <div style={styles.presetGroup}>
               {quickHints.map((preset, idx) => (
                 <button
@@ -65,23 +66,21 @@ export const TeacherHintModal: React.FC<TeacherHintModalProps> = ({
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Or Type Custom Hint Message:</label>
+            <label style={styles.label}>{t('teacherDashboard.customHintMessage', 'Or Type Custom Hint Message:')}</label>
             <textarea
               required
               rows={3}
               value={hintText}
               onChange={(e) => setHintText(e.target.value)}
-              placeholder="Type live hint or guidance to assist student..."
+              placeholder={t('teacherDashboard.hintPlaceholder', 'Type live hint or guidance to assist student...')}
               style={styles.textarea}
             />
           </div>
 
           <div style={styles.actionsRow}>
-            <button type="button" style={styles.cancelBtn} onClick={onClose}>
-              Cancel
-            </button>
+            <button type="button" style={styles.cancelBtn} onClick={onClose}>{t('common.cancel', 'Cancel')}</button>
             <button type="submit" style={styles.sendBtn}>
-              🚀 Send Live Hint Instantly
+              {t('teacherDashboard.sendLiveHint', '🚀 Send Live Hint Instantly')}
             </button>
           </div>
         </form>

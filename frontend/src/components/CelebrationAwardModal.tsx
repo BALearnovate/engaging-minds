@@ -63,7 +63,7 @@ export const CelebrationAwardModal: React.FC<CelebrationAwardModalProps> = ({
             <span style={styles.studentNameValue}>{studentName}</span>
           </div>
           <div style={styles.categoryPill}>
-            {t('awards.categorySuffix', `${category} Category`)}
+            {t('awards.categorySuffix', `${category} Category`, { category })}
           </div>
         </div>
 

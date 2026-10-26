@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface LiveActivityPopupModalProps {
   isOpen: boolean;
@@ -10,12 +11,11 @@ interface LiveActivityPopupModalProps {
 }
 
 export const LiveActivityPopupModal: React.FC<LiveActivityPopupModalProps> = ({
-  isOpen,
-  activityTitle,
-  teacherName = 'Mrs. Sarah Jenkins',
-  onJoin,
-  onClose,
+  ...props
 }) => {
+  const { t } = useTranslation();
+  const { isOpen, activityTitle, teacherName = 'Mrs. Sarah Jenkins', onJoin, onClose } = props;
+
   if (!isOpen) return null;
 
   return (
@@ -27,7 +27,7 @@ export const LiveActivityPopupModal: React.FC<LiveActivityPopupModalProps> = ({
             🔥
           </div>
           <div style={styles.confirmPillBadge}>
-            Live Activity Detected!
+            {t('studentPortal.liveActivityDetected', 'Live Activity Detected!')}
           </div>
         </div>
 
@@ -40,22 +40,17 @@ export const LiveActivityPopupModal: React.FC<LiveActivityPopupModalProps> = ({
 
         {/* Subtitle */}
         <p style={styles.confirmSubTitle}>
-          {teacherName ? `${teacherName} has shared this activity with your class.` : 'Your teacher has shared a live activity with your class.'} Tap to join and participate!
+          {t('studentPortal.liveSharedNotice', '{{teacher}} has shared this activity with your class. Tap to join and participate!', { teacher: teacherName || 'Your teacher' })}
         </p>
 
         {/* Action Buttons */}
         <div style={styles.confirmActionsRow}>
-          <button
-            onClick={onClose}
-            style={styles.confirmCancelBtn}
-          >
-            Dismiss
-          </button>
+          <button onClick={onClose} style={styles.confirmCancelBtn}>{t('studentPortal.dismiss', 'Dismiss')}</button>
           <button
             onClick={onJoin}
             style={styles.confirmContinueBtn}
           >
-            Join Live Activity ➔
+            {t('studentPortal.joinLiveActivity', 'Join Live Activity ➔')}
           </button>
         </div>
       </div>
