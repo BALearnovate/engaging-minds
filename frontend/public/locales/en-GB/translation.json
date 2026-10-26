@@ -282,7 +282,7 @@
     "enterStudentPortal": "ENTER STUDENT PORTAL →"
   },
   "classroomSetup": {
-    "bannerTitle": "CLASSROOM SETUP",
+    "bannerTitle": "Classroom Setup",
     "bannerSubtitle": "Configure classrooms and student access credentials.",
     "syncingDb": "⚡ Syncing Database...",
     "savingChanges": "💾 Saving Changes...",

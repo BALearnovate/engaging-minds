@@ -20,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
         { id: 'teacher_dashboard', label: t('nav.activityReview', 'Activity Review'), icon: 'dashboard' },
         { id: 'classroom_setup', label: t('classroomSetup.bannerTitle', 'Classroom Setup'), icon: 'classroom' },
         { id: 'activity_creation', label: t('nav.activityCreation', 'Activity Creation'), icon: 'activity' },
-        { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
+        // { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
       ]
     : [
         { id: 'student_home', label: t('nav.studentDashboard', 'Student Dashboard'), icon: 'dashboard' },
