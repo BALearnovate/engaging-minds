@@ -678,7 +678,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-    minHeight: '620px',
+    height: '557px',
+    overflowY: "scroll"
   },
   /* Section 2.1 XP Card */
   xpCard: {
