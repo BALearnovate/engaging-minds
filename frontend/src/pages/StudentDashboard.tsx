@@ -218,9 +218,15 @@ export const StudentDashboard: React.FC = () => {
     }
   };
 
-  // Convert DB activities / assignments to Student List Items
+  // Convert DB activities / assignments to Student List Items (Newest 1st, Oldest Last)
   const activityList: StudentActivityItem[] = useMemo(() => {
-    return dbActivities.map((item: any) => {
+    const sortedDb = [...dbActivities].sort((a: any, b: any) => {
+      const timeA = new Date(a.assignedAt || a.createdAt || 0).getTime();
+      const timeB = new Date(b.assignedAt || b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+
+    return sortedDb.map((item: any) => {
       const assignment = item.activity ? item : null;
       const act = assignment ? assignment.activity : item;
       const content = act.content || {};

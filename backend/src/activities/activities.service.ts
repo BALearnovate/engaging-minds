@@ -367,7 +367,7 @@ export class ActivitiesService {
     const studentFullName = `${student.firstName} ${student.lastName}`.trim();
 
     const assignments = await this.prisma.activityAssignment.findMany({
-      where: { classroomId: student.classroomId, status: 'ACTIVE' },
+      where: { classroomId: student.classroomId },
       include: {
         activity: {
           include: {
@@ -377,7 +377,8 @@ export class ActivitiesService {
               take: 1,
               include: {
                 sessions: {
-                  where: { status: 'ACTIVE' },
+                  orderBy: { createdAt: 'desc' },
+                  take: 1,
                   include: {
                     studentSessions: {
                       where: {
