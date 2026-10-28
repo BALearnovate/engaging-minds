@@ -211,26 +211,55 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     }
   };
 
-  const handleExecuteIntervention = () => {
+  const handleExecuteIntervention = async () => {
     if (!selectedStudent) return;
     const actionText = selectedIntervention === 'desk_checkin' 
       ? 'In-person desk check-in flagged' 
       : 'Discreet reminder notification deployed';
     setFeedbackMessage(`✅ ${actionText} for ${selectedStudent.name}`);
 
+    const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+
+    // Emit live socket event
     const socket = getSocket();
     if (socket && shareCode) {
+      socket.emit('send_intervention', {
+        activityId: shareCode,
+        studentId: selectedStudent.id,
+        studentName: selectedStudent.name,
+        interventionType: selectedIntervention,
+      });
+
       socket.emit('resolve_help', {
         activityId: shareCode,
         studentId: selectedStudent.id,
       });
     }
 
+    // Persist intervention in database
+    try {
+      await activitiesApi.recordIntervention(
+        {
+          activityId: shareCode,
+          studentId: selectedStudent.id,
+          studentName: selectedStudent.name,
+          interventionType: selectedIntervention,
+        },
+        activeToken,
+      );
+    } catch (err) {
+      console.warn('Failed to persist intervention in database:', err);
+    }
+
     // Clear help flag for this student after teacher intervenes
     setStudents((prev) =>
       prev.map((st) =>
         st.id === selectedStudent.id
-          ? { ...st, helpRequested: false, subtext: 'Teacher checked in' }
+          ? {
+              ...st,
+              helpRequested: false,
+              subtext: selectedIntervention === 'desk_checkin' ? 'Teacher support on the way' : 'Reminder deployed',
+            }
           : st
       )
     );

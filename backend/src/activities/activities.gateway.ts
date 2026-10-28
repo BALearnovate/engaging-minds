@@ -388,6 +388,73 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     }
   }
 
+  @SubscribeMessage('send_intervention')
+  handleSendIntervention(
+    @MessageBody()
+    payload: {
+      activityId: string;
+      studentId: string;
+      studentName?: string;
+      interventionType: 'desk_checkin' | 'discreet_reminder' | string;
+    },
+  ) {
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
+
+    const title =
+      payload.interventionType === 'desk_checkin'
+        ? 'In-Person Desk Check-In'
+        : 'Focus Reminder';
+    const message =
+      payload.interventionType === 'desk_checkin'
+        ? 'I am coming to your desk to help you.'
+        : 'Focus on your activity.';
+    const badge =
+      payload.interventionType === 'desk_checkin'
+        ? '📍 TEACHER SUPPORT'
+        : '💬 TEACHER GUIDANCE';
+
+    const eventData = {
+      activityId: normalizedActId,
+      studentId: payload.studentId,
+      studentName: payload.studentName,
+      interventionType: payload.interventionType,
+      title,
+      message,
+      badge,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.server.to(roomName).emit('receive_intervention', eventData);
+    this.server.to(roomName).emit('teacher_intervention', eventData);
+    this.server.emit('receive_intervention', eventData);
+    this.server.emit('teacher_intervention', eventData);
+  }
+
+  emitIntervention(data: {
+    activityId: string;
+    studentId: string;
+    realStudentId?: string | null;
+    studentName: string;
+    interventionType: string;
+    title: string;
+    message: string;
+    badge: string;
+  }) {
+    if (this.server) {
+      const roomName = `activity_${data.activityId.toUpperCase()}`;
+      const payload = {
+        ...data,
+        timestamp: new Date().toISOString(),
+      };
+      this.server.to(roomName).emit('receive_intervention', payload);
+      this.server.to(roomName).emit('teacher_intervention', payload);
+      this.server.emit('receive_intervention', payload);
+      this.server.emit('teacher_intervention', payload);
+    }
+  }
+
   emitActivityPublished(data: {
     classroomId?: string;
     activityId: string;

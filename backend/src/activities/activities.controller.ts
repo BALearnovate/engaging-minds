@@ -111,6 +111,23 @@ export class ActivitiesController {
     );
   }
 
+  // Record Teacher Intervention Endpoint (Desk Check-in / Discreet Reminder)
+  @Post('intervention')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  async recordIntervention(
+    @CurrentUser('id') teacherId: string,
+    @Body()
+    body: {
+      activityId: string;
+      studentId: string;
+      studentName?: string;
+      interventionType: string;
+    },
+  ) {
+    return this.activitiesService.recordIntervention(teacherId, body);
+  }
+
   // Record Student Event / Action / Intervention
   @Post('event')
   async recordStudentEvent(

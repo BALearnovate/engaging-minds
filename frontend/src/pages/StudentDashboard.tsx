@@ -63,6 +63,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     category: string;
     reward: string;
   } | null>(null);
+  const [interventionModal, setInterventionModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    badge: string;
+    icon: string;
+  } | null>(null);
   const [liveActivityData, setLiveActivityData] = useState<{
     title: string;
     shareCode?: string;
@@ -183,6 +190,55 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       socket.off('live_student_update', handleLiveStudentUpdate);
     };
   }, [user, activeToken]);
+
+  // Listen for real-time teacher interventions (Desk check-in & Discreet reminder)
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleIntervention = (data: {
+      studentId?: string | null;
+      realStudentId?: string | null;
+      studentName?: string;
+      interventionType?: string;
+      title?: string;
+      message?: string;
+      badge?: string;
+    }) => {
+      const currentUserId = user?.id ? String(user.id) : null;
+      const currentUserName = user
+        ? ((user as any).name || `${user.firstName || ''} ${user.lastName || ''}`).trim().toLowerCase()
+        : '';
+
+      const targetStudentId = data.studentId ? String(data.studentId) : data.realStudentId ? String(data.realStudentId) : null;
+      const targetStudentName = data.studentName ? data.studentName.trim().toLowerCase() : '';
+
+      const isIdMatch = targetStudentId && currentUserId && targetStudentId === currentUserId;
+      const isNameMatch = targetStudentName && currentUserName && (
+        targetStudentName === currentUserName ||
+        currentUserName.includes(targetStudentName) ||
+        targetStudentName.includes(currentUserName)
+      );
+
+      if (isIdMatch || isNameMatch || !targetStudentId) {
+        const isDeskCheckin = data.interventionType === 'desk_checkin';
+        setInterventionModal({
+          isOpen: true,
+          title: data.title || (isDeskCheckin ? t('studentPortal.teacherDeskCheckInTitle', 'In-Person Desk Check-In') : t('studentPortal.teacherFocusTitle', 'Focus Reminder')),
+          message: data.message || (isDeskCheckin ? t('studentPortal.comingToHelpMessage', 'I am coming to your desk to help you.') : t('studentPortal.focusActivityMessage', 'Focus on your activity.')),
+          badge: data.badge || (isDeskCheckin ? t('studentPortal.teacherSupportBadge', '📍 TEACHER SUPPORT') : t('studentPortal.teacherGuidanceBadge', '💬 TEACHER GUIDANCE')),
+          icon: isDeskCheckin ? '📍' : '💬',
+        });
+      }
+    };
+
+    socket.on('teacher_intervention', handleIntervention);
+    socket.on('receive_intervention', handleIntervention);
+
+    return () => {
+      socket.off('teacher_intervention', handleIntervention);
+      socket.off('receive_intervention', handleIntervention);
+    };
+  }, [user, t]);
 
   // Fetch Database Activities
   useEffect(() => {
@@ -632,6 +688,45 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
           onDismiss={() => setAwardCelebration(null)}
           showDismissButton={true}
         />
+      )}
+
+      {/* Real-time Teacher Intervention Dialog (Desk Check-In / Discreet Reminder) */}
+      {interventionModal?.isOpen && (
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.confirmModalCard}>
+            {/* Top Icon Circle & Pill Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.confirmFireCircle}>
+                {interventionModal.icon}
+              </div>
+              <div style={styles.confirmPillBadge}>
+                {interventionModal.badge}
+              </div>
+            </div>
+
+            {/* Title Section */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {interventionModal.title}
+              </h2>
+            </div>
+
+            {/* Message Subtitle */}
+            <p style={styles.confirmSubTitle}>
+              {interventionModal.message}
+            </p>
+
+            {/* Action Button */}
+            <div style={styles.confirmActionsRow}>
+              <button
+                onClick={() => setInterventionModal(null)}
+                style={styles.confirmContinueBtn}
+              >
+                {t('studentPortal.gotIt', 'Got it! 👍')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1095,5 +1190,100 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.5rem 1rem',
     fontWeight: 700,
     cursor: 'pointer',
+  },
+  confirmModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backdropFilter: 'blur(6px)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    padding: '1rem',
+  },
+  confirmModalCard: {
+    background: 'linear-gradient(135deg, #10b981 0%, #0d9488 40%, #0284c7 100%)',
+    borderRadius: '24px',
+    border: '2px solid #84cc16',
+    padding: '2.5rem 2rem',
+    maxWidth: '520px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(34, 197, 94, 0.3)',
+    color: '#ffffff',
+  },
+  confirmBadgeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    marginBottom: '1.25rem',
+  },
+  confirmFireCircle: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    border: '1.5px solid rgba(255, 255, 255, 0.4)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+  confirmPillBadge: {
+    padding: '0.4rem 1rem',
+    borderRadius: '20px',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  confirmTitleSection: {
+    marginBottom: '0.75rem',
+  },
+  confirmActivityTitle: {
+    fontSize: '1.75rem',
+    fontWeight: '900',
+    color: '#ffffff',
+    margin: 0,
+    lineHeight: '1.25',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
+  },
+  confirmSubTitle: {
+    fontSize: '1.15rem',
+    color: 'rgba(255, 255, 255, 0.95)',
+    margin: '0 0 2rem 0',
+    lineHeight: '1.5',
+    fontWeight: '600',
+  },
+  confirmActionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+    width: '100%',
+  },
+  confirmContinueBtn: {
+    backgroundColor: '#ffffff',
+    color: '#16a34a',
+    border: '2px solid #22c55e',
+    padding: '0.85rem 2.2rem',
+    borderRadius: '24px',
+    fontSize: '0.98rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+    transition: 'all 0.2s ease',
   },
 };

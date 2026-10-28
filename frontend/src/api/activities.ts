@@ -320,6 +320,23 @@ export const activitiesApi = {
     }>>('/activities/teacher/active-sessions', { token });
   },
 
+  // Record teacher intervention (Desk check-in / Discreet reminder)
+  async recordIntervention(
+    data: {
+      activityId: string;
+      studentId: string;
+      studentName?: string;
+      interventionType: string;
+    },
+    token?: string,
+  ): Promise<any> {
+    return apiFetch('/activities/intervention', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      token,
+    });
+  },
+
   // Record an activity event / telemetry
   async recordEvent(data: RecordEventPayload): Promise<any> {
     return apiFetch<any>('/activities/event', {

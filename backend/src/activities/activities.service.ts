@@ -737,6 +737,99 @@ export class ActivitiesService {
     };
   }
 
+  async recordIntervention(
+    teacherId: string,
+    data: { activityId: string; studentId: string; studentName?: string; interventionType: string },
+  ) {
+    const rawCode = (data.activityId || '').trim().toUpperCase();
+    const session = await this.prisma.activitySession.findFirst({
+      where: {
+        OR: [{ shareCode: rawCode }, { id: data.activityId }],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Activity session not found for activityId/code: "${data.activityId}"`);
+    }
+
+    let studentSession = await this.prisma.studentSession.findFirst({
+      where: {
+        activitySessionId: session.id,
+        OR: [
+          { id: data.studentId },
+          { studentId: data.studentId },
+          ...(data.studentName ? [{ studentName: { equals: data.studentName.trim(), mode: 'insensitive' as const } }] : []),
+        ],
+      },
+    });
+
+    if (!studentSession) {
+      studentSession = await this.prisma.studentSession.create({
+        data: {
+          activitySessionId: session.id,
+          studentId: data.studentId && !data.studentId.startsWith('student_guest') ? data.studentId : null,
+          studentName: data.studentName || 'Student',
+          status: 'IN_PROGRESS',
+        },
+      });
+    }
+
+    const title =
+      data.interventionType === 'desk_checkin'
+        ? 'In-Person Desk Check-In'
+        : 'Focus Reminder';
+    const message =
+      data.interventionType === 'desk_checkin'
+        ? 'I am coming to your desk to help you.'
+        : 'Focus on your activity.';
+    const badge =
+      data.interventionType === 'desk_checkin'
+        ? '📍 TEACHER SUPPORT'
+        : '💬 TEACHER GUIDANCE';
+
+    // Persist activity event
+    const event = await this.prisma.activityEvent.create({
+      data: {
+        studentSessionId: studentSession.id,
+        type: 'TEACHER_INTERVENTION',
+        payload: {
+          action: data.interventionType,
+          title,
+          message,
+          badge,
+          teacherId,
+        },
+      },
+    });
+
+    // Reset status to IN_PROGRESS if stuck & update lastSeenAt
+    await this.prisma.studentSession.update({
+      where: { id: studentSession.id },
+      data: {
+        status: studentSession.progress >= 100 ? 'COMPLETED' : 'IN_PROGRESS',
+        lastSeenAt: new Date(),
+      },
+    });
+
+    // Broadcast live websocket event to student
+    this.activitiesGateway.emitIntervention({
+      activityId: session.shareCode,
+      studentId: studentSession.id,
+      realStudentId: studentSession.studentId,
+      studentName: studentSession.studentName,
+      interventionType: data.interventionType,
+      title,
+      message,
+      badge,
+    });
+
+    return {
+      message: `Intervention (${title}) recorded successfully for ${studentSession.studentName}`,
+      event,
+    };
+  }
+
   private async resolveClassroomForSession(session: {
     id: string;
     createdAt: Date;
