@@ -515,11 +515,11 @@ export const StudentDashboard: React.FC = () => {
                     {/* Line 2: Teacher, Date, Description, XP Points */}
                     <div style={styles.itemLine2}>
                       <div style={styles.itemMetaText}>
-                        Teacher: <strong>{item.teacherName}</strong> • Date : <strong>{item.assignedDateFormatted}</strong> • {item.description}
+                         {item.description} <br/><br/> Teacher: <strong>{item.teacherName}</strong> • Date : <strong>{item.assignedDateFormatted}</strong> 
                       </div>
 
                       <div style={styles.itemXpText}>
-                        + {item.xpPoints} XP
+                         {item.xpPoints} XP
                       </div>
                     </div>
                   </div>
@@ -932,7 +932,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#475569',
   },
   itemXpText: {
-    fontSize: '0.85rem',
+    fontSize: '1.5rem',
     fontWeight: 800,
     color: '#0284c7',
   },
