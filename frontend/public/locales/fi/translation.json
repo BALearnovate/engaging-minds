@@ -112,7 +112,11 @@
     "elapsedTime": "Istunnon kulunut aika (minuuttia)",
     "classAverageProgress": "Luokan keskimääräinen edistyminen (%)",
     "classLevelPlaceholder": "Vaihda Yksittäinen oppilas -näkymään tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi.",
-    "selectStudentPlaceholder": "Valitse oppilas tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi."
+    "selectStudentPlaceholder": "Valitse oppilas tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi.",
+    "noStudentsNeedHelp": "Kukaan oppilas ei tarvitse apua",
+    "studentsNeedHelp": "{{count}} oppilasta tarvitsee apua",
+    "clickToViewHelp": "Napsauta nähdäksesi apua tarvitsevat oppilaat",
+    "dismissHelpTip": "Oppilas pyysi apua. Napsauta kuitataksesi."
   },
   "teacherHome": {
     "welcome": "Tervetuloa {{name}} !",
@@ -422,6 +426,7 @@
     "joinLiveActivity": "Liity reaaliaikaiseen tehtävään ➔",
     "dismiss": "Hylkää",
     "progressTitle": "TEHTÄVÄN EDISTYMINEN",
+    "helpSent": "Avunpyyntö lähetetty opettajalle!",
     "allStepsCompleted": "Kaikki {{count}} vaihetta suoritettu",
     "stepOfSteps": "Vaihe {{step}} / {{total}} käynnissä",
     "questionsCorrect": "Oikein vastatut kysymykset: {{correct}}/{{total}}",

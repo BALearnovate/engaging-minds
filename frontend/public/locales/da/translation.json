@@ -112,7 +112,11 @@
     "elapsedTime": "Forløbet sessionstid (minutter)",
     "classAverageProgress": "Klassens gennemsnitlige fremgang (%)",
     "classLevelPlaceholder": "Skift til Individuel elev-omfang for at se fremskridt, støtte og tildele belønninger.",
-    "selectStudentPlaceholder": "Vælg en elev for at se fremskridt, støtte og tildele belønninger."
+    "selectStudentPlaceholder": "Vælg en elev for at se fremskridt, støtte og tildele belønninger.",
+    "noStudentsNeedHelp": "Ingen elever har brug for hjælp",
+    "studentsNeedHelp": "{{count}} elever har brug for hjælp",
+    "clickToViewHelp": "Klik for at se individuelle elever, der har brug for hjælp",
+    "dismissHelpTip": "Elev anmodede om hjælp. Klik for at løse."
   },
   "teacherHome": {
     "welcome": "Velkommen {{name}} !",
@@ -427,6 +431,7 @@
     "questionsCorrect": "Rigtige spørgsmål: {{correct}}/{{total}}",
     "pctCompleted": "{{pct}}% GENNEMFØRT",
     "submitAnswer": "INDSEND SVAR",
+    "helpSent": "Hjælpeanmodning sendt til læreren!",
     "helpRequested": "HJÆLP ANMODET ⏳",
     "askHelpTeacher": "BED LÆRER OM HJÆLP",
     "askAiTutor": "SPØRG EMBOT AI-TUTOR",

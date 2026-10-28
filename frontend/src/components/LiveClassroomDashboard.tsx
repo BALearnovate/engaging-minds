@@ -25,6 +25,7 @@ interface StudentStatus {
   behavioralPoints: number;
   totalStars: number;
   totalPoints: number;
+  helpRequested?: boolean;
 }
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
@@ -73,9 +74,11 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     ? Math.round((classCompletedCount / totalStudentsCount) * 100)
     : 20;
 
+  const studentsRequestingHelpCount = students.filter((s) => s.helpRequested).length;
+
   const classNeedAttentionCount = totalStudentsCount > 0
-    ? students.filter((s) => s.status === 'ALERT FLAG' || s.status === 'AT RISK' || s.subtext?.toLowerCase().includes('blocked') || s.subtext?.toLowerCase().includes('assistance')).length
-    : 3;
+    ? students.filter((s) => s.helpRequested || s.status === 'ALERT FLAG' || (s.status === 'AT RISK' && s.progress > 0) || s.subtext?.toLowerCase().includes('blocked') || s.subtext?.toLowerCase().includes('assistance')).length
+    : 0;
 
   // 5 Progress distribution buckets: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%
   const distributionBuckets = [
@@ -123,7 +126,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
             status = 'ALERT FLAG';
             progressColor = '#dc2626';
-          } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (st.progress < 30 && rawStatus !== 'COMPLETED')) {
+          } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (typeof st.progress === 'number' && st.progress > 0 && st.progress < 30 && rawStatus !== 'COMPLETED')) {
             status = 'AT RISK';
             progressColor = '#ea580c';
           }
@@ -157,6 +160,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           const totalStars = academicStars + behavioralStars;
           const totalPoints = academicPoints + behavioralPoints;
 
+          const helpRequested = Boolean(st.helpRequested || rawStatus === 'STUCK');
+
           return {
             id: st.id,
             name,
@@ -173,6 +178,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             behavioralPoints,
             totalStars,
             totalPoints,
+            helpRequested,
           };
         });
         setStudents(mappedStudents);
@@ -221,7 +227,46 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       ? 'In-person desk check-in flagged' 
       : 'Discreet reminder notification deployed';
     setFeedbackMessage(`✅ ${actionText} for ${selectedStudent.name}`);
+
+    const socket = getSocket();
+    if (socket && shareCode) {
+      socket.emit('resolve_help', {
+        activityId: shareCode,
+        studentId: selectedStudent.id,
+      });
+    }
+
+    // Clear help flag for this student after teacher intervenes
+    setStudents((prev) =>
+      prev.map((st) =>
+        st.id === selectedStudent.id
+          ? { ...st, helpRequested: false, subtext: 'Teacher checked in' }
+          : st
+      )
+    );
+
     setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  const handleDismissHelpRequest = (studentId: string) => {
+    const socket = getSocket();
+    if (socket && shareCode) {
+      socket.emit('resolve_help', {
+        activityId: shareCode,
+        studentId,
+      });
+    }
+
+    setStudents((prev) =>
+      prev.map((st) =>
+        st.id === studentId
+          ? {
+              ...st,
+              helpRequested: false,
+            }
+          : st
+      )
+    );
   };
 
   const handleIssueAward = async () => {
@@ -270,18 +315,24 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     if (!shareCode) return;
     const socket = getSocket();
 
-    socket.emit('join_room', {
-      activityId: shareCode,
-      userId: 'teacher',
-      role: 'TEACHER',
-    });
+    const joinRoom = () => {
+      socket.emit('join_room', {
+        activityId: shareCode.toUpperCase(),
+        shareCode: shareCode.toUpperCase(),
+        userId: 'teacher',
+        role: 'TEACHER',
+      });
+    };
+
+    joinRoom();
+    socket.on('connect', joinRoom);
 
     const handleLiveStudentUpdate = (updatedState: any) => {
       setStudents((prevStudents) => {
         const existingIndex = prevStudents.findIndex(
           (s) =>
             s.id === updatedState.studentId ||
-            s.name.toLowerCase() === (updatedState.studentName || '').toLowerCase()
+            s.name.toLowerCase().trim() === (updatedState.studentName || '').toLowerCase().trim()
         );
 
         const newProgress = typeof updatedState.progress === 'number' ? updatedState.progress : 0;
@@ -295,7 +346,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
           status = 'ALERT FLAG';
           progressColor = '#dc2626';
-        } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (newProgress < 30 && rawStatus !== 'COMPLETED')) {
+        } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (newProgress > 0 && newProgress < 30 && rawStatus !== 'COMPLETED')) {
           status = 'AT RISK';
           progressColor = '#ea580c';
         }
@@ -316,6 +367,17 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           milestone = 'MIDDLE PROGRESS MILESTONE';
         }
 
+        let targetHelpRequested = prevStudents[existingIndex]?.helpRequested || false;
+        if (updatedState.helpRequested === false) {
+          targetHelpRequested = false;
+        } else if (
+          updatedState.helpRequested === true ||
+          rawStatus === 'STUCK' ||
+          (updatedState.progressText && updatedState.progressText.toLowerCase().includes('assistance'))
+        ) {
+          targetHelpRequested = true;
+        }
+
         if (existingIndex >= 0) {
           const copy = [...prevStudents];
           copy[existingIndex] = {
@@ -327,6 +389,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             subtext,
             progressColor,
             milestone,
+            helpRequested: rawStatus === 'COMPLETED' ? false : targetHelpRequested,
           };
           return copy;
         } else {
@@ -346,6 +409,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             behavioralPoints: 0,
             totalStars: 0,
             totalPoints: 0,
+            helpRequested: targetHelpRequested,
           };
           return [...prevStudents, newStudent];
         }
@@ -358,11 +422,74 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       }
     };
 
+    const handleStudentStuckAlert = (payload: any) => {
+      if (!payload) return;
+      const targetId = payload.studentId;
+      const targetName = (payload.studentName || '').toLowerCase().trim();
+      setStudents((prev) => {
+        const idx = prev.findIndex(
+          (s) =>
+            (targetId && (s.id === targetId || s.name.toLowerCase().trim() === (payload.studentName || '').toLowerCase().trim())) ||
+            (targetName && s.name.toLowerCase().trim() === targetName)
+        );
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = {
+            ...copy[idx],
+            subtext: payload.progressText || 'Blocked: Requires assistance',
+            helpRequested: true,
+          };
+          return copy;
+        } else {
+          const newStudent: StudentStatus = {
+            id: targetId || `student_${Date.now()}`,
+            name: payload.studentName || 'Student',
+            status: 'OPTIMAL',
+            subtext: 'Blocked: Requires assistance',
+            progress: 0,
+            engagementScore: 0,
+            performanceScore: 0,
+            milestone: 'EARLY SETUP MILESTONE',
+            progressColor: '#16a34a',
+            academicStars: 0,
+            academicPoints: 0,
+            behavioralStars: 0,
+            behavioralPoints: 0,
+            totalStars: 0,
+            totalPoints: 0,
+            helpRequested: true,
+          };
+          return [...prev, newStudent];
+        }
+      });
+    };
+
+    const handleHelpResolved = (payload: { studentId: string; studentName?: string }) => {
+      if (!payload) return;
+      const targetId = payload.studentId;
+      const targetName = (payload.studentName || '').toLowerCase().trim();
+      setStudents((prev) =>
+        prev.map((s) =>
+          (targetId && (s.id === targetId || s.name === targetId)) ||
+          (targetName && s.name.toLowerCase().trim() === targetName)
+            ? { ...s, helpRequested: false }
+            : s
+        )
+      );
+    };
+
     socket.on('live_student_update', handleLiveStudentUpdate);
+    socket.on('student_stuck_alert', handleStudentStuckAlert);
+    socket.on('request_help', handleStudentStuckAlert);
+    socket.on('help_resolved', handleHelpResolved);
     socket.on('room_state', handleRoomState);
 
     return () => {
+      socket.off('connect', joinRoom);
       socket.off('live_student_update', handleLiveStudentUpdate);
+      socket.off('student_stuck_alert', handleStudentStuckAlert);
+      socket.off('request_help', handleStudentStuckAlert);
+      socket.off('help_resolved', handleHelpResolved);
       socket.off('room_state', handleRoomState);
     };
   }, [shareCode]);
@@ -383,8 +510,6 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           height: 24px;
           border-radius: 50%;
           background-color: #f59e0b;
-          box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8);
-          animation: vibratePulseYellow 1.1s infinite ease-in-out;
           display: inline-block;
           flex-shrink: 0;
         }
@@ -393,24 +518,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           height: 24px;
           border-radius: 50%;
           background-color: #ef4444;
-          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9);
-          animation: vibratePulseRed 0.85s infinite ease-in-out;
           display: inline-block;
           flex-shrink: 0;
-        }
-
-        @keyframes vibratePulseYellow {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
-          50% { transform: scale(1.18) translate(0.5px, -0.5px); box-shadow: 0 0 0 9px rgba(245, 158, 11, 0); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-        }
-
-        @keyframes vibratePulseRed {
-          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9); }
-          25% { transform: scale(1.22) translate(-1px, 1px); }
-          50% { transform: scale(1.15) box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-          75% { transform: scale(1.22) translate(1px, -1px); }
-          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         @keyframes popScaleGlow {
@@ -502,26 +611,47 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         <div style={styles.leftMainColumn}>
           {/* METRICS SCOPE SELECTOR */}
           <div style={styles.cardScopeSelectorLeft}>
-            <h3 style={styles.sectionHeaderTitle}>
-              {t('liveDashboard.metricsScope', 'METRICS SCOPE SELECTOR')}
-            </h3>
-            <div style={styles.scopeButtonsRowLeft}>
-              {['Class Level', 'Individual Student'].map((scope) => {
-                const isActive = activeScope === scope;
-                return (
-                  <button
-                    key={scope}
-                    onClick={() => setActiveScope(scope)}
-                    style={{
-                      ...styles.scopeBtn,
-                      backgroundColor: isActive ? '#78be20' : '#2b82a3',
-                      color: '#ffffff',
-                    }}
-                  >
-                    {scope}
-                  </button>
-                );
-              })}
+            <div style={styles.scopeSelectorHeaderRow}>
+              <div style={styles.scopeSelectorLeftGroup}>
+                <h3 style={styles.sectionHeaderTitle}>
+                  {t('liveDashboard.metricsScope', 'METRICS SCOPE SELECTOR')}
+                </h3>
+                <div style={styles.scopeButtonsRowLeft}>
+                  {['Class Level', 'Individual Student'].map((scope) => {
+                    const isActive = activeScope === scope;
+                    return (
+                      <button
+                        key={scope}
+                        onClick={() => setActiveScope(scope)}
+                        style={{
+                          ...styles.scopeBtn,
+                          backgroundColor: isActive ? '#78be20' : '#2b82a3',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {scope}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Hand Icon & Help Badge on Right Side */}
+              <div
+                onClick={() => setActiveScope('Individual Student')}
+                style={styles.helpBadgeContainer}
+                title={t('liveDashboard.clickToViewHelp', 'Click to view individual students needing help')}
+              >
+                <div style={styles.helpBadgeTopRow}>
+                  <span style={styles.helpHandIcon}>✋</span>
+                  <span style={styles.helpCountNumber}>{studentsRequestingHelpCount}</span>
+                </div>
+                <div style={styles.helpBadgeLabel}>
+                  {studentsRequestingHelpCount === 0
+                    ? t('liveDashboard.noStudentsNeedHelp', 'No students need help')
+                    : t('liveDashboard.studentsNeedHelp', '{{count}} students need help', { count: studentsRequestingHelpCount })}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -683,95 +813,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               </div>
 
               {/* 3. Title: Progress Over time */}
-              <div style={styles.classSectionBox}>
-                <h4 style={styles.classSectionHeading}>
-                  {t('liveDashboard.progressOverTime', 'Progress Over time')}
-                </h4>
-                <div style={styles.chartWrapper}>
-                  <svg viewBox="0 0 620 220" style={styles.chartSvg}>
-                    <defs>
-                      <linearGradient id="progressAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#16a34a" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#16a34a" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Y Axis Grid Lines */}
-                    {[0, 25, 50, 75, 100].map((pct, idx) => {
-                      const y = 170 - (pct / 100) * 130;
-                      return (
-                        <g key={idx}>
-                          <line x1="50" y1={y} x2="590" y2={y} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth="1" />
-                          <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="600">
-                            {pct}%
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Line & Area Points */}
-                    {(() => {
-                      const points = timePoints.map((pt, i) => {
-                        const x = 75 + (i * 495) / (timePoints.length - 1);
-                        const y = 170 - (pt.pct / 100) * 130;
-                        return { x, y, ...pt };
-                      });
-
-                      const pathData = points.reduce((acc, pt, i) => {
-                        if (i === 0) return `M ${pt.x} ${pt.y}`;
-                        const prev = points[i - 1];
-                        const cx1 = prev.x + (pt.x - prev.x) / 2;
-                        const cy1 = prev.y;
-                        const cx2 = prev.x + (pt.x - prev.x) / 2;
-                        const cy2 = pt.y;
-                        return `${acc} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pt.x} ${pt.y}`;
-                      }, '');
-
-                      const areaData = `${pathData} L ${points[points.length - 1].x} 170 L ${points[0].x} 170 Z`;
-
-                      return (
-                        <>
-                          {/* Gradient Area Fill */}
-                          <path d={areaData} fill="url(#progressAreaGradient)" />
-
-                          {/* Smooth Line Path */}
-                          <path
-                            d={pathData}
-                            fill="none"
-                            stroke="#16a34a"
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-
-                          {/* Data Points with Glow Rings */}
-                          {points.map((pt, idx) => (
-                            <g key={idx}>
-                              {/* Outer Pulse Ring */}
-                              <circle cx={pt.x} cy={pt.y} r="8" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
-                              {/* Center Dot */}
-                              <circle cx={pt.x} cy={pt.y} r="4" fill="#15803d" />
-
-                              {/* Progress Percent Badge on top */}
-                              <text x={pt.x} y={pt.y - 13} textAnchor="middle" fontSize="10" fontWeight="800" fill="#15803d">
-                                {pt.pct}%
-                              </text>
-
-                              {/* X Axis Time Label */}
-                              <text x={pt.x} y="195" textAnchor="middle" fontSize="11" fontWeight="700" fill="#475569">
-                                {pt.time}
-                              </text>
-                            </g>
-                          ))}
-                        </>
-                      );
-                    })()}
-
-                    {/* Bottom Base Line */}
-                    <line x1="50" y1="170" x2="590" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
-                  </svg>
-                </div>
-              </div>
+              
             </div>
           ) : (
             /* INDIVIDUAL STATUS MONITOR */
@@ -821,14 +863,38 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       }}
                     >
                       <div style={styles.studentCardTop}>
-                        <span
-                          style={{
-                            ...styles.studentCardName,
-                            color: isSelected ? '#1e3a8a' : '#2563eb',
-                          }}
-                        >
-                          {student.name}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span
+                            style={{
+                              ...styles.studentCardName,
+                              color: isSelected ? '#1e3a8a' : '#2563eb',
+                            }}
+                          >
+                            {student.name}
+                          </span>
+                          {student.helpRequested && (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.35rem',
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                lineHeight: '1',
+                              }}
+                              title={t('liveDashboard.dismissHelpTip', 'Student requested help. Click to resolve.')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDismissHelpRequest(student.id);
+                              }}
+                            >
+                              ✋
+                            </span>
+                          )}
+                        </div>
                         <div
                           className={
                             student.status === 'OPTIMAL'
@@ -1204,6 +1270,55 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'flex-start',
     gap: '0.75rem',
     border: '1px solid #cbd5e1',
+  },
+  scopeSelectorHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
+  scopeSelectorLeftGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '0.75rem',
+  },
+  helpBadgeContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    backgroundColor: '#eff6ff',
+    border: '1.5px solid #93c5fd',
+    borderRadius: '10px',
+    padding: '0.5rem 0.9rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.08)',
+  },
+  helpBadgeTopRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+  },
+  helpHandIcon: {
+    fontSize: '1.35rem',
+    lineHeight: 1,
+  },
+  helpCountNumber: {
+    fontSize: '1.4rem',
+    fontWeight: '900',
+    color: '#1e40af',
+    lineHeight: 1,
+  },
+  helpBadgeLabel: {
+    fontSize: '0.82rem',
+    fontWeight: '800',
+    color: '#1d4ed8',
+    marginTop: '0.2rem',
+    textAlign: 'right',
   },
   scopeButtonsRowLeft: {
     display: 'flex',

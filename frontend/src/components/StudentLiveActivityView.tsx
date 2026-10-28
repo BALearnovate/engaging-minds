@@ -146,24 +146,38 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   // Join live session socket room on mount
   useEffect(() => {
-    if (!shareCode) return;
+    const actId = (shareCode || activityId || '').trim().toUpperCase();
+    if (!actId) return;
+
     const socket = getSocket();
     const studentId = currentUser?.id || 'student_guest';
     const studentName = currentUser
       ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
       : 'Student';
 
-    socket.emit('join_room', {
-      activityId: shareCode,
-      userId: studentId,
-      role: 'STUDENT',
-      userName: studentName,
-    });
-  }, [shareCode, currentUser]);
+    const joinRoom = () => {
+      socket.emit('join_room', {
+        activityId: actId,
+        shareCode: actId,
+        userId: studentId,
+        role: 'STUDENT',
+        userName: studentName,
+      });
+    };
+
+    joinRoom();
+    socket.on('connect', joinRoom);
+
+    return () => {
+      socket.off('connect', joinRoom);
+    };
+  }, [shareCode, activityId, currentUser]);
 
   // Emit real-time progress changes to Socket.IO
   useEffect(() => {
-    if (!shareCode) return;
+    const actId = (shareCode || activityId || '').trim().toUpperCase();
+    if (!actId) return;
+
     const socket = getSocket();
     const studentId = currentUser?.id || 'student_guest';
     const studentName = currentUser
@@ -171,13 +185,14 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       : 'Student';
 
     socket.emit('update_progress', {
-      activityId: shareCode,
+      activityId: actId,
+      shareCode: actId,
       studentId,
       studentName,
       progress: progressPct,
       status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
     });
-  }, [progressPct, shareCode, currentUser]);
+  }, [progressPct, shareCode, activityId, currentUser]);
 
   // Listen for real-time awards issued by teacher
   useEffect(() => {
@@ -217,14 +232,27 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   const handleAskTeacher = () => {
     setHelpRequested(true);
     const socket = getSocket();
-    if (socket && shareCode) {
+    const actId = (shareCode || activityId || '').trim().toUpperCase();
+    if (socket && actId) {
+      const studentId = currentUser?.id || 'student_guest';
+      const studentName = currentUser?.name || (currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : 'Student');
+      
+      if (!socket.connected) {
+        socket.connect();
+      }
+
       socket.emit('request_help', {
-        shareCode,
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        studentName,
         teacherName,
+        helpMessage: 'Student requested help during Live Activity',
         message: 'Student requested help during Live Activity',
+        progressText: '⚠️ Help Requested',
       });
     }
-    setToastMessage('📩 Help request sent to teacher!');
+    setToastMessage(t('studentPortal.helpSent', '📩 Help request sent to teacher!'));
     setTimeout(() => setToastMessage(null), 3000);
   };
 

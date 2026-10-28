@@ -112,7 +112,11 @@
     "elapsedTime": "Förfluten sessionstid (minuter)",
     "classAverageProgress": "Klassens genomsnittliga framsteg (%)",
     "classLevelPlaceholder": "Växla till Individuell elev för att granska framsteg, stödja och belöna.",
-    "selectStudentPlaceholder": "Välj en elev för att granska framsteg, stödja och belöna."
+    "selectStudentPlaceholder": "Välj en elev för att granska framsteg, stödja och belöna.",
+    "noStudentsNeedHelp": "Inga elever behöver hjälp",
+    "studentsNeedHelp": "{{count}} elever behöver hjälp",
+    "clickToViewHelp": "Klicka för att visa enskilda elever som behöver hjälp",
+    "dismissHelpTip": "Eleven bad om hjälp. Klicka för att lösa."
   },
   "teacherHome": {
     "welcome": "Välkommen {{name}} !",
@@ -422,6 +426,7 @@
     "joinLiveActivity": "Gå med i live-aktivitet ➔",
     "dismiss": "Avfärda",
     "progressTitle": "DINA FRAMSTEG I AKTIVITETEN",
+    "helpSent": "Hjälpförfrågan skickad till läraren!",
     "allStepsCompleted": "Alla {{count}} steg slutförda",
     "stepOfSteps": "Steg {{step}} av {{total}} pågår",
     "questionsCorrect": "Rätta frågor: {{correct}}/{{total}}",

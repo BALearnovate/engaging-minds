@@ -112,7 +112,9 @@
     "elapsedTime": "Istunnon kulunut aika (minuuttia)",
     "classAverageProgress": "Luokan keskimääräinen edistyminen (%)",
     "classLevelPlaceholder": "Vaihda Yksittäinen oppilas -näkymään tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi.",
-    "selectStudentPlaceholder": "Valitse oppilas tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi."
+    "selectStudentPlaceholder": "Valitse oppilas tarkastellaksesi edistymistä, tukeaksesi ja palkitaksesi.",
+    "noStudentsNeedHelp": "Kukaan oppilas ei tarvitse apua",
+    "studentsNeedHelp": "{{count}} oppilasta tarvitsee apua"
   },
   "teacherHome": {
     "welcome": "Tervetuloa {{name}} !",

@@ -112,7 +112,11 @@
     "elapsedTime": "Elapsed Session Time (minutes)",
     "classAverageProgress": "Class Average Progress (%)",
     "classLevelPlaceholder": "Switch to Individual Student scope to view progress, support and award.",
-    "selectStudentPlaceholder": "Select a student to view progress, support and award."
+    "selectStudentPlaceholder": "Select a student to view progress, support and award.",
+    "noStudentsNeedHelp": "No students need help",
+    "studentsNeedHelp": "{{count}} students need help",
+    "clickToViewHelp": "Click to view individual students needing help",
+    "dismissHelpTip": "Student requested help. Click to resolve."
   },
   "teacherHome": {
     "welcome": "Welcome {{name}} !",
@@ -433,6 +437,7 @@
     "questionsCorrect": "Questions Correct: {{correct}}/{{total}}",
     "pctCompleted": "{{pct}}% COMPLETED",
     "submitAnswer": "SUBMIT ANSWER",
+    "helpSent": "Help request sent to teacher!",
     "helpRequested": "HELP REQUESTED ⏳",
     "askHelpTeacher": "ASK HELP FROM TEACHER",
     "askAiTutor": "ASK EMBOT AI TUTOR",

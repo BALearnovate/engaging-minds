@@ -112,7 +112,9 @@
     "elapsedTime": "Förfluten sessionstid (minuter)",
     "classAverageProgress": "Klassens genomsnittliga framsteg (%)",
     "classLevelPlaceholder": "Växla till Individuell elev för att granska framsteg, stödja och belöna.",
-    "selectStudentPlaceholder": "Välj en elev för att granska framsteg, stödja och belöna."
+    "selectStudentPlaceholder": "Välj en elev för att granska framsteg, stödja och belöna.",
+    "noStudentsNeedHelp": "Inga elever behöver hjälp",
+    "studentsNeedHelp": "{{count}} elever behöver hjälp"
   },
   "teacherHome": {
     "welcome": "Välkommen {{name}} !",

@@ -112,7 +112,9 @@
     "elapsedTime": "Forløbet sessionstid (minutter)",
     "classAverageProgress": "Klassens gennemsnitlige fremgang (%)",
     "classLevelPlaceholder": "Skift til Individuel elev-omfang for at se fremskridt, støtte og tildele belønninger.",
-    "selectStudentPlaceholder": "Vælg en elev for at se fremskridt, støtte og tildele belønninger."
+    "selectStudentPlaceholder": "Vælg en elev for at se fremskridt, støtte og tildele belønninger.",
+    "noStudentsNeedHelp": "Ingen elever har brug for hjælp",
+    "studentsNeedHelp": "{{count}} elever har brug for hjælp"
   },
   "teacherHome": {
     "welcome": "Velkommen {{name}} !",

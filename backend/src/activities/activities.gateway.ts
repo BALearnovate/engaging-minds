@@ -52,24 +52,26 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: { activityId: string; userId: string; role: string; userName?: string },
   ) {
-    const roomName = `activity_${payload.activityId}`;
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
     client.join(roomName);
 
-    if (!this.liveTrackingMap.has(payload.activityId)) {
-      this.liveTrackingMap.set(payload.activityId, new Map());
+    if (!this.liveTrackingMap.has(normalizedActId)) {
+      this.liveTrackingMap.set(normalizedActId, new Map());
     }
 
-    const activityStateMap = this.liveTrackingMap.get(payload.activityId)!;
+    const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
 
     // Load initial student states from DB if in-memory map doesn't have them yet
     try {
-      if (payload.activityId) {
+      if (rawId) {
         const actSession = await this.prisma.activitySession.findFirst({
           where: {
             OR: [
-              { shareCode: payload.activityId.toUpperCase() },
-              { id: payload.activityId },
-              { activityVersion: { activityId: payload.activityId } },
+              { shareCode: normalizedActId },
+              { id: rawId },
+              { activityVersion: { activityId: rawId } },
             ],
             status: 'ACTIVE',
           },
@@ -81,7 +83,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
         if (actSession && actSession.studentSessions) {
           for (const st of actSession.studentSessions) {
-            const key = st.studentId || st.id;
+            const key = st.id;
             if (!activityStateMap.has(key)) {
               activityStateMap.set(key, {
                 studentId: key,
@@ -90,10 +92,11 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
                 progress: st.progress || 0,
                 engagementScore: 0,
                 performanceScore: st.score || 0,
-                progressText: `${st.progress || 0}% completed`,
+                progressText: st.status === 'STUCK' ? 'Needs assistance' : `${st.progress || 0}% completed`,
                 score: st.score || 0,
                 lastUpdated: st.lastSeenAt ? st.lastSeenAt.toISOString() : new Date().toISOString(),
-              });
+                helpRequested: st.status === 'STUCK',
+              } as any);
             }
           }
         }
@@ -104,7 +107,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Send current live states of all students to the client
     const currentStudents = Array.from(activityStateMap.values());
-    client.emit('room_state', { activityId: payload.activityId, students: currentStudents });
+    client.emit('room_state', { activityId: rawId, students: currentStudents });
   }
 
   @SubscribeMessage('update_progress')
@@ -123,13 +126,15 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       score?: number;
     },
   ) {
-    const roomName = `activity_${payload.activityId}`;
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
 
-    if (!this.liveTrackingMap.has(payload.activityId)) {
-      this.liveTrackingMap.set(payload.activityId, new Map());
+    if (!this.liveTrackingMap.has(normalizedActId)) {
+      this.liveTrackingMap.set(normalizedActId, new Map());
     }
 
-    const activityStateMap = this.liveTrackingMap.get(payload.activityId)!;
+    const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
     const existing = activityStateMap.get(payload.studentId);
 
     const progressVal = typeof payload.progress === 'number' ? payload.progress : existing?.progress || 0;
@@ -152,8 +157,9 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     activityStateMap.set(payload.studentId, updatedState);
 
-    // Broadcast updated state to room
+    // Broadcast updated state to room and globally
     this.server.to(roomName).emit('live_student_update', updatedState);
+    this.server.emit('live_student_update', updatedState);
 
     // Asynchronously persist progress update to database
     this.persistStudentProgress(payload, progressVal, engagementVal, performanceVal).catch((err) => {
@@ -172,42 +178,171 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       progressText?: string;
     },
   ) {
-    const roomName = `activity_${payload.activityId}`;
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
 
-    if (!this.liveTrackingMap.has(payload.activityId)) {
-      this.liveTrackingMap.set(payload.activityId, new Map());
+    if (!this.liveTrackingMap.has(normalizedActId)) {
+      this.liveTrackingMap.set(normalizedActId, new Map());
     }
 
-    const activityStateMap = this.liveTrackingMap.get(payload.activityId)!;
-    const existing = activityStateMap.get(payload.studentId);
+    const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
 
-    const stuckState: StudentProgressState = {
-      studentId: payload.studentId,
-      studentName: payload.studentName,
+    let dbStudentSessionId: string | null = null;
+    let dbStudentName = payload.studentName;
+    try {
+      const actSession = await this.prisma.activitySession.findFirst({
+        where: {
+          OR: [
+            { shareCode: normalizedActId },
+            { id: rawId },
+            { activityVersion: { activityId: rawId } },
+          ],
+          status: 'ACTIVE',
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (actSession) {
+        const trimmedName = payload.studentName?.trim();
+        const studentSession = await this.prisma.studentSession.findFirst({
+          where: {
+            activitySessionId: actSession.id,
+            OR: [
+              { id: payload.studentId },
+              { studentId: payload.studentId },
+              ...(trimmedName ? [{ studentName: { equals: trimmedName, mode: 'insensitive' as const } }] : []),
+            ],
+          },
+        });
+
+        if (studentSession) {
+          dbStudentSessionId = studentSession.id;
+          dbStudentName = studentSession.studentName;
+          await this.prisma.studentSession.update({
+            where: { id: studentSession.id },
+            data: { status: 'STUCK', lastSeenAt: new Date() },
+          });
+        } else {
+          const newSession = await this.prisma.studentSession.create({
+            data: {
+              activitySessionId: actSession.id,
+              studentId: payload.studentId && !payload.studentId.startsWith('student_guest') ? payload.studentId : null,
+              studentName: trimmedName || 'Student',
+              status: 'STUCK',
+              progress: 0,
+              score: 0,
+            },
+          });
+          dbStudentSessionId = newSession.id;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to persist help request in DB:', err);
+    }
+
+    const effectiveStudentId = dbStudentSessionId || payload.studentId;
+    const existing = activityStateMap.get(effectiveStudentId) || activityStateMap.get(payload.studentId);
+
+    const stuckState: StudentProgressState & { helpRequested: boolean } = {
+      studentId: effectiveStudentId,
+      studentName: dbStudentName || payload.studentName || 'Student',
       status: 'STUCK',
+      progress: existing?.progress || 0,
+      engagementScore: existing?.engagementScore || 0,
+      performanceScore: existing?.performanceScore || 0,
       progressText: payload.progressText || existing?.progressText || 'Needs assistance',
       answers: existing?.answers || {},
       helpMessage: payload.helpMessage || 'Student requested help on exercise',
       lastUpdated: new Date().toISOString(),
+      helpRequested: true,
     };
 
-    activityStateMap.set(payload.studentId, stuckState);
+    activityStateMap.set(effectiveStudentId, stuckState);
+    if (payload.studentId !== effectiveStudentId) {
+      activityStateMap.set(payload.studentId, stuckState);
+    }
 
-    // Broadcast stuck alert to room
+    // Broadcast stuck alert to room and globally
     this.server.to(roomName).emit('live_student_update', stuckState);
     this.server.to(roomName).emit('student_stuck_alert', stuckState);
+    this.server.to(roomName).emit('request_help', stuckState);
 
-    this.persistStudentProgress(
-      {
-        activityId: payload.activityId,
-        studentId: payload.studentId,
-        studentName: payload.studentName,
-        status: 'STUCK',
-      },
-      existing?.progress || 0,
-      existing?.engagementScore || 0,
-      existing?.performanceScore || 0,
-    ).catch(() => {});
+    this.server.emit('live_student_update', stuckState);
+    this.server.emit('student_stuck_alert', stuckState);
+    this.server.emit('request_help', stuckState);
+  }
+
+  @SubscribeMessage('resolve_help')
+  async handleResolveHelp(
+    @MessageBody()
+    payload: {
+      activityId: string;
+      studentId: string;
+    },
+  ) {
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
+
+    if (this.liveTrackingMap.has(normalizedActId)) {
+      const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
+      if (activityStateMap.has(payload.studentId)) {
+        const studentState = activityStateMap.get(payload.studentId)!;
+        const currentProgress = studentState.progress || 0;
+        studentState.status = currentProgress === 100 ? 'COMPLETED' : currentProgress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
+        studentState.helpMessage = undefined;
+        (studentState as any).helpRequested = false;
+        studentState.lastUpdated = new Date().toISOString();
+        this.server.to(roomName).emit('live_student_update', studentState);
+      }
+    }
+
+    try {
+      const actSession = await this.prisma.activitySession.findFirst({
+        where: {
+          OR: [
+            { shareCode: normalizedActId },
+            { id: rawId },
+            { activityVersion: { activityId: rawId } },
+          ],
+          status: 'ACTIVE',
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (actSession) {
+        const trimmedId = payload.studentId;
+        const studentSession = await this.prisma.studentSession.findFirst({
+          where: {
+            activitySessionId: actSession.id,
+            OR: [
+              { id: trimmedId },
+              { studentId: trimmedId },
+            ],
+          },
+        });
+
+        if (studentSession) {
+          const resetStatus = studentSession.progress >= 100 ? 'COMPLETED' : studentSession.progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
+          await this.prisma.studentSession.update({
+            where: { id: studentSession.id },
+            data: { status: resetStatus },
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to reset student status on resolve_help:', err);
+    }
+
+    this.server.to(roomName).emit('help_resolved', {
+      studentId: payload.studentId,
+      activityId: rawId,
+    });
+    this.server.emit('help_resolved', {
+      studentId: payload.studentId,
+      activityId: rawId,
+    });
   }
 
   @SubscribeMessage('send_hint')

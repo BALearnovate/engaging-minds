@@ -220,8 +220,13 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     });
 
     if (socket && shareCode) {
+      const actId = shareCode.trim().toUpperCase();
+      if (!socket.connected) {
+        socket.connect();
+      }
       socket.emit('request_help', {
-        activityId: shareCode,
+        activityId: actId,
+        shareCode: actId,
         studentId: studentSessionId,
         studentName,
         helpMessage: message,
