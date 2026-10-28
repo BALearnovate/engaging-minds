@@ -174,6 +174,7 @@ export const StudentDashboard: React.FC = () => {
 
   // Fetch Database Activities
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchAssignedActivities();
   }, []);
 
