@@ -113,8 +113,8 @@
     "classAverageProgress": "Class Average Progress (%)",
     "classLevelPlaceholder": "Switch to Individual Student scope to view progress, support and award.",
     "selectStudentPlaceholder": "Select a student to view progress, support and award.",
-    "noStudentsNeedHelp": "No students need help",
-    "studentsNeedHelp": "{{count}} students need help",
+    "noStudentsNeedHelp": "No students requesting help",
+    "studentsNeedHelp": "{{count}} students requesting help",
     "clickToViewHelp": "Click to view individual students needing help",
     "dismissHelpTip": "Student requested help. Click to resolve."
   },

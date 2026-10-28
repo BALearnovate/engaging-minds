@@ -705,8 +705,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                 </div>
                 <div style={styles.helpBadgeLabel}>
                   {studentsRequestingHelpCount === 0
-                    ? t('liveDashboard.noStudentsNeedHelp', 'No students need help')
-                    : t('liveDashboard.studentsNeedHelp', '{{count}} students need help', { count: studentsRequestingHelpCount })}
+                    ? t('liveDashboard.noStudentsNeedHelp', 'No students requesting help')
+                    : t('liveDashboard.studentsNeedHelp', '{{count}} students requesting help', { count: studentsRequestingHelpCount })}
                 </div>
               </div>
             </div>
@@ -1303,13 +1303,13 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    backgroundColor: '#eff6ff',
-    border: '1.5px solid #93c5fd',
+    // backgroundColor: '#eff6ff',
+    // border: '1.5px solid #93c5fd',
     borderRadius: '10px',
     padding: '0.5rem 0.9rem',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.08)',
+    // boxShadow: '0 2px 6px rgba(37, 99, 235, 0.08)',
   },
   helpBadgeTopRow: {
     display: 'flex',
