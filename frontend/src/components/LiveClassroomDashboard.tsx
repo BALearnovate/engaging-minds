@@ -110,26 +110,31 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       if (Array.isArray(data.students)) {
         const mappedStudents: StudentStatus[] = data.students.map((st: any) => {
           const rawStatus = (st.status || '').toUpperCase();
-          let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
-          let progressColor = '#16a34a';
-
-          if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
-            status = 'ALERT FLAG';
-            progressColor = '#dc2626';
-          } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (typeof st.progress === 'number' && st.progress > 0 && st.progress < 30 && rawStatus !== 'COMPLETED')) {
-            status = 'AT RISK';
-            progressColor = '#ea580c';
-          }
-
           const progress = typeof st.progress === 'number' ? st.progress : 0;
           const engagementScore = typeof st.engagementScore === 'number' ? st.engagementScore : (progress > 0 ? Math.min(100, progress + 10) : 0);
           const performanceScore = typeof st.performanceScore === 'number' ? st.performanceScore : (typeof st.score === 'number' ? st.score : 0);
+
+          let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
+          let progressColor = '#16a34a';
+
+          if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG' || rawStatus === 'NOT_STARTED' || progress === 0) {
+            status = 'ALERT FLAG';
+            progressColor = '#dc2626';
+          } else if (progress > 0 && progress < 20) {
+            status = 'AT RISK';
+            progressColor = '#ea580c';
+          } else {
+            status = 'OPTIMAL';
+            progressColor = '#16a34a';
+          }
 
           let subtext = `Active: ${progress}% progress`;
           if (rawStatus === 'STUCK') {
             subtext = 'Blocked: Requires assistance';
           } else if (rawStatus === 'NOT_STARTED' || progress === 0) {
             subtext = 'Not Started: Awaiting activity response';
+          } else if (progress > 0 && progress < 20) {
+            subtext = `At Risk: ${progress}% progress`;
           } else if (progress >= 80) {
             subtext = 'Active: Final Reflection Stage';
           }
@@ -362,12 +367,15 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
         let progressColor = '#16a34a';
 
-        if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG') {
+        if (rawStatus === 'STUCK' || rawStatus === 'ALERT_FLAG' || rawStatus === 'ALERT FLAG' || rawStatus === 'NOT_STARTED' || newProgress === 0) {
           status = 'ALERT FLAG';
           progressColor = '#dc2626';
-        } else if (rawStatus === 'AT_RISK' || rawStatus === 'AT RISK' || (newProgress > 0 && newProgress < 30 && rawStatus !== 'COMPLETED')) {
+        } else if (newProgress > 0 && newProgress < 20) {
           status = 'AT RISK';
           progressColor = '#ea580c';
+        } else {
+          status = 'OPTIMAL';
+          progressColor = '#16a34a';
         }
 
         let subtext = `Active: ${newProgress}% progress`;
@@ -375,6 +383,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           subtext = 'Blocked: Requires assistance';
         } else if (rawStatus === 'NOT_STARTED' || newProgress === 0) {
           subtext = 'Not Started: Awaiting activity response';
+        } else if (newProgress > 0 && newProgress < 20) {
+          subtext = `At Risk: ${newProgress}% progress`;
         } else if (newProgress >= 80) {
           subtext = 'Active: Final Reflection Stage';
         }
@@ -463,13 +473,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           const newStudent: StudentStatus = {
             id: targetId || `student_${Date.now()}`,
             name: payload.studentName || 'Student',
-            status: 'OPTIMAL',
+            status: 'ALERT FLAG',
             subtext: 'Blocked: Requires assistance',
             progress: 0,
             engagementScore: 0,
             performanceScore: 0,
             milestone: 'EARLY SETUP MILESTONE',
-            progressColor: '#16a34a',
+            progressColor: '#dc2626',
             academicStars: 0,
             academicPoints: 0,
             behavioralStars: 0,
