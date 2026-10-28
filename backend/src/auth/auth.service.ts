@@ -303,6 +303,8 @@ export class AuthService {
         email: student.email || `${student.loginCode}@student.em`,
         firstName: student.firstName,
         lastName: student.lastName,
+        loginCode: student.loginCode,
+        classroomId: student.classroomId,
         role: 'STUDENT',
         avatar: '🎓',
       };

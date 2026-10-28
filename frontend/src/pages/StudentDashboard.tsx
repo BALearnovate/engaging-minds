@@ -135,7 +135,7 @@ export const StudentDashboard: React.FC = () => {
     };
   }, [(user as any)?.classroomId, activeToken]);
 
-  // Listen for real-time awards issued to the student
+  // Listen for real-time awards issued to the student and live updates
   useEffect(() => {
     const socket = getSocket();
 
@@ -146,6 +146,8 @@ export const StudentDashboard: React.FC = () => {
       reward: string;
       deliveryMode?: string;
     }) => {
+      fetchAssignedActivities();
+
       if (data.deliveryMode === 'Silent Archive') return;
 
       const currentUserId = user?.id;
@@ -164,142 +166,117 @@ export const StudentDashboard: React.FC = () => {
       }
     };
 
+    const handleLiveStudentUpdate = () => {
+      fetchAssignedActivities();
+    };
+
     socket.on('award_issued', handleAwardIssued);
+    socket.on('live_student_update', handleLiveStudentUpdate);
     return () => {
       socket.off('award_issued', handleAwardIssued);
+      socket.off('live_student_update', handleLiveStudentUpdate);
     };
-  }, [user]);
+  }, [user, activeToken]);
 
   // Fetch Database Activities
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchAssignedActivities();
-  }, []);
+  }, [user, activeToken]);
 
   const fetchAssignedActivities = async () => {
     setIsLoading(true);
     try {
-      const data: any = await activitiesApi.getActivities(activeToken);
-      setDbActivities(data);
+      const studentCode =
+        (user as any)?.loginCode ||
+        user?.email ||
+        user?.id ||
+        localStorage.getItem('student_login_code') ||
+        '';
+
+      let assignmentsData: any = null;
+
+      if (studentCode) {
+        try {
+          assignmentsData = await activitiesApi.getStudentAssignments(studentCode, activeToken);
+        } catch (err) {
+          console.warn('Failed to fetch student assigned activities by loginCode/ID:', err);
+        }
+      }
+
+      if (assignmentsData && Array.isArray(assignmentsData.assignments)) {
+        setDbActivities(assignmentsData.assignments);
+      } else {
+        const data: any = await activitiesApi.getActivities(activeToken);
+        setDbActivities(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       console.error('Failed to fetch assigned activities from DB:', err);
+      setDbActivities([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Convert DB activities to Student List Items with default fallback
+  // Convert DB activities / assignments to Student List Items
   const activityList: StudentActivityItem[] = useMemo(() => {
-    const listFromDb: StudentActivityItem[] = dbActivities.map((act, index) => {
+    return dbActivities.map((item: any) => {
+      const assignment = item.activity ? item : null;
+      const act = assignment ? assignment.activity : item;
       const content = act.content || {};
       const blocks = Array.isArray(content.blocks) ? content.blocks : [];
-      const teacherName = act.teacher
-        ? `${act.teacher.firstName || ''} ${act.teacher.lastName || ''}`.trim()
-        : 'Prof. Jenkins';
+
+      const assignedByTeacher = assignment?.assignedByTeacher;
+      const actTeacher = act.teacher;
+      const teacherObj = assignedByTeacher || actTeacher;
+      const teacherName = teacherObj
+        ? `${teacherObj.firstName || ''} ${teacherObj.lastName || ''}`.trim()
+        : 'Teacher';
+
+      const description =
+        act.description ||
+        content.description ||
+        'Complete the interactive tasks and check your understanding.';
+
+      let xpPoints = 0;
+      const versions = act.versions || [];
+      const latestVer = versions[0];
+      const sessions = latestVer?.sessions || [];
+      const activeSession = sessions[0];
+      const studentSessions = activeSession?.studentSessions || [];
+      const stSession = studentSessions[0];
+
+      if (stSession) {
+        const academicStars = stSession.academicStars || 0;
+        const behavioralStars = stSession.behavioralStars || 0;
+        const academicPoints = stSession.academicPoints || 0;
+        const behavioralPoints = stSession.behavioralPoints || 0;
+        xpPoints = (academicStars + behavioralStars) * 100 + (academicPoints + behavioralPoints);
+      }
 
       const status: 'assigned' | 'in_progress' | 'completed' =
-        index === 0 ? 'assigned' : index === 1 ? 'in_progress' : 'assigned';
+        stSession?.status === 'COMPLETED'
+          ? 'completed'
+          : stSession?.status === 'IN_PROGRESS' || stSession?.status === 'STUCK'
+          ? 'in_progress'
+          : 'assigned';
 
       return {
-        id: act.id,
+        id: assignment ? assignment.id : act.id,
         title: act.title || content.title || 'Interactive Learning Module',
-        description:
-          act.description ||
-          content.description ||
-          'Complete the interactive tasks, clock schedule, and check your understanding.',
-        subject: content.subject || 'General Science',
-        gradeLevel: content.gradeLevel || 'Grade 6',
-        teacherName: teacherName || 'Prof. Jenkins',
-        estimatedTime: '15 - 20 mins',
+        description,
+        subject: content.subject || 'General',
+        gradeLevel: content.gradeLevel || 'Grade Level',
+        teacherName: teacherName || 'Teacher',
+        estimatedTime: '20 mins',
         blockCount: blocks.length || 4,
         status,
-        dueDate: 'Due Today • 20 mins',
+        dueDate: assignment?.dueAt ? `Due ${new Date(assignment.dueAt).toLocaleDateString()}` : 'Due Today • 20 mins',
         content,
-        xpPoints: 350 + index * 100,
-        completionPct: index === 0 ? 60 : index === 1 ? 40 : 100,
+        xpPoints,
+        completionPct: stSession?.progress || 0,
       };
     });
-
-    if (listFromDb.length === 0) {
-      return [
-        {
-          id: 'seed-1',
-          title: 'Quadratic Equations & Parabola Graphs',
-          description: 'Factorize quadratics and plot vertex turning points.',
-          subject: 'MATHEMATICS',
-          gradeLevel: 'Grade 7',
-          teacherName: 'Mr. D. Harris',
-          estimatedTime: '20 mins',
-          blockCount: 5,
-          status: 'in_progress',
-          dueDate: 'Due Today • 20 mins',
-          xpPoints: 350,
-          completionPct: 60,
-          content: {
-            schemaVersion: '1.0',
-            id: 'quadratics-dsl',
-            title: 'Quadratic Equations & Parabola Graphs',
-            subject: 'Mathematics',
-            gradeLevel: 'Grade 7',
-            blocks: [
-              {
-                id: 'b1',
-                type: 'multiple_choice',
-                title: 'Step 4: Factoring Quadratic Expressions',
-                instructions: 'Solve the factoring equation.',
-                config: { question: 'What are the roots of x^2 - 5x + 6 = 0?', options: ['x=2, x=3', 'x=1, x=6'], correctAnswer: 'x=2, x=3' },
-              },
-            ],
-          },
-        },
-        {
-          id: 'seed-2',
-          title: 'Python Functions & Data Structure Lab',
-          description: 'Write modular functions to calculate list averages and search arrays.',
-          subject: 'COMPUTER SCIENCE',
-          gradeLevel: 'Grade 8',
-          teacherName: 'Ms. E. Davis',
-          estimatedTime: '30 mins',
-          blockCount: 4,
-          status: 'assigned',
-          dueDate: 'Due in 2 days • 30 mins',
-          xpPoints: 450,
-          completionPct: 0,
-          content: {
-            schemaVersion: '1.0',
-            id: 'python-lab',
-            title: 'Python Functions & Data Structure Lab',
-            subject: 'Computer Science',
-            gradeLevel: 'Grade 8',
-            blocks: [],
-          },
-        },
-        {
-          id: 'seed-3',
-          title: 'Kinematics & Motion Vectors Challenge',
-          description: 'Calculate velocity vectors and displacement graph curves.',
-          subject: 'PHYSICS',
-          gradeLevel: 'Grade 8',
-          teacherName: 'Dr. R. Aris',
-          estimatedTime: '15 mins',
-          blockCount: 3,
-          status: 'in_progress',
-          dueDate: 'Due Friday • 15 mins',
-          xpPoints: 450,
-          completionPct: 35,
-          content: {
-            schemaVersion: '1.0',
-            id: 'physics-vectors',
-            title: 'Kinematics & Motion Vectors Challenge',
-            subject: 'Physics',
-            gradeLevel: 'Grade 8',
-            blocks: [],
-          },
-        },
-      ];
-    }
-
-    return listFromDb;
   }, [dbActivities]);
 
   // Set default selected activity if none selected
@@ -315,8 +292,7 @@ export const StudentDashboard: React.FC = () => {
 
   // Calculate total student XP (sum of activity XP points)
   const totalXp = useMemo(() => {
-    const sum = activityList.reduce((acc, curr) => acc + (curr.xpPoints || 300), 0);
-    return sum > 0 ? sum : 1250;
+    return activityList.reduce((acc, curr) => acc + (curr.xpPoints || 0), 0);
   }, [activityList]);
 
   if (joinedLiveView && liveActivityData) {
@@ -423,11 +399,6 @@ export const StudentDashboard: React.FC = () => {
                 </span>
               </div>
 
-              {/* Subject Tag Pill */}
-              <div style={styles.subjectPillGreen}>
-                {selectedActivity.subject.toUpperCase()}
-              </div>
-
               {/* Activity Title & Teacher */}
               <h3 style={styles.selectedActivityTitle}>
                 {selectedActivity.title}
@@ -504,7 +475,7 @@ export const StudentDashboard: React.FC = () => {
             ) : activityList.length === 0 ? (
               <div style={styles.emptyStateBox}>
                 <div style={{ fontSize: '2rem' }}>📚</div>
-                <p>{t('studentPortal.noActivitiesFound', 'No assigned activities found')}</p>
+                <p>{t('studentPortal.noAssignedActivities', 'No activities currently assigned to your classroom.')}</p>
               </div>
             ) : (
               activityList.map((item) => {
@@ -518,12 +489,9 @@ export const StudentDashboard: React.FC = () => {
                       ...(isSelected ? styles.activityListItemSelected : styles.activityListItemUnselected),
                     }}
                   >
-                    {/* Line 1: Subject Badges, Title, Completion / Due Badge */}
+                    {/* Line 1: Title & Selection Badge */}
                     <div style={styles.itemLine1}>
                       <div style={styles.itemTitleGroup}>
-                        <span style={styles.subjectPillIndigo}>
-                          {item.subject.toUpperCase()}
-                        </span>
                         <span style={styles.sessionTypePill}>
                           Live Classroom Session
                         </span>
@@ -545,14 +513,14 @@ export const StudentDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Line 2: Teacher, Date, XP Points */}
+                    {/* Line 2: Teacher, Description, XP Points */}
                     <div style={styles.itemLine2}>
                       <div style={styles.itemMetaText}>
                         Teacher: <strong>{item.teacherName}</strong> • {item.description}
                       </div>
 
                       <div style={styles.itemXpText}>
-                        + {item.xpPoints || 350} XP
+                        + {item.xpPoints} XP
                       </div>
                     </div>
                   </div>

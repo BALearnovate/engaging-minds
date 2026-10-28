@@ -243,6 +243,14 @@ export const activitiesApi = {
     return apiFetch(`/activities/session/${shareCode}`, { token });
   },
 
+  // Get assigned activities for student code / id
+  async getStudentAssignments(loginCode: string, token?: string): Promise<{
+    student: any;
+    assignments: any[];
+  }> {
+    return apiFetch(`/activities/assignments/student/${encodeURIComponent(loginCode)}`, { token });
+  },
+
   // Join a student session with share code
   async joinStudentSession(data: JoinStudentSessionPayload): Promise<{ id: string; [key: string]: any }> {
     return apiFetch<{ id: string; [key: string]: any }>('/activities/student-session/join', {

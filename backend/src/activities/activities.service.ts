@@ -344,14 +344,27 @@ export class ActivitiesService {
   }
 
   async getAssignmentsForStudent(loginCode: string) {
+    const cleanId = (loginCode || '').trim();
+
     const student = await this.prisma.student.findFirst({
-      where: { loginCode: loginCode.trim() },
+      where: {
+        OR: [
+          { loginCode: { equals: cleanId, mode: 'insensitive' } },
+          { id: cleanId },
+          { email: { equals: cleanId.toLowerCase(), mode: 'insensitive' } },
+        ],
+      },
       include: { classroom: true },
     });
 
     if (!student) {
-      throw new NotFoundException(`Student with login code "${loginCode}" not found.`);
+      return {
+        student: null,
+        assignments: [],
+      };
     }
+
+    const studentFullName = `${student.firstName} ${student.lastName}`.trim();
 
     const assignments = await this.prisma.activityAssignment.findMany({
       where: { classroomId: student.classroomId, status: 'ACTIVE' },
@@ -362,11 +375,26 @@ export class ActivitiesService {
               where: { status: 'PUBLISHED' },
               orderBy: { version: 'desc' },
               take: 1,
+              include: {
+                sessions: {
+                  where: { status: 'ACTIVE' },
+                  include: {
+                    studentSessions: {
+                      where: {
+                        OR: [
+                          { studentId: student.id },
+                          { studentName: { equals: studentFullName, mode: 'insensitive' } },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
         assignedByTeacher: {
-          select: { firstName: true, lastName: true, email: true },
+          select: { id: true, firstName: true, lastName: true, email: true },
         },
       },
       orderBy: { assignedAt: 'desc' },

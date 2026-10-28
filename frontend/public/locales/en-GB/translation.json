@@ -438,6 +438,7 @@
     "statusCompleted": "✅ Completed",
     "loadingActivities": "⏳ Loading assigned activities from database...",
     "noActivitiesFound": "No assigned activities found",
+    "noAssignedActivities": "No activities currently assigned to your classroom.",
     "tryClearingFilters": "Try clearing your search query or filters.",
     "exercisesCount": "🧩 {{count}} Exercises",
     "dueLabel": "📅 Due: {{due}}",
