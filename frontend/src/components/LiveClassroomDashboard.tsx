@@ -91,16 +91,6 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   const maxBucketCount = Math.max(1, ...distributionBuckets.map((b) => b.count));
 
-  // Timeline points for Progress Over Time (0m to 30m)
-  const timePoints = [
-    { time: '0m', label: '0m', pct: 0, milestone: 'Start' },
-    { time: '5m', label: '5m', pct: Math.min(25, classEngagedPct > 0 ? 20 : 15), milestone: 'Intro' },
-    { time: '10m', label: '10m', pct: Math.min(50, Math.round(classEngagedPct * 0.55)), milestone: 'Core Task' },
-    { time: '15m', label: '15m', pct: Math.min(75, Math.round(classInProgressPct * 0.75)), milestone: 'Step 2' },
-    { time: '20m', label: '20m', pct: Math.min(90, Math.max(classInProgressPct, 70)), milestone: 'Review' },
-    { time: '25m', label: '25m', pct: Math.min(98, Math.max(classCompletedPct + 65, 85)), milestone: 'Wrap Up' },
-    { time: '30m', label: '30m', pct: Math.min(100, Math.max(classCompletedPct + 80, 95)), milestone: 'Finished' },
-  ];
 
   // Fetch initial dashboard state from REST API
   const fetchDashboardState = async () => {

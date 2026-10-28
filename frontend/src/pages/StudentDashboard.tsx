@@ -35,6 +35,8 @@ interface StudentActivityItem {
   status: 'assigned' | 'in_progress' | 'completed';
   dueDate?: string;
   content: ActivityDefinition;
+  xpPoints?: number;
+  completionPct?: number;
 }
 
 export const StudentDashboard: React.FC = () => {
@@ -44,14 +46,12 @@ export const StudentDashboard: React.FC = () => {
   const [dbActivities, setDbActivities] = useState<DatabaseActivity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activePlayingActivity, setActivePlayingActivity] = useState<ActivityDefinition | null>(null);
-  const [activePlayingTitle, setActivePlayingTitle] = useState<string>('');
 
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [subjectFilter, setSubjectFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedActivityId, setSelectedActivityId] = useState<string>('');
 
   const [showLiveModal, setShowLiveModal] = useState<boolean>(false);
   const [joinedLiveView, setJoinedLiveView] = useState<boolean>(false);
+  const [showAiModal, setShowAiModal] = useState<boolean>(false);
   const [awardCelebration, setAwardCelebration] = useState<{
     studentName: string;
     category: string;
@@ -89,8 +89,6 @@ export const StudentDashboard: React.FC = () => {
       rewardMode?: string;
       targetScope?: string;
     }) => {
-      console.log('Live activity published event received:', data);
-      // Strictly enforce classroom visibility: if published for a classroom, only display if matches student classroom
       if (data.classroomId && studentClassroomId && data.classroomId !== studentClassroomId) {
         return;
       }
@@ -215,8 +213,10 @@ export const StudentDashboard: React.FC = () => {
         estimatedTime: '15 - 20 mins',
         blockCount: blocks.length || 4,
         status,
-        dueDate: 'Tomorrow at 3:00 PM',
+        dueDate: 'Due Today • 20 mins',
         content,
+        xpPoints: 350 + index * 100,
+        completionPct: index === 0 ? 60 : index === 1 ? 40 : 100,
       };
     });
 
@@ -224,79 +224,76 @@ export const StudentDashboard: React.FC = () => {
       return [
         {
           id: 'seed-1',
-          title: 'Photosynthesis & Plant Biology',
-          description:
-            'Explore core concept flashcards, plant radial clock schedule, leaf hotspot diagram, and multiple choice quiz.',
-          subject: 'Science',
-          gradeLevel: 'Grade 6',
-          teacherName: 'Prof. Sarah Jenkins',
-          estimatedTime: '15 mins',
-          blockCount: 4,
-          status: 'assigned',
-          dueDate: 'Today at 5:00 PM',
+          title: 'Quadratic Equations & Parabola Graphs',
+          description: 'Factorize quadratics and plot vertex turning points.',
+          subject: 'MATHEMATICS',
+          gradeLevel: 'Grade 7',
+          teacherName: 'Mr. D. Harris',
+          estimatedTime: '20 mins',
+          blockCount: 5,
+          status: 'in_progress',
+          dueDate: 'Due Today • 20 mins',
+          xpPoints: 350,
+          completionPct: 60,
           content: {
             schemaVersion: '1.0',
-            id: 'photosynthesis-dsl',
-            title: 'Photosynthesis & Plant Biology',
-            subject: 'Science',
-            gradeLevel: 'Grade 6',
+            id: 'quadratics-dsl',
+            title: 'Quadratic Equations & Parabola Graphs',
+            subject: 'Mathematics',
+            gradeLevel: 'Grade 7',
             blocks: [
               {
                 id: 'b1',
-                type: 'flashcards',
-                title: 'Core Concept Flashcards',
-                instructions: 'Flip through key terms before attempting the radial clock diagram.',
-                config: {
-                  cards: [
-                    { id: 'fc1', prompt: 'What is Chlorophyll?', answer: 'Green pigment that absorbs light energy.' },
-                    { id: 'fc2', prompt: 'What is Stomata?', answer: 'Microscopic pores for gas exchange.' },
-                  ],
-                },
-              },
-              {
-                id: 'b2',
-                type: 'clock_diagram',
-                title: '24-Hour Plant Rhythm Clock',
-                instructions: 'Specify plant metabolic activities for each radial hour slot.',
-                config: {
-                  prompt: 'Specify plant metabolic activities for each radial hour slot.',
-                  hours: Array.from({ length: 24 }, (_, i) => ({ hour: i })),
-                },
+                type: 'multiple_choice',
+                title: 'Step 4: Factoring Quadratic Expressions',
+                instructions: 'Solve the factoring equation.',
+                config: { question: 'What are the roots of x^2 - 5x + 6 = 0?', options: ['x=2, x=3', 'x=1, x=6'], correctAnswer: 'x=2, x=3' },
               },
             ],
           },
         },
         {
           id: 'seed-2',
-          title: 'Green-Yellow-Red Response Cards',
-          description:
-            'Interactive participation activity to check understanding and share opinions using response cards.',
-          subject: 'General Education',
-          gradeLevel: 'Whole Class',
-          teacherName: 'Prof. Sarah Jenkins',
-          estimatedTime: '10 mins',
-          blockCount: 2,
-          status: 'in_progress',
-          dueDate: 'Tomorrow at 10:00 AM',
+          title: 'Python Functions & Data Structure Lab',
+          description: 'Write modular functions to calculate list averages and search arrays.',
+          subject: 'COMPUTER SCIENCE',
+          gradeLevel: 'Grade 8',
+          teacherName: 'Ms. E. Davis',
+          estimatedTime: '30 mins',
+          blockCount: 4,
+          status: 'assigned',
+          dueDate: 'Due in 2 days • 30 mins',
+          xpPoints: 450,
+          completionPct: 0,
           content: {
             schemaVersion: '1.0',
-            id: 'gyr-response-cards',
-            title: 'Green-Yellow-Red Response Cards',
-            subject: 'General Education',
-            gradeLevel: 'Whole Class',
-            blocks: [
-              {
-                id: 'gyr-1',
-                type: 'multiple_choice',
-                title: 'Card Selection Activity',
-                instructions: 'Select Green (Understand), Yellow (Unsure), or Red (Need Help).',
-                config: {
-                  question: 'How comfortable do you feel with today’s topic?',
-                  options: ['🟢 Green - I get it!', '🟡 Yellow - I need practice', '🔴 Red - I need help'],
-                  correctAnswer: '🟢 Green - I get it!',
-                },
-              },
-            ],
+            id: 'python-lab',
+            title: 'Python Functions & Data Structure Lab',
+            subject: 'Computer Science',
+            gradeLevel: 'Grade 8',
+            blocks: [],
+          },
+        },
+        {
+          id: 'seed-3',
+          title: 'Kinematics & Motion Vectors Challenge',
+          description: 'Calculate velocity vectors and displacement graph curves.',
+          subject: 'PHYSICS',
+          gradeLevel: 'Grade 8',
+          teacherName: 'Dr. R. Aris',
+          estimatedTime: '15 mins',
+          blockCount: 3,
+          status: 'in_progress',
+          dueDate: 'Due Friday • 15 mins',
+          xpPoints: 450,
+          completionPct: 35,
+          content: {
+            schemaVersion: '1.0',
+            id: 'physics-vectors',
+            title: 'Kinematics & Motion Vectors Challenge',
+            subject: 'Physics',
+            gradeLevel: 'Grade 8',
+            blocks: [],
           },
         },
       ];
@@ -305,32 +302,22 @@ export const StudentDashboard: React.FC = () => {
     return listFromDb;
   }, [dbActivities]);
 
-  const filteredActivities = useMemo(() => {
-    return activityList.filter((item) => {
-      const matchesSearch =
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.subject.toLowerCase().includes(searchQuery.toLowerCase());
+  // Set default selected activity if none selected
+  useEffect(() => {
+    if (activityList.length > 0 && !selectedActivityId) {
+      setSelectedActivityId(activityList[0].id);
+    }
+  }, [activityList, selectedActivityId]);
 
-      const matchesSubject =
-        subjectFilter === 'all' ||
-        item.subject.toLowerCase().includes(subjectFilter.toLowerCase());
+  const selectedActivity = useMemo(() => {
+    return activityList.find((a) => a.id === selectedActivityId) || activityList[0] || null;
+  }, [activityList, selectedActivityId]);
 
-      const matchesStatus =
-        statusFilter === 'all' || item.status === statusFilter;
-
-      return matchesSearch && matchesSubject && matchesStatus;
-    });
-  }, [activityList, searchQuery, subjectFilter, statusFilter]);
-
-  const totalAssigned = activityList.length;
-  const inProgressCount = activityList.filter((a) => a.status === 'in_progress').length;
-  const completedCount = activityList.filter((a) => a.status === 'completed').length;
-
-  const handleStartActivity = (item: StudentActivityItem) => {
-    setActivePlayingActivity(item.content);
-    setActivePlayingTitle(item.title);
-  };
+  // Calculate total student XP (sum of activity XP points)
+  const totalXp = useMemo(() => {
+    const sum = activityList.reduce((acc, curr) => acc + (curr.xpPoints || 300), 0);
+    return sum > 0 ? sum : 1250;
+  }, [activityList]);
 
   if (joinedLiveView && liveActivityData) {
     return (
@@ -358,7 +345,7 @@ export const StudentDashboard: React.FC = () => {
             {t('studentPortal.backToAssigned', '← Back to My Assigned Activities')}
           </button>
           <div style={styles.runtimeTitleBadge}>
-            {t('studentPortal.playing', '📖 Playing:')} <strong>{activePlayingTitle}</strong>
+            {t('studentPortal.playing', '📖 Playing:')} <strong>{activePlayingActivity.title}</strong>
           </div>
         </div>
 
@@ -376,170 +363,252 @@ export const StudentDashboard: React.FC = () => {
     );
   }
 
-  // Derive selected student avatar from user profile or local session
+  const studentFirstName = user?.firstName || 'Alex';
+  const studentLastName = user?.lastName || 'Student';
   const avatarSetting = user?.avatar || localStorage.getItem('student_avatar');
-  const userInitials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase() || 'ST';
+  const userInitials = `${studentFirstName[0] || ''}${studentLastName[0] || ''}`.toUpperCase() || 'ST';
   const displayAvatar = avatarSetting === 'MONOGRAM' ? userInitials : (avatarSetting || '🎓');
 
   return (
     <div style={styles.pageWrapper}>
-      <div style={styles.container}>
-        {/* Welcome Header */}
-        <header style={styles.headerCard}>
-          <div style={styles.welcomeBox}>
-            <div style={{
-              ...styles.studentAvatar,
-              fontSize: displayAvatar.length > 2 ? '1.6rem' : '1.15rem',
-            }}>
-              {displayAvatar}
+      {/* Top Main Page Title Bar */}
+      {/* <div style={styles.pageTitleHeader}>
+        <h1 style={styles.mainTitleText}>
+          {t('studentPortal.dashboardTitle', 'Student Progress Dashboard')}
+        </h1>
+      </div> */}
+
+      {/* Main 3-Section Layout Container */}
+      <div style={styles.dashboardGrid}>
+        {/* LEFT COLUMN: Section 2.1 Top Left Card & Section 2.3 Bottom Left Card */}
+        <div style={styles.leftColumn}>
+          {/* SECTION 2.1: TOP LEFT CARD (Welcome & Total XP) */}
+          <div style={styles.xpCard}>
+            {/* Student Welcome Header */}
+            <div style={styles.studentWelcomeRow}>
+              <div style={styles.studentAvatarCircle}>
+                {displayAvatar}
+              </div>
+              <div style={styles.welcomeNameText}>
+                {t('studentPortal.welcomeStudent', 'Welcome {{name}} !', { name: studentFirstName })}
+              </div>
             </div>
+
+            {/* XP Points Summary */}
+            <div style={styles.xpHeaderLabel}>
+              {t('studentPortal.academicXpPoints', 'Your Total Points')}
+            </div>
+            <div style={styles.xpValueText}>
+              {totalXp.toLocaleString()} XP
+            </div>
+
+            {/* Streak Badge */}
+            {/* <div style={styles.streakBadge}>
+              {t('studentPortal.studyStreak', '🔥 5-Day Study Streak')}
+            </div> */}
+
+            {/* Target Progress Bar */}
+            
+          </div>
+
+          {/* SECTION 2.3: BOTTOM LEFT CARD (Selected Activity Progress Details) */}
+          {selectedActivity && (
+            <div style={styles.selectedProgressCard}>
+              <div style={styles.selectedCardHeaderRow}>
+                <span style={styles.selectedProgressTitle}>
+                  {t('studentPortal.selectedActivityProgress', 'SELECTED ACTIVITY PROGRESS')}
+                </span>
+                <span style={styles.pctCompleteBadge}>
+                  {t('studentPortal.pctComplete', '{{pct}}% Complete', { pct: selectedActivity.completionPct ?? 60 })}
+                </span>
+              </div>
+
+              {/* Subject Tag Pill */}
+              <div style={styles.subjectPillGreen}>
+                {selectedActivity.subject.toUpperCase()}
+              </div>
+
+              {/* Activity Title & Teacher */}
+              <h3 style={styles.selectedActivityTitle}>
+                {selectedActivity.title}
+              </h3>
+              <p style={styles.selectedTeacherText}>
+                Teacher: {selectedActivity.teacherName}
+              </p>
+
+              {/* Questions Progress */}
+              <div style={styles.questionsProgressRow}>
+                <span style={styles.questionsLabel}>
+                  {t('studentPortal.questionsProgress', 'Questions Progress')}
+                </span>
+                <span style={styles.questionsCount}>
+                  {t('studentPortal.doneOfTotal', '{{done}} of {{total}} Done', {
+                    done: Math.round(((selectedActivity.completionPct || 60) / 100) * (selectedActivity.blockCount || 5)),
+                    total: selectedActivity.blockCount || 5,
+                  })}
+                </span>
+              </div>
+
+              <div style={styles.selectedBarTrack}>
+                <div
+                  style={{
+                    ...styles.selectedBarFill,
+                    width: `${selectedActivity.completionPct ?? 60}%`,
+                  }}
+                />
+              </div>
+
+              {/* Inner Step Box */}
+              <div style={styles.stepInfoBox}>
+                <div style={styles.currentStepBadge}>
+                  {t('studentPortal.currentStepInActivity', 'CURRENT STEP IN ACTIVITY')}
+                </div>
+                <div style={styles.stepTitleText}>
+                  Step 4: Factoring Quadratic Expressions
+                </div>
+                <div style={styles.timeElapsedText}>
+                  {t('studentPortal.timeElapsed', '⏱ Time Elapsed: {{time}}', { time: '12 mins' })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: SECTION 2.2 BIG CARD (Activity Logs and History) */}
+        <div style={styles.rightColumnCard}>
+          {/* Top Single Tab */}
+          <div style={styles.tabsHeaderRow}>
+            <button style={styles.activeTabBtn}>
+              {t('studentPortal.activityLogsAndHistory', 'Activity Logs & History')}
+            </button>
+          </div>
+
+          {/* Section Title */}
+          <div style={styles.assignedTitleRow}>
             <div>
-              <div style={styles.portalBadge}>🎓 {t('studentPortal.portalTitle', 'STUDENT LEARNING PORTAL')}</div>
-              <h1 style={styles.welcomeTitle}>
-                {t('studentPortal.welcomeBack', 'Welcome back, {{name}}! 👋', { name: user?.firstName || 'Student' })}
-              </h1>
-              <p style={styles.welcomeSubtitle}>
-                {t('studentPortal.assignedSubtitle', 'Here are the interactive learning activities assigned to you by your teacher from the database.')}
+              <h2 style={styles.assignedHeading}>
+                {t('studentPortal.assignedActivities', 'Assigned activities')}
+              </h2>
+              <p style={styles.clickTipText}>
+                {t('studentPortal.clickActivityToView', '💡 Click any activity to view its progress on left')}
               </p>
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div style={styles.statsRow}>
-            <div style={{ ...styles.statPill, borderColor: '#7dd3fc', backgroundColor: '#f0f9ff' }}>
-              <span style={styles.statIcon}>📋</span>
-              <div>
-                <div style={styles.statNumber}>{totalAssigned}</div>
-                <div style={styles.statLabel}>{t('studentPortal.assigned', 'Assigned')}</div>
+          {/* Activity Cards List */}
+          <div style={styles.activityListContainer}>
+            {isLoading ? (
+              <div style={styles.loadingBox}>
+                <p>{t('studentPortal.loadingActivities', '⏳ Loading assigned activities from database...')}</p>
               </div>
-            </div>
+            ) : activityList.length === 0 ? (
+              <div style={styles.emptyStateBox}>
+                <div style={{ fontSize: '2rem' }}>📚</div>
+                <p>{t('studentPortal.noActivitiesFound', 'No assigned activities found')}</p>
+              </div>
+            ) : (
+              activityList.map((item) => {
+                const isSelected = item.id === selectedActivityId;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSelectedActivityId(item.id)}
+                    style={{
+                      ...styles.activityListItem,
+                      ...(isSelected ? styles.activityListItemSelected : styles.activityListItemUnselected),
+                    }}
+                  >
+                    {/* Line 1: Subject Badges, Title, Completion / Due Badge */}
+                    <div style={styles.itemLine1}>
+                      <div style={styles.itemTitleGroup}>
+                        <span style={styles.subjectPillIndigo}>
+                          {item.subject.toUpperCase()}
+                        </span>
+                        <span style={styles.sessionTypePill}>
+                          Live Classroom Session
+                        </span>
+                        <h3 style={styles.itemTitleText}>
+                          {item.title}
+                        </h3>
+                      </div>
 
-            <div style={{ ...styles.statPill, borderColor: '#fde047', backgroundColor: '#fefce8' }}>
-              <span style={styles.statIcon}>⏳</span>
-              <div>
-                <div style={styles.statNumber}>{inProgressCount}</div>
-                <div style={styles.statLabel}>{t('studentPortal.inProgress', 'In Progress')}</div>
-              </div>
-            </div>
+                      <div>
+                        {isSelected ? (
+                          <div style={styles.selectedBadge}>
+                            {t('studentPortal.selected', 'Selected ✓')}
+                          </div>
+                        ) : (
+                          <div style={styles.selectLinkText}>
+                            {t('studentPortal.select', 'Select →')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-            <div style={{ ...styles.statPill, borderColor: '#86efac', backgroundColor: '#f0fdf4' }}>
-              <span style={styles.statIcon}>✅</span>
-              <div>
-                <div style={styles.statNumber}>{completedCount}</div>
-                <div style={styles.statLabel}>{t('studentPortal.completed', 'Completed')}</div>
-              </div>
-            </div>
+                    {/* Line 2: Teacher, Date, XP Points */}
+                    <div style={styles.itemLine2}>
+                      <div style={styles.itemMetaText}>
+                        Teacher: <strong>{item.teacherName}</strong> • {item.description}
+                      </div>
+
+                      <div style={styles.itemXpText}>
+                        + {item.xpPoints || 350} XP
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
-        </header>
 
-        {/* Filter & Search Toolbar */}
-        <div style={styles.toolbarCard}>
-          <div style={styles.searchBox}>
-            <span style={styles.searchIcon}>🔍</span>
-            <input
-              type="text"
-              placeholder={t('studentPortal.searchPlaceholder', 'Search assigned activities by title or subject...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
-            />
+          {/* Bottom Assistance Bar inside Right Card */}
+          <div style={styles.bottomAssistanceBar}>
+            <span style={styles.assistanceText}>
+              {t('studentPortal.needHelpWithTask', 'Need help with a classroom task? Ask your AI Learning Assistant.')}
+            </span>
+            <button
+              onClick={() => setShowAiModal(true)}
+              style={styles.askAiBtn}
+            >
+              {t('studentPortal.askAiAssistant', '🤖 ASK AI ASSISTANT')}
+            </button>
           </div>
+        </div>
+      </div>
 
-          <div style={styles.filterRow}>
-            <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>{t('studentPortal.subject', 'Subject:')}</span>
-              <button
-                onClick={() => setSubjectFilter('all')}
-                style={{
-                  ...styles.filterTab,
-                  ...(subjectFilter === 'all' ? styles.filterTabActive : {}),
-                }}
-              >{t('studentPortal.all', 'All')}</button>
-              <button
-                onClick={() => setSubjectFilter('science')}
-                style={{
-                  ...styles.filterTab,
-                  ...(subjectFilter === 'science' ? styles.filterTabActive : {}),
-                }}
-              >{t('studentPortal.science', '🌿 Science')}</button>
-              <button
-                onClick={() => setSubjectFilter('math')}
-                style={{
-                  ...styles.filterTab,
-                  ...(subjectFilter === 'math' ? styles.filterTabActive : {}),
-                }}
-              >{t('studentPortal.math', '📐 Math')}</button>
-              <button
-                onClick={() => setSubjectFilter('general')}
-                style={{
-                  ...styles.filterTab,
-                  ...(subjectFilter === 'general' ? styles.filterTabActive : {}),
-                }}
-              >{t('studentPortal.general', '📖 General')}</button>
+      {/* EMBOT AI TUTOR MODAL */}
+      {showAiModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.tutorModalCard}>
+            <div style={styles.tutorHeader}>
+              <span style={{ fontSize: '1.8rem' }}>🤖</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#0284c7' }}>
+                  {t('studentPortal.tutorTitle', 'EMBOT AI Tutor Guidance')}
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+                  Student Learning Assistant
+                </p>
+              </div>
             </div>
 
-            <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>{t('studentPortal.status', 'Status:')}</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={styles.statusSelect}
+            <div style={styles.tutorBodyText}>
+              <p style={{ margin: '0 0 0.75rem 0' }}>
+                {t('studentPortal.tutorHint', 'AI Hint: Read the question carefully, review each option or task step, and select your best answer!')}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button
+                onClick={() => setShowAiModal(false)}
+                style={styles.tutorCloseBtn}
               >
-                <option value="all">{t('studentPortal.allStatuses', 'All Statuses')}</option>
-                <option value="assigned">{t('studentPortal.statusAssigned', '🟢 Assigned')}</option>
-                <option value="in_progress">{t('studentPortal.statusInProgress', '🟡 In Progress')}</option>
-                <option value="completed">{t('studentPortal.statusCompleted', '✅ Completed')}</option>
-              </select>
+                {t('studentPortal.tutorGotIt', 'Got it! Thanks EMBOT')}
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Activity Cards List */}
-        {isLoading ? (
-          <div style={styles.loadingBox}>
-            <p>{t('studentPortal.loadingActivities', '⏳ Loading assigned activities from database...')}</p>
-          </div>
-        ) : filteredActivities.length === 0 ? (
-          <div style={styles.emptyStateBox}>
-            <div style={{ fontSize: '2.5rem' }}>📚</div>
-            <h3>{t('studentPortal.noActivitiesFound', 'No assigned activities found')}</h3>
-            <p>{t('studentPortal.tryClearingFilters', 'Try clearing your search query or filters.')}</p>
-          </div>
-        ) : (
-          <div style={styles.activityGrid}>
-            {filteredActivities.map((item) => (
-              <div key={item.id} style={styles.activityCard}>
-                <div style={styles.cardHeaderRow}>
-                  <div style={styles.subjectPill}>{item.subject}</div>
-                  <div style={styles.gradePill}>{item.gradeLevel}</div>
-                </div>
-
-                <h3 style={styles.cardTitle}>{item.title}</h3>
-                <p style={styles.cardDesc}>{item.description}</p>
-
-                <div style={styles.cardMetaRow}>
-                  <span style={styles.metaItem}>👨‍🏫 {item.teacherName}</span>
-                  <span style={styles.metaItem}>⏱️ {item.estimatedTime}</span>
-                  <span style={styles.metaItem}>{t('studentPortal.exercisesCount', '🧩 {{count}} Exercises', { count: item.blockCount })}</span>
-                </div>
-
-                <div style={styles.cardFooterRow}>
-                  <div style={styles.dueDateBadge}>
-                    {t('studentPortal.dueLabel', '📅 Due: {{due}}', { due: item.dueDate || 'N/A' })}
-                  </div>
-
-                  <button
-                    onClick={() => handleStartActivity(item)}
-                    style={styles.startBtn}
-                  >
-                    {t('studentPortal.startActivity', '🚀 Start Activity')}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Live Activity Dialog Popup */}
       <LiveActivityPopupModal
@@ -570,308 +639,437 @@ export const StudentDashboard: React.FC = () => {
 
 const styles: Record<string, React.CSSProperties> = {
   pageWrapper: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f0fdf4',
     minHeight: 'calc(100vh - 70px)',
-    padding: '1.5rem 1rem',
+    padding: '1.25rem 1.5rem',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   },
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
+  pageTitleHeader: {
+    marginBottom: '1rem',
+  },
+  mainTitleText: {
+    margin: 0,
+    fontSize: '1.5rem',
+    fontWeight: 800,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+  },
+  dashboardGrid: {
+    display: 'flex',
+    gap: '1.25rem',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  leftColumn: {
+    width: '350px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem',
+    gap: '1.25rem',
+    flexShrink: 0,
   },
-  headerCard: {
+  rightColumnCard: {
+    flex: 1,
+    minWidth: '500px',
     backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '2px solid #7dd3fc',
-    padding: '1.5rem 1.75rem',
+    borderRadius: '16px',
+    border: '1px solid #dcfce7',
+    padding: '1.25rem 1.5rem',
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
     display: 'flex',
+    flexDirection: 'column',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '1rem',
-    boxShadow: '0 4px 16px rgba(0, 168, 232, 0.05)',
+    minHeight: '620px',
   },
-  welcomeBox: {
+  /* Section 2.1 XP Card */
+  xpCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    border: '1px solid #dcfce7',
+    padding: '1.25rem',
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+    textAlign: 'center',
+  },
+  studentWelcomeRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
+    gap: '0.75rem',
+    justifyContent: 'center',
+    marginBottom: '1rem',
+    paddingBottom: '0.75rem',
+    borderBottom: '1px solid #f1f5f9',
   },
-  studentAvatar: {
-    width: '54px',
-    height: '54px',
+  studentAvatarCircle: {
+    width: '80px',
+    height: '80px',
     borderRadius: '50%',
-    backgroundColor: '#0284c7',
-    color: '#ffffff',
+    backgroundColor: '#e0f2fe',
+    color: '#0284c7',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '1.5rem',
-    fontWeight: '800',
-    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)',
+    fontSize: '3.2rem',
+    fontWeight: 700,
   },
-  portalBadge: {
+  welcomeNameText: {
+    fontSize: '1.1rem',
+    fontWeight: 800,
+    color: '#0f172a',
+  },
+  xpHeaderLabel: {
+    fontSize: '0.75rem',
+    fontWeight: 800,
+    color: '#64748b',
+    letterSpacing: '0.05em',
+    marginBottom: '0.25rem',
+  },
+  xpValueText: {
+    fontSize: '3rem',
+    fontWeight: 900,
+    color: '#0284c7',
+    margin: '1.25rem 0',
+  },
+  streakBadge: {
     display: 'inline-block',
-    backgroundColor: '#e0f2fe',
-    color: '#0369a1',
-    fontWeight: '800',
-    fontSize: '0.72rem',
-    padding: '0.2rem 0.6rem',
-    borderRadius: '10px',
-    letterSpacing: '0.04em',
-    marginBottom: '0.2rem',
-  },
-  welcomeTitle: {
-    fontSize: '1.45rem',
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: '0 0 0.2rem 0',
-  },
-  welcomeSubtitle: {
-    fontSize: '0.85rem',
-    color: '#64748b',
-    margin: 0,
-  },
-  statsRow: {
-    display: 'flex',
-    gap: '0.75rem',
-  },
-  statPill: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    padding: '0.6rem 1rem',
-    borderRadius: '10px',
-    border: '1.5px solid',
-  },
-  statIcon: {
-    fontSize: '1.25rem',
-  },
-  statNumber: {
-    fontSize: '1.1rem',
-    fontWeight: '800',
-    color: '#0f172a',
-    lineHeight: '1',
-  },
-  statLabel: {
-    fontSize: '0.72rem',
-    fontWeight: '700',
-    color: '#64748b',
-  },
-  toolbarCard: {
-    backgroundColor: '#ffffff',
+    fontSize: '0.825rem',
+    fontWeight: 700,
+    color: '#c2410c',
+    backgroundColor: '#fff7ed',
+    padding: '0.25rem 0.75rem',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0',
-    padding: '1rem 1.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
+    margin: '0.5rem 0 0.75rem 0',
   },
-  searchBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #cbd5e1',
-    borderRadius: '8px',
-    padding: '0.6rem 0.85rem',
-  },
-  searchIcon: {
-    fontSize: '1rem',
-  },
-  searchInput: {
-    border: 'none',
-    backgroundColor: 'transparent',
-    outline: 'none',
-    width: '100%',
-    fontSize: '0.88rem',
-    color: '#1e293b',
-  },
-  filterRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '1rem',
-  },
-  filterGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-  },
-  filterLabel: {
-    fontSize: '0.78rem',
-    fontWeight: '800',
-    color: '#64748b',
-  },
-  filterTab: {
-    padding: '0.4rem 0.75rem',
-    borderRadius: '6px',
-    border: '1px solid #cbd5e1',
-    backgroundColor: '#ffffff',
-    color: '#475569',
-    fontSize: '0.8rem',
-    fontWeight: '700',
-    cursor: 'pointer',
-  },
-  filterTabActive: {
-    backgroundColor: '#0284c7',
-    color: '#ffffff',
-    borderColor: '#0284c7',
-  },
-  statusSelect: {
-    padding: '0.4rem 0.75rem',
-    borderRadius: '6px',
-    border: '1px solid #cbd5e1',
-    fontSize: '0.8rem',
-    fontWeight: '700',
-    color: '#334155',
-    backgroundColor: '#ffffff',
-    outline: 'none',
-  },
-  activityGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '1.25rem',
-  },
-  activityCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '2px solid #7dd3fc',
-    padding: '1.25rem 1.35rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: '0.85rem',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-    transition: 'transform 0.2s ease, boxShadow 0.2s ease',
-  },
-  cardHeaderRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  subjectPill: {
-    backgroundColor: '#e0f2fe',
-    color: '#0369a1',
-    fontSize: '0.72rem',
-    fontWeight: '800',
-    padding: '0.2rem 0.55rem',
-    borderRadius: '6px',
-  },
-  gradePill: {
+  xpProgressBarTrack: {
+    height: '8px',
     backgroundColor: '#f1f5f9',
-    color: '#475569',
-    fontSize: '0.72rem',
-    fontWeight: '700',
-    padding: '0.2rem 0.55rem',
-    borderRadius: '6px',
-  },
-  cardTitle: {
-    fontSize: '1.1rem',
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0,
-    lineHeight: '1.3',
-  },
-  cardDesc: {
-    fontSize: '0.82rem',
-    color: '#64748b',
-    margin: 0,
-    lineHeight: '1.45',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
+    borderRadius: '4px',
     overflow: 'hidden',
+    margin: '0.5rem 0 0.5rem 0',
   },
-  cardMetaRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
+  xpProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#22c55e',
+    borderRadius: '4px',
+  },
+  targetAchievedText: {
     fontSize: '0.75rem',
     color: '#64748b',
-    fontWeight: '600',
-    backgroundColor: '#f8fafc',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '8px',
+    marginTop: '0.25rem',
   },
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.25rem',
+  /* Section 2.3 Selected Activity Progress Card */
+  selectedProgressCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    border: '1px solid #dcfce7',
+    padding: '1.25rem',
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
   },
-  cardFooterRow: {
+  selectedCardHeaderRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: '0.5rem',
+    marginBottom: '0.75rem',
+  },
+  selectedProgressTitle: {
+    fontSize: '0.75rem',
+    fontWeight: 800,
+    color: '#0284c7',
+    letterSpacing: '0.04em',
+  },
+  pctCompleteBadge: {
+    fontSize: '0.75rem',
+    fontWeight: 800,
+    color: '#db2777',
+    backgroundColor: '#fce7f3',
+    padding: '0.2rem 0.6rem',
+    borderRadius: '12px',
+  },
+  subjectPillGreen: {
+    display: 'inline-block',
+    fontSize: '0.7rem',
+    fontWeight: 800,
+    color: '#15803d',
+    backgroundColor: '#dcfce7',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '4px',
+    marginBottom: '0.5rem',
+  },
+  selectedActivityTitle: {
+    fontSize: '1rem',
+    fontWeight: 800,
+    color: '#0f172a',
+    margin: '0 0 0.25rem 0',
+    lineHeight: 1.3,
+  },
+  selectedTeacherText: {
+    fontSize: '0.8rem',
+    color: '#64748b',
+    margin: '0 0 0.75rem 0',
+  },
+  questionsProgressRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    color: '#0284c7',
+    marginBottom: '0.35rem',
+  },
+  questionsLabel: {
+    color: '#0284c7',
+  },
+  questionsCount: {
+    color: '#15803d',
+  },
+  selectedBarTrack: {
+    height: '8px',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    marginBottom: '1rem',
+  },
+  selectedBarFill: {
+    height: '100%',
+    backgroundColor: '#22c55e',
+    borderRadius: '4px',
+  },
+  stepInfoBox: {
+    backgroundColor: '#f4fbf0',
+    border: '1px solid #d9f99d',
+    borderRadius: '10px',
+    padding: '0.75rem 0.85rem',
+  },
+  currentStepBadge: {
+    fontSize: '0.65rem',
+    fontWeight: 900,
+    color: '#15803d',
+    letterSpacing: '0.05em',
+    marginBottom: '0.25rem',
+  },
+  stepTitleText: {
+    fontSize: '0.85rem',
+    fontWeight: 800,
+    color: '#0f172a',
+    margin: '0 0 0.25rem 0',
+  },
+  timeElapsedText: {
+    fontSize: '0.75rem',
+    color: '#64748b',
+  },
+  /* Section 2.2 Right Big Card */
+  tabsHeaderRow: {
+    borderBottom: '1px solid #e2e8f0',
+    marginBottom: '1rem',
+  },
+  activeTabBtn: {
+    background: 'none',
+    border: 'none',
+    borderBottom: '3px solid #22c55e',
+    padding: '0.5rem 0.5rem 0.75rem 0.5rem',
+    fontSize: '0.95rem',
+    fontWeight: 800,
+    color: '#15803d',
+    cursor: 'pointer',
+  },
+  assignedTitleRow: {
+    marginBottom: '1rem',
+  },
+  assignedHeading: {
+    fontSize: '0.9rem',
+    fontWeight: 900,
+    color: '#15803d',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    margin: 0,
+  },
+  clickTipText: {
+    fontSize: '0.75rem',
+    color: '#64748b',
+    margin: '0.25rem 0 0 0',
+  },
+  activityListContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+    flex: 1,
+  },
+  activityListItem: {
+    borderRadius: '12px',
+    padding: '1rem 1.15rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  activityListItemSelected: {
+    backgroundColor: '#f4fbf0',
+    border: '2px solid #84cc16',
+  },
+  activityListItemUnselected: {
+    backgroundColor: '#f0f7ff',
+    border: '1px solid #bfdbfe',
+  },
+  itemLine1: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.4rem',
+  },
+  itemTitleGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    flexWrap: 'wrap',
+  },
+  subjectPillIndigo: {
+    fontSize: '0.65rem',
+    fontWeight: 900,
+    color: '#3730a3',
+    backgroundColor: '#e0e7ff',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '4px',
+  },
+  sessionTypePill: {
+    fontSize: '0.65rem',
+    fontWeight: 700,
+    color: '#6b21a8',
+    backgroundColor: '#f3e8ff',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '4px',
+  },
+  itemTitleText: {
+    fontSize: '0.95rem',
+    fontWeight: 800,
+    color: '#0f172a',
+    margin: 0,
+  },
+  selectedBadge: {
+    fontSize: '0.75rem',
+    fontWeight: 800,
+    color: '#15803d',
+    backgroundColor: '#dcfce7',
+    border: '1px solid #86efac',
+    padding: '0.25rem 0.6rem',
+    borderRadius: '12px',
+  },
+  selectLinkText: {
+    fontSize: '0.8rem',
+    fontWeight: 800,
+    color: '#0284c7',
+  },
+  itemLine2: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '0.8rem',
+    color: '#64748b',
+  },
+  itemMetaText: {
+    fontSize: '0.8rem',
+    color: '#475569',
+  },
+  itemXpText: {
+    fontSize: '0.85rem',
+    fontWeight: 800,
+    color: '#0284c7',
+  },
+  bottomAssistanceBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '1.5rem',
+    paddingTop: '0.85rem',
     borderTop: '1px solid #f1f5f9',
   },
-  dueDateBadge: {
-    fontSize: '0.72rem',
-    fontWeight: '700',
-    color: '#0369a1',
+  assistanceText: {
+    fontSize: '0.8rem',
+    color: '#64748b',
   },
-  startBtn: {
-    backgroundColor: '#0066b2',
+  askAiBtn: {
+    backgroundColor: '#0284c7',
     color: '#ffffff',
     border: 'none',
-    padding: '0.55rem 1.1rem',
     borderRadius: '8px',
-    fontSize: '0.82rem',
-    fontWeight: '800',
+    padding: '0.45rem 0.9rem',
+    fontSize: '0.8rem',
+    fontWeight: 800,
     cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(0, 102, 178, 0.25)',
   },
+  /* Shared / Modals */
   loadingBox: {
     textAlign: 'center',
-    padding: '3rem',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
+    padding: '2rem',
     color: '#64748b',
-    fontWeight: '700',
   },
   emptyStateBox: {
     textAlign: 'center',
-    padding: '3rem',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
+    padding: '2rem',
     color: '#64748b',
   },
   runtimeContainer: {
-    maxWidth: '1100px',
-    margin: '1.5rem auto',
-    padding: '0 1rem',
+    padding: '1rem',
+    backgroundColor: '#f8fafc',
+    minHeight: 'calc(100vh - 70px)',
   },
   runtimeHeaderBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '1rem',
-    backgroundColor: '#ffffff',
-    padding: '0.75rem 1.25rem',
-    borderRadius: '10px',
-    border: '2px solid #7dd3fc',
   },
   backBtn: {
-    backgroundColor: '#f1f5f9',
-    color: '#0f172a',
-    border: '1px solid #cbd5e1',
+    backgroundColor: '#e2e8f0',
+    color: '#334155',
+    border: 'none',
     padding: '0.5rem 1rem',
     borderRadius: '8px',
-    fontSize: '0.85rem',
-    fontWeight: '700',
+    fontWeight: 700,
     cursor: 'pointer',
   },
   runtimeTitleBadge: {
-    fontSize: '0.9rem',
-    color: '#0055a5',
+    fontSize: '1rem',
+    color: '#0f172a',
   },
   runtimeCanvasWrapper: {
     backgroundColor: '#ffffff',
     borderRadius: '12px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
+    padding: '1rem',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  tutorModalCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    width: '90%',
+    maxWidth: '500px',
+    padding: '1.5rem',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+  },
+  tutorHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    marginBottom: '1rem',
+  },
+  tutorBodyText: {
+    fontSize: '0.9rem',
+    color: '#334155',
+    lineHeight: 1.5,
+  },
+  tutorCloseBtn: {
+    backgroundColor: '#0284c7',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '0.5rem 1rem',
+    fontWeight: 700,
+    cursor: 'pointer',
   },
 };
