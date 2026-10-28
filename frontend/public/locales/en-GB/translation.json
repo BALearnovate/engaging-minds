@@ -27,6 +27,7 @@
     "studentPortal": "Student Portal",
     "studentDashboard": "Student Dashboard and Progress",
     "studentDashboardAndProgress": "Student Dashboard and Progress",
+    "liveActivity": "Live Activity",
     "logout": "Log-out"
   },
   "partnerBar": {
@@ -450,6 +451,8 @@
     "playing": "📖 Playing:",
     "activityCompletedAlert": "🎉 Activity completed successfully! Great work!",
     "liveActivityDetected": "Live Activity Detected!",
+    "noLiveActivityTitle": "No Live Activity",
+    "noLiveActivityNotice": "No live activity is currently running for your classroom.",
     "liveSharedNotice": "{{teacher}} has shared this activity with your class. Tap to join and participate!",
     "joinLiveActivity": "Join Live Activity ➔",
     "dismiss": "Dismiss",

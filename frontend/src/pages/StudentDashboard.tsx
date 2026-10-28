@@ -40,7 +40,12 @@ interface StudentActivityItem {
   completionPct?: number;
 }
 
-export const StudentDashboard: React.FC = () => {
+interface StudentDashboardProps {
+  currentTab?: string;
+  onSelectTab?: (tab: string) => void;
+}
+
+export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, onSelectTab }) => {
   const { t } = useTranslation();
   const { user, token: authContextToken } = useAuth();
 
@@ -311,18 +316,45 @@ export const StudentDashboard: React.FC = () => {
     return activityList.reduce((acc, curr) => acc + (curr.xpPoints || 0), 0);
   }, [activityList]);
 
-  if (joinedLiveView && liveActivityData) {
+  if (currentTab === 'student_live_activity') {
+    if (liveActivityData || joinedLiveView) {
+      return (
+        <StudentLiveActivityView
+          activityTitle={liveActivityData?.title || 'Live Interactive Lesson'}
+          shareCode={liveActivityData?.shareCode}
+          teacherName={liveActivityData?.teacherName}
+          activityId={liveActivityData?.activityId}
+          timerMode={liveActivityData?.timerMode}
+          rewardMode={liveActivityData?.rewardMode}
+          targetScope={liveActivityData?.targetScope}
+          onExit={() => {
+            setJoinedLiveView(false);
+            onSelectTab?.('student_home');
+          }}
+        />
+      );
+    }
     return (
-      <StudentLiveActivityView
-        activityTitle={liveActivityData.title}
-        shareCode={liveActivityData.shareCode}
-        teacherName={liveActivityData.teacherName}
-        activityId={liveActivityData.activityId}
-        timerMode={liveActivityData.timerMode}
-        rewardMode={liveActivityData.rewardMode}
-        targetScope={liveActivityData.targetScope}
-        onExit={() => setJoinedLiveView(false)}
-      />
+      <div style={styles.pageWrapper}>
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #dcfce7',
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)',
+          maxWidth: '560px',
+          margin: '3rem auto'
+        }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>📡</div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
+            {t('studentPortal.noLiveActivityTitle', 'No Live Activity')}
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '1rem', margin: 0, lineHeight: 1.5 }}>
+            {t('studentPortal.noLiveActivityNotice', 'No live activity is currently running for your classroom.')}
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -586,6 +618,7 @@ export const StudentDashboard: React.FC = () => {
         onJoin={() => {
           setShowLiveModal(false);
           setJoinedLiveView(true);
+          onSelectTab?.('student_live_activity');
         }}
         onClose={() => setShowLiveModal(false)}
       />

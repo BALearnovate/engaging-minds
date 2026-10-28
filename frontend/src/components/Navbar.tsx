@@ -25,6 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
         return t('nav.home', 'Home');
       case 'student_support':
         return t('nav.studentSupport', 'Student Support');
+      case 'student_live_activity':
+        return t('nav.liveActivity', 'Live Activity');
       case 'student_home':
       case 'student':
         return t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress');

@@ -44,10 +44,10 @@ const MainApp: React.FC = () => {
       );
     }
 
-    if (user.role === 'STUDENT' || currentTab === 'student_home' || currentTab === 'student') {
+    if (user.role === 'STUDENT' || currentTab === 'student_home' || currentTab === 'student' || currentTab === 'student_live_activity' || currentTab === 'student_support') {
       return (
         <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <StudentDashboard />
+          <StudentDashboard currentTab={currentTab} onSelectTab={setCurrentTab} />
         </ProtectedRoute>
       );
     }
@@ -72,14 +72,6 @@ const MainApp: React.FC = () => {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
           <TeacherDashboard />
-        </ProtectedRoute>
-      );
-    }
-
-    if (currentTab === 'student_support') {
-      return (
-        <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <StudentDashboard />
         </ProtectedRoute>
       );
     }

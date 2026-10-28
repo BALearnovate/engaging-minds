@@ -24,7 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
       ]
     : [
         { id: 'student_home', label: t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress'), icon: 'dashboard' },
-        { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
+        { id: 'student_live_activity', label: t('nav.liveActivity', 'Live Activity'), icon: 'live' },
       ];
 
   const renderIcon = (type: string, isActive: boolean) => {
@@ -70,6 +70,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
             <circle cx="12" cy="12" r="10" />
             <line x1="2" y1="12" x2="22" y2="12" />
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+        );
+      case 'live':
+        return (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="2" fill={strokeColor} />
+            <path d="M16.24 7.76a6 6 0 0 1 0 8.49" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            <path d="M7.76 16.24a6 6 0 0 1 0-8.49" />
+            <path d="M4.93 19.07a10 10 0 0 1 0-14.14" />
           </svg>
         );
       default:
