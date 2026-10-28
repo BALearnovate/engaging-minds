@@ -225,8 +225,9 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
               </div>
 
               {/* 3x4 Numpad Keypad */}
-              <div style={styles.numpadGrid}>
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLEAR', '0', 'GO'].map(
+              {/* Remove Go button from Numpad */}
+             <div style={styles.numpadGrid}>
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'CLEAR', '0'].map(
                   (btnVal) => (
                     <button
                       key={btnVal}
@@ -234,11 +235,10 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                       onClick={() => handleNumpadPress(btnVal)}
                       style={{
                         ...styles.numpadBtn,
-                        ...(btnVal === 'GO' ? styles.numpadGoBtn : {}),
                         ...(btnVal === 'CLEAR' ? styles.numpadClearBtn : {}),
                       }}
                     >
-                      {btnVal === 'CLEAR' ? t('login.clear', 'CLEAR') : btnVal === 'GO' ? t('login.go', 'GO') : btnVal}
+                      {btnVal === 'CLEAR' ? t('login.clear', 'CLEAR') : btnVal}
                     </button>
                   )
                 )}
