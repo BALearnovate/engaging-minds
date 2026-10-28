@@ -327,12 +327,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             )}
 
             {/* Exit Session Button */}
-            <button
+            {/* <button
               onClick={onExit}
               style={styles.exitButton}
             >
               {t('studentPortal.exitSession', '✕ Exit Session')}
-            </button>
+            </button> */}
           </div>
         </div>
 
