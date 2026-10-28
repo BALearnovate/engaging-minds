@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
         // { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
       ]
     : [
-        { id: 'student_home', label: t('nav.studentDashboard', 'Student Dashboard'), icon: 'dashboard' },
+        { id: 'student_home', label: t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress'), icon: 'dashboard' },
         { id: 'student_support', label: t('nav.studentSupport', 'Student Support'), icon: 'support' },
       ];
 
@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
       <div style={styles.topSection}>
         {!collapsed ? (
           <div style={styles.portalBadge}>
-            {isTeacher ? t('login.teacherPortalTag', 'Teacher Portal') : t('login.studentPortal', 'Student Portal')}
+            {isTeacher ? t('login.teacherPortalTag', 'Teacher Portal') : t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress')}
           </div>
         ) : (
           <div style={styles.portalBadgeCollapsed}>

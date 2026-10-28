@@ -25,7 +25,8 @@
     "activityCreation": "Activity Creation Studio",
     "studentSupport": "Student Support",
     "studentPortal": "Student Portal",
-    "studentDashboard": "Student Dashboard",
+    "studentDashboard": "Student Dashboard and Progress",
+    "studentDashboardAndProgress": "Student Dashboard and Progress",
     "logout": "Log-out"
   },
   "partnerBar": {
