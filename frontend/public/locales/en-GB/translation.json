@@ -410,6 +410,8 @@
     "targetAchieved": "82% of Grade 7 Target Achieved",
     "selectedActivityProgress": "SELECTED ACTIVITY PROGRESS",
     "pctComplete": "{{pct}}% Complete",
+    "activityCompletion": "Activity Completion",
+    "assignedDateLabel": "Date : {{date}}",
     "questionsProgress": "Questions Progress",
     "doneOfTotal": "{{done}} of {{total}} Done",
     "currentStepInActivity": "CURRENT STEP IN ACTIVITY",

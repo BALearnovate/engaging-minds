@@ -30,6 +30,7 @@ interface StudentActivityItem {
   subject: string;
   gradeLevel: string;
   teacherName: string;
+  assignedDateFormatted: string;
   estimatedTime: string;
   blockCount: number;
   status: 'assigned' | 'in_progress' | 'completed';
@@ -267,6 +268,14 @@ export const StudentDashboard: React.FC = () => {
           ? 'in_progress'
           : 'assigned';
 
+      const rawDate = assignment?.assignedAt || act.createdAt;
+      const dateObj = rawDate ? new Date(rawDate) : new Date();
+      const assignedDateFormatted = dateObj.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+
       return {
         id: assignment ? assignment.id : act.id,
         title: act.title || content.title || 'Interactive Learning Module',
@@ -274,6 +283,7 @@ export const StudentDashboard: React.FC = () => {
         subject: content.subject || 'General',
         gradeLevel: content.gradeLevel || 'Grade Level',
         teacherName: teacherName || 'Teacher',
+        assignedDateFormatted,
         estimatedTime: '20 mins',
         blockCount: blocks.length || 4,
         status,
@@ -400,9 +410,9 @@ export const StudentDashboard: React.FC = () => {
                 <span style={styles.selectedProgressTitle}>
                   {t('studentPortal.selectedActivityProgress', 'SELECTED ACTIVITY PROGRESS')}
                 </span>
-                <span style={styles.pctCompleteBadge}>
-                  {t('studentPortal.pctComplete', '{{pct}}% Complete', { pct: selectedActivity.completionPct ?? 60 })}
-                </span>
+                {/* <span style={styles.pctCompleteBadge}>
+                  {t('studentPortal.pctComplete', '{{pct}}% Complete', { pct: selectedActivity.completionPct ?? 0 })}
+                </span> */}
               </div>
 
               {/* Activity Title & Teacher */}
@@ -413,38 +423,21 @@ export const StudentDashboard: React.FC = () => {
                 Teacher: {selectedActivity.teacherName}
               </p>
 
-              {/* Questions Progress */}
-              <div style={styles.questionsProgressRow}>
-                <span style={styles.questionsLabel}>
-                  {t('studentPortal.questionsProgress', 'Questions Progress')}
-                </span>
-                <span style={styles.questionsCount}>
-                  {t('studentPortal.doneOfTotal', '{{done}} of {{total}} Done', {
-                    done: Math.round(((selectedActivity.completionPct || 60) / 100) * (selectedActivity.blockCount || 5)),
-                    total: selectedActivity.blockCount || 5,
-                  })}
-                </span>
-              </div>
-
-              <div style={styles.selectedBarTrack}>
-                <div
-                  style={{
-                    ...styles.selectedBarFill,
-                    width: `${selectedActivity.completionPct ?? 60}%`,
-                  }}
-                />
-              </div>
-
-              {/* Inner Step Box */}
-              <div style={styles.stepInfoBox}>
-                <div style={styles.currentStepBadge}>
-                  {t('studentPortal.currentStepInActivity', 'CURRENT STEP IN ACTIVITY')}
+              {/* Large Completion Percentage Block */}
+              <div style={styles.largeCompletionContainer}>
+                <div style={styles.largeCompletionPctText}>
+                  {selectedActivity.completionPct ?? 0}%
                 </div>
-                <div style={styles.stepTitleText}>
-                  Step 4: Factoring Quadratic Expressions
+                <div style={styles.largeCompletionSubtext}>
+                  {t('studentPortal.activityCompletion', 'Activity Completion')}
                 </div>
-                <div style={styles.timeElapsedText}>
-                  {t('studentPortal.timeElapsed', '⏱ Time Elapsed: {{time}}', { time: '12 mins' })}
+                <div style={styles.selectedBarTrack}>
+                  <div
+                    style={{
+                      ...styles.selectedBarFill,
+                      width: `${selectedActivity.completionPct ?? 0}%`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -519,10 +512,10 @@ export const StudentDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Line 2: Teacher, Description, XP Points */}
+                    {/* Line 2: Teacher, Date, Description, XP Points */}
                     <div style={styles.itemLine2}>
                       <div style={styles.itemMetaText}>
-                        Teacher: <strong>{item.teacherName}</strong> • {item.description}
+                        Teacher: <strong>{item.teacherName}</strong> • Date : <strong>{item.assignedDateFormatted}</strong> • {item.description}
                       </div>
 
                       <div style={styles.itemXpText}>
@@ -1036,6 +1029,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     color: '#334155',
     lineHeight: 1.5,
+  },
+  largeCompletionContainer: {
+    // backgroundColor: '#f8fafc',
+    // borderRadius: '12px',
+    padding: '1.25rem 1rem',
+    marginTop: '1rem',
+    textAlign: 'center' as const,
+    // border: '1px solid #e2e8f0',
+  },
+  largeCompletionPctText: {
+    fontSize: '2.5rem',
+    fontWeight: 800,
+    color: '#16a34a',
+    lineHeight: 1.1,
+  },
+  largeCompletionSubtext: {
+    fontSize: '0.85rem',
+    fontWeight: 700,
+    color: '#64748b',
+    marginTop: '0.25rem',
+    marginBottom: '0.75rem',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
   },
   tutorCloseBtn: {
     backgroundColor: '#0284c7',
