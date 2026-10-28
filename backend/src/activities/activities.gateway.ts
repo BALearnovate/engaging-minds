@@ -190,6 +190,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     let dbStudentSessionId: string | null = null;
     let dbStudentName = payload.studentName;
+    let dbProgress = 0;
+    let dbScore = 0;
     try {
       const actSession = await this.prisma.activitySession.findFirst({
         where: {
@@ -219,6 +221,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
         if (studentSession) {
           dbStudentSessionId = studentSession.id;
           dbStudentName = studentSession.studentName;
+          dbProgress = studentSession.progress || 0;
+          dbScore = studentSession.score || 0;
           await this.prisma.studentSession.update({
             where: { id: studentSession.id },
             data: { status: 'STUCK', lastSeenAt: new Date() },
@@ -242,24 +246,50 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     }
 
     const effectiveStudentId = dbStudentSessionId || payload.studentId;
-    const existing = activityStateMap.get(effectiveStudentId) || activityStateMap.get(payload.studentId);
+    const trimmedPayloadName = (payload.studentName || '').trim().toLowerCase();
+    const existingInMap =
+      activityStateMap.get(effectiveStudentId) ||
+      activityStateMap.get(payload.studentId) ||
+      Array.from(activityStateMap.values()).find(
+        (s) => s.studentName && s.studentName.trim().toLowerCase() === trimmedPayloadName
+      );
+
+    const currentProgress =
+      typeof existingInMap?.progress === 'number' && existingInMap.progress > 0
+        ? existingInMap.progress
+        : dbProgress;
+
+    const currentEngagement =
+      typeof existingInMap?.engagementScore === 'number' && existingInMap.engagementScore > 0
+        ? existingInMap.engagementScore
+        : currentProgress > 0
+        ? Math.min(100, currentProgress + 10)
+        : 0;
+
+    const currentPerformance =
+      typeof existingInMap?.performanceScore === 'number' && existingInMap.performanceScore > 0
+        ? existingInMap.performanceScore
+        : typeof (existingInMap as any)?.score === 'number' && (existingInMap as any).score > 0
+        ? (existingInMap as any).score
+        : dbScore;
 
     const stuckState: StudentProgressState & { helpRequested: boolean } = {
       studentId: effectiveStudentId,
       studentName: dbStudentName || payload.studentName || 'Student',
       status: 'STUCK',
-      progress: existing?.progress || 0,
-      engagementScore: existing?.engagementScore || 0,
-      performanceScore: existing?.performanceScore || 0,
-      progressText: payload.progressText || existing?.progressText || 'Needs assistance',
-      answers: existing?.answers || {},
+      progress: currentProgress,
+      engagementScore: currentEngagement,
+      performanceScore: currentPerformance,
+      progressText: payload.progressText || existingInMap?.progressText || 'Needs assistance',
+      answers: existingInMap?.answers || {},
+      score: currentPerformance,
       helpMessage: payload.helpMessage || 'Student requested help on exercise',
       lastUpdated: new Date().toISOString(),
       helpRequested: true,
     };
 
     activityStateMap.set(effectiveStudentId, stuckState);
-    if (payload.studentId !== effectiveStudentId) {
+    if (payload.studentId && payload.studentId !== effectiveStudentId) {
       activityStateMap.set(payload.studentId, stuckState);
     }
 

@@ -358,12 +358,33 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             s.id === updatedState.studentId ||
             s.name.toLowerCase().trim() === (updatedState.studentName || '').toLowerCase().trim()
         );
-
-        const newProgress = typeof updatedState.progress === 'number' ? updatedState.progress : 0;
-        const newEngagement = typeof updatedState.engagementScore === 'number' ? updatedState.engagementScore : (prevStudents[existingIndex]?.engagementScore || (newProgress > 0 ? Math.min(100, newProgress + 10) : 0));
-        const newPerformance = typeof updatedState.performanceScore === 'number' ? updatedState.performanceScore : (typeof updatedState.score === 'number' ? updatedState.score : (prevStudents[existingIndex]?.performanceScore || 0));
+        const prevStudent = existingIndex >= 0 ? prevStudents[existingIndex] : null;
 
         const rawStatus = (updatedState.status || '').toUpperCase();
+
+        const incomingProgress = typeof updatedState.progress === 'number' ? updatedState.progress : null;
+        const newProgress =
+          incomingProgress !== null && (incomingProgress > 0 || rawStatus !== 'STUCK')
+            ? incomingProgress
+            : (prevStudent?.progress || 0);
+
+        const incomingEngagement = typeof updatedState.engagementScore === 'number' ? updatedState.engagementScore : null;
+        const newEngagement =
+          incomingEngagement !== null && incomingEngagement > 0
+            ? incomingEngagement
+            : (prevStudent?.engagementScore || (newProgress > 0 ? Math.min(100, newProgress + 10) : 0));
+
+        const incomingPerformance =
+          typeof updatedState.performanceScore === 'number'
+            ? updatedState.performanceScore
+            : typeof updatedState.score === 'number'
+            ? updatedState.score
+            : null;
+        const newPerformance =
+          incomingPerformance !== null && incomingPerformance > 0
+            ? incomingPerformance
+            : (prevStudent?.performanceScore || 0);
+
         let status: 'OPTIMAL' | 'AT RISK' | 'ALERT FLAG' = 'OPTIMAL';
         let progressColor = '#16a34a';
 
@@ -463,8 +484,15 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         );
         if (idx >= 0) {
           const copy = [...prev];
+          const prevStudent = copy[idx];
+          const payloadProgress = typeof payload.progress === 'number' && payload.progress > 0 ? payload.progress : prevStudent.progress;
+          const payloadEngagement = typeof payload.engagementScore === 'number' && payload.engagementScore > 0 ? payload.engagementScore : prevStudent.engagementScore;
+          const payloadPerformance = typeof payload.performanceScore === 'number' && payload.performanceScore > 0 ? payload.performanceScore : prevStudent.performanceScore;
           copy[idx] = {
-            ...copy[idx],
+            ...prevStudent,
+            progress: payloadProgress,
+            engagementScore: payloadEngagement,
+            performanceScore: payloadPerformance,
             subtext: payload.progressText || 'Blocked: Requires assistance',
             helpRequested: true,
           };
@@ -475,9 +503,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             name: payload.studentName || 'Student',
             status: 'ALERT FLAG',
             subtext: 'Blocked: Requires assistance',
-            progress: 0,
-            engagementScore: 0,
-            performanceScore: 0,
+            progress: typeof payload.progress === 'number' ? payload.progress : 0,
+            engagementScore: typeof payload.engagementScore === 'number' ? payload.engagementScore : 0,
+            performanceScore: typeof payload.performanceScore === 'number' ? payload.performanceScore : 0,
             milestone: 'EARLY SETUP MILESTONE',
             progressColor: '#dc2626',
             academicStars: 0,
