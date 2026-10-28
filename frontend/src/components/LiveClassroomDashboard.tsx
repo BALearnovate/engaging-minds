@@ -953,86 +953,42 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               {/* STUDENT TRI-DIMENSION ANALYTICS (ENGAGEMENT, PROGRESS, PERFORMANCE) */}
               <div style={styles.cardProgress}>
                 <div style={styles.cardHeaderRow}>
-                  <h3 style={styles.sectionHeaderTitle}>STUDENT TRI-DIMENSION ANALYTICS</h3>
+                  <h3 style={styles.sectionHeaderTitle}>{t('studentPortal.triDimensionAnalytics', 'STUDENT 3-DIMENSION ANALYTICS')}</h3>
                   <span style={styles.targetLabelRight}>{selectedStudent.name}</span>
                 </div>
 
                 <div style={styles.progressInnerCard}>
-                  {/* DIMENSION 1: ENGAGEMENT */}
+                  {/* DIMENSION 1: PROGRESS */}
                   <div style={styles.triDimensionRow}>
                     <div style={styles.triDimensionHeader}>
-                      <span style={styles.triDimensionTitle}>🎯 Engagement</span>
-                      <span style={{ ...styles.triDimensionValue, color: '#2563eb' }}>
-                        {selectedStudent.engagementScore}%
-                      </span>
-                    </div>
-                    <div style={styles.progressBarTrack}>
-                      <div
-                        style={{
-                          ...styles.progressBarFill,
-                          width: `${selectedStudent.engagementScore}%`,
-                          backgroundColor: '#2563eb',
-                        }}
-                      />
-                    </div>
-                    <div style={styles.triDimensionTag}>
-                      {selectedStudent.engagementScore >= 75
-                        ? '🔥 High Active Participation'
-                        : selectedStudent.engagementScore >= 40
-                        ? '⚡ Moderate Session Activity'
-                        : '💤 Low / Idle Participation'}
-                    </div>
-                  </div>
-
-                  <hr style={styles.triDimensionDivider} />
-
-                  {/* DIMENSION 2: PROGRESS */}
-                  <div style={styles.triDimensionRow}>
-                    <div style={styles.triDimensionHeader}>
-                      <span style={styles.triDimensionTitle}>📈 Completion Progress</span>
+                      <span style={styles.triDimensionTitle}>{t('studentPortal.progressLabel', 'Progress')}</span>
                       <span style={{ ...styles.triDimensionValue, color: selectedStudent.progressColor }}>
                         {selectedStudent.progress}%
                       </span>
                     </div>
-                    <div style={styles.progressBarTrack}>
-                      <div
-                        style={{
-                          ...styles.progressBarFill,
-                          width: `${selectedStudent.progress}%`,
-                          backgroundColor: selectedStudent.progressColor,
-                        }}
-                      />
-                    </div>
-                    <div style={styles.triDimensionTag}>
-                      ▲ {selectedStudent.milestone}
+                  </div>
+
+                  <hr style={styles.triDimensionDivider} />
+
+                  {/* DIMENSION 2: ENGAGEMENT */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>{t('studentPortal.engagementLabel', 'Engagement')}</span>
+                      <span style={{ ...styles.triDimensionValue, color: '#2563eb' }}>
+                        {selectedStudent.engagementScore}%
+                      </span>
                     </div>
                   </div>
 
                   <hr style={styles.triDimensionDivider} />
 
-                  {/* DIMENSION 3: PERFORMANCE */}
+                  {/* DIMENSION 3: CORRECTNESS */}
                   <div style={styles.triDimensionRow}>
                     <div style={styles.triDimensionHeader}>
-                      <span style={styles.triDimensionTitle}>🏆 Performance Mastery</span>
+                      <span style={styles.triDimensionTitle}>{t('studentPortal.correctnessLabel', 'Correctness')}</span>
                       <span style={{ ...styles.triDimensionValue, color: '#d97706' }}>
                         {selectedStudent.performanceScore}%
                       </span>
-                    </div>
-                    <div style={styles.progressBarTrack}>
-                      <div
-                        style={{
-                          ...styles.progressBarFill,
-                          width: `${selectedStudent.performanceScore}%`,
-                          backgroundColor: '#d97706',
-                        }}
-                      />
-                    </div>
-                    <div style={styles.triDimensionTag}>
-                      {selectedStudent.performanceScore >= 80
-                        ? '🌟 High Mastery Demonstrated'
-                        : selectedStudent.performanceScore >= 50
-                        ? '📘 Developing Understanding'
-                        : '⚠️ Needs Learning Support'}
                     </div>
                   </div>
                 </div>
@@ -1383,7 +1339,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0.85rem',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: '0.4rem',
     backgroundColor: '#f8fafc',
   },

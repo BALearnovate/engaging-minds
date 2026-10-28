@@ -482,7 +482,11 @@
     "unlimitedPractice": "Unlimited Practice Session • {{time}}",
     "exitSession": "✕ Exit Session",
     "followTeacherGuidance": "Please follow your teacher's guidance on screen. Your answers and responses will be updated in real-time.",
-    "interactiveLesson": "Interactive Classroom Lesson"
+    "interactiveLesson": "Interactive Classroom Lesson",
+    "triDimensionAnalytics": "STUDENT 3-DIMENSION ANALYTICS",
+    "progressLabel": "Progress",
+    "engagementLabel": "Engagement",
+    "correctnessLabel": "Correctness"
   },
   "footer": {
     "cofunded": "Co-funded by",
