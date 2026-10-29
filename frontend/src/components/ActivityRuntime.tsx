@@ -408,17 +408,17 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1.5rem',
     backgroundColor: '#ffffff',
-    padding: '1.75rem',
+    
     borderRadius: '12px',
-    border: '1px solid #e5e7eb',
+    // border: '1px solid #e5e7eb',
     boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
   },
   topBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottom: '1px solid #f3f4f6',
-    paddingBottom: '1rem',
+    // borderBottom: '1px solid #f3f4f6',
+   
   },
   titleInfo: {
     display: 'flex',
@@ -432,8 +432,8 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   blockTracker: {
-    fontSize: '0.85rem',
-    fontWeight: '600',
+    fontSize: '1.85rem',
+    fontWeight: 'bold',
     color: '#6b7280',
   },
   progressGroup: {
@@ -504,7 +504,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTop: '1px solid #f3f4f6',
+    borderTop: 'none',
     paddingTop: '1rem',
   },
   navBtn: {

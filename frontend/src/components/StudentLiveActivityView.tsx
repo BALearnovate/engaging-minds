@@ -396,7 +396,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           </div>
         </div>
 
-        <hr style={styles.dividerLine} />
+        
 
         {/* Two Column Layout */}
         <div style={styles.bodyGrid}>
@@ -691,19 +691,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dividerLine: {
     border: 'none',
-    borderTop: '1px solid #e2e8f0',
+    borderTop: 'none',
     margin: '0.25rem 0 0.5rem 0',
   },
   bodyGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 340px',
-    gap: '2rem',
     minHeight: '480px',
+   
   },
   leftColumn: {
     display: 'flex',
     flexDirection: 'column',
-    borderRight: '1px solid #e2e8f0',
+    borderRight: 'none',
     paddingRight: '2rem',
     overflowY: 'auto',
   },
@@ -757,6 +757,9 @@ const styles: Record<string, React.CSSProperties> = {
   rightColumn: {
     display: 'flex',
     flexDirection: 'column',
+    padding: '20px 5px ',
+    // border: '1px solid rgb(226, 232, 240)',
+  
   },
   progressCard: {
     border: '1.5px solid #84cc16',
