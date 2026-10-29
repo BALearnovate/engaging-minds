@@ -145,8 +145,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     const engagementVal = typeof payload.engagementScore === 'number' ? payload.engagementScore : existing?.engagementScore || 0;
     const performanceVal = typeof payload.performanceScore === 'number' ? payload.performanceScore : existing?.performanceScore || 0;
 
-    const incomingActStatus = (payload as any).activityStatus || existing?.activityStatus || 'Active';
-    const incomingStartedAt = (payload as any).startedAt || existing?.startedAt || new Date().toISOString();
+    const incomingActStatus = (payload as any).activityStatus || existing?.activityStatus || (progressVal > 0 ? 'Active' : 'Inactive');
+    const incomingStartedAt = (payload as any).startedAt || existing?.startedAt || (progressVal > 0 ? new Date().toISOString() : undefined);
     let incomingCompletedAt = existing?.completedAt;
     if (progressVal >= 100 && !incomingCompletedAt) {
       incomingCompletedAt = new Date().toISOString();

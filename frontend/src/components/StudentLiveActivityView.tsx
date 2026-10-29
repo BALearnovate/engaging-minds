@@ -23,7 +23,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   ...props
 }) => {
   const { t } = useTranslation();
-  const { activityTitle, shareCode, teacherName = 'Your Teacher', activityId, timerMode, rewardMode: _rewardMode, targetScope: _targetScope, activityContent: initialContent, onExit: _onExit } = props;
+  const { activityTitle, shareCode, teacherName = 'Your Teacher', activityId, timerMode, rewardMode: _rewardMode, targetScope: _targetScope, activityContent: initialContent, onExit } = props;
 
   let contextToken = '';
   let currentUser: any = null;
@@ -224,8 +224,6 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     };
 
     const handleUserActivity = () => {
-      if (document.hidden) return;
-
       if (inactiveTimer) clearTimeout(inactiveTimer);
 
       if (currentStatus !== 'Active') {
@@ -233,28 +231,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       }
 
       inactiveTimer = setTimeout(() => {
-        if (!document.hidden) {
-          emitStatusUpdate('Inactive');
-        }
+        emitStatusUpdate('Inactive');
       }, 1000); // Set Inactive after > 1s of no input
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        if (inactiveTimer) clearTimeout(inactiveTimer);
-        emitStatusUpdate('Left');
-      } else {
-        handleUserActivity();
-      }
-    };
-
-    const handleBlur = () => {
-      if (inactiveTimer) clearTimeout(inactiveTimer);
-      emitStatusUpdate('Left');
-    };
-
-    const handleFocus = () => {
-      handleUserActivity();
     };
 
     window.addEventListener('mousemove', handleUserActivity);
@@ -262,9 +240,6 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     window.addEventListener('click', handleUserActivity);
     window.addEventListener('touchstart', handleUserActivity);
     window.addEventListener('scroll', handleUserActivity);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('focus', handleFocus);
 
     // Initial status emit
     emitStatusUpdate('Active');
@@ -276,9 +251,6 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       window.removeEventListener('click', handleUserActivity);
       window.removeEventListener('touchstart', handleUserActivity);
       window.removeEventListener('scroll', handleUserActivity);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
     };
   }, [shareCode, activityId, currentUser, sessionStartTimeMs, progressPct]);
 
@@ -409,6 +381,42 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const handleExitActivity = () => {
+    if (window.confirm('Are you sure you want to exit this activity?')) {
+      const actId = (shareCode || activityId || '').trim().toUpperCase();
+      const socket = getSocket();
+      const studentId = currentUser?.id || 'student_guest';
+      const studentName = currentUser
+        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+        : 'Student';
+
+      if (socket && actId) {
+        socket.emit('update_activity_status', {
+          activityId: actId,
+          shareCode: actId,
+          studentId,
+          activityStatus: 'Left',
+          startedAt: new Date(sessionStartTimeMs).toISOString(),
+        });
+
+        socket.emit('update_progress', {
+          activityId: actId,
+          shareCode: actId,
+          studentId,
+          studentName,
+          progress: progressPct,
+          status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
+          activityStatus: 'Left',
+          startedAt: new Date(sessionStartTimeMs).toISOString(),
+        });
+      }
+
+      if (onExit) {
+        onExit();
+      }
+    }
+  };
+
   return (
     
     <div style={styles.pageBackground}>
@@ -465,12 +473,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             )}
 
             {/* Exit Session Button */}
-            {/* <button
-              onClick={onExit}
+            <button
+              onClick={handleExitActivity}
               style={styles.exitButton}
             >
               {t('studentPortal.exitSession', '✕ Exit Session')}
-            </button> */}
+            </button>
           </div>
         </div>
 

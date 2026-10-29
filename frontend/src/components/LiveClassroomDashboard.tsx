@@ -219,6 +219,10 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             totalStars,
             totalPoints,
             helpRequested,
+            activityStatus: st.activityStatus || (progress > 0 ? 'Active' : 'Inactive'),
+            startedAt: st.startedAt || undefined,
+            timeSpentMs: typeof st.timeSpentMs === 'number' ? st.timeSpentMs : undefined,
+            completedAt: st.completedAt || undefined,
           };
         });
         setStudents(mappedStudents);
@@ -473,8 +477,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           targetHelpRequested = true;
         }
 
-        const incomingActStatus = updatedState.activityStatus || prevStudent?.activityStatus || 'Active';
-        const incomingStartedAt = updatedState.startedAt || prevStudent?.startedAt || new Date().toISOString();
+        const incomingActStatus = updatedState.activityStatus || prevStudent?.activityStatus || (newProgress > 0 ? 'Active' : 'Inactive');
+        const incomingStartedAt = updatedState.startedAt || prevStudent?.startedAt || ((updatedState.activityStatus === 'Active' || newProgress > 0) ? new Date().toISOString() : undefined);
         let incomingCompletedAt = prevStudent?.completedAt;
         if (newProgress >= 100 && !incomingCompletedAt) {
           incomingCompletedAt = new Date().toISOString();
@@ -1131,15 +1135,15 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                           fontSize: '0.8rem',
                           fontWeight: '800',
                           backgroundColor:
-                            (selectedStudent.activityStatus || 'Active') === 'Active'
+                            (selectedStudent.activityStatus || 'Inactive') === 'Active'
                               ? '#dcfce7'
-                              : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                              : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
                               ? '#fef3c7'
                               : '#fee2e2',
                           color:
-                            (selectedStudent.activityStatus || 'Active') === 'Active'
+                            (selectedStudent.activityStatus || 'Inactive') === 'Active'
                               ? '#15803d'
-                              : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                              : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
                               ? '#b45309'
                               : '#b91c1c',
                         }}
@@ -1150,16 +1154,16 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                             height: '8px',
                             borderRadius: '50%',
                             backgroundColor:
-                              (selectedStudent.activityStatus || 'Active') === 'Active'
+                              (selectedStudent.activityStatus || 'Inactive') === 'Active'
                                 ? '#22c55e'
-                                : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                                : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
                                 ? '#f59e0b'
                                 : '#ef4444',
                           }}
                         />
-                        {(selectedStudent.activityStatus || 'Active') === 'Active'
+                        {(selectedStudent.activityStatus || 'Inactive') === 'Active'
                           ? t('studentPortal.activeStatus', 'Active')
-                          : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                          : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
                           ? t('studentPortal.inactiveStatus', 'Inactive')
                           : t('studentPortal.leftStatus', 'Left')}
                       </span>
