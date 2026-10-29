@@ -315,19 +315,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     const normalizedActId = rawId.trim().toUpperCase();
     const roomName = `activity_${normalizedActId}`;
 
-    if (this.liveTrackingMap.has(normalizedActId)) {
-      const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
-      if (activityStateMap.has(payload.studentId)) {
-        const studentState = activityStateMap.get(payload.studentId)!;
-        const currentProgress = studentState.progress || 0;
-        studentState.status = currentProgress === 100 ? 'COMPLETED' : currentProgress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
-        studentState.helpMessage = undefined;
-        (studentState as any).helpRequested = false;
-        studentState.lastUpdated = new Date().toISOString();
-        this.server.to(roomName).emit('live_student_update', studentState);
-      }
-    }
-
+    let dbStudentSession: any = null;
     try {
       const actSession = await this.prisma.activitySession.findFirst({
         where: {
@@ -343,7 +331,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
       if (actSession) {
         const trimmedId = payload.studentId;
-        const studentSession = await this.prisma.studentSession.findFirst({
+        dbStudentSession = await this.prisma.studentSession.findFirst({
           where: {
             activitySessionId: actSession.id,
             OR: [
@@ -353,10 +341,10 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           },
         });
 
-        if (studentSession) {
-          const resetStatus = studentSession.progress >= 100 ? 'COMPLETED' : studentSession.progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
+        if (dbStudentSession) {
+          const resetStatus = dbStudentSession.progress >= 100 ? 'COMPLETED' : dbStudentSession.progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
           await this.prisma.studentSession.update({
-            where: { id: studentSession.id },
+            where: { id: dbStudentSession.id },
             data: { status: resetStatus },
           });
         }
@@ -365,12 +353,74 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       console.warn('Failed to reset student status on resolve_help:', err);
     }
 
+    if (!this.liveTrackingMap.has(normalizedActId)) {
+      this.liveTrackingMap.set(normalizedActId, new Map());
+    }
+    const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
+
+    const targetKey =
+      (activityStateMap.has(payload.studentId) && payload.studentId) ||
+      (dbStudentSession && activityStateMap.has(dbStudentSession.id) && dbStudentSession.id) ||
+      (dbStudentSession?.studentId && activityStateMap.has(dbStudentSession.studentId) && dbStudentSession.studentId) ||
+      Array.from(activityStateMap.keys()).find((k) => {
+        const s = activityStateMap.get(k);
+        return s && (s.studentId === payload.studentId || (dbStudentSession && s.studentId === dbStudentSession.id));
+      }) ||
+      payload.studentId;
+
+    const existingState = activityStateMap.get(targetKey);
+    const progressVal =
+      typeof existingState?.progress === 'number' && existingState.progress > 0
+        ? existingState.progress
+        : dbStudentSession?.progress || 0;
+
+    const engagementVal =
+      typeof existingState?.engagementScore === 'number' && existingState.engagementScore > 0
+        ? existingState.engagementScore
+        : progressVal > 0
+        ? Math.min(100, progressVal + 10)
+        : 0;
+
+    const performanceVal =
+      typeof existingState?.performanceScore === 'number' && existingState.performanceScore > 0
+        ? existingState.performanceScore
+        : typeof (existingState as any)?.score === 'number' && (existingState as any).score > 0
+        ? (existingState as any).score
+        : dbStudentSession?.score || 0;
+
+    const statusVal = progressVal >= 100 ? 'COMPLETED' : progressVal > 0 ? 'IN_PROGRESS' : 'NOT_STARTED';
+
+    const updatedState: StudentProgressState & { helpRequested: boolean } = {
+      studentId: dbStudentSession?.id || payload.studentId,
+      studentName: dbStudentSession?.studentName || existingState?.studentName || 'Student',
+      status: statusVal,
+      progress: progressVal,
+      engagementScore: engagementVal,
+      performanceScore: performanceVal,
+      progressText: `${progressVal}% completed`,
+      answers: existingState?.answers || {},
+      score: performanceVal,
+      helpMessage: undefined,
+      lastUpdated: new Date().toISOString(),
+      helpRequested: false,
+    };
+
+    activityStateMap.set(payload.studentId, updatedState);
+    if (dbStudentSession?.id) {
+      activityStateMap.set(dbStudentSession.id, updatedState);
+    }
+
+    this.server.to(roomName).emit('live_student_update', updatedState);
+    this.server.emit('live_student_update', updatedState);
+
     this.server.to(roomName).emit('help_resolved', {
       studentId: payload.studentId,
+      studentName: updatedState.studentName,
       activityId: rawId,
     });
     this.server.emit('help_resolved', {
       studentId: payload.studentId,
+      studentName: updatedState.studentName,
       activityId: rawId,
     });
   }
