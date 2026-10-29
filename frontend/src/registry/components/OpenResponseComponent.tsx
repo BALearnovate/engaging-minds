@@ -90,6 +90,10 @@ export const OpenResponseStudent: React.FC<
     setSubmitted(false);
   };
 
+    useEffect(()=>{
+      window.scroll(0,0);
+    }, [])
+
   return (
     <div style={styles.card}>
       {block.title && <h3 style={styles.title}>{block.title}</h3>}

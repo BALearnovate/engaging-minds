@@ -69,6 +69,9 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
   // Timer Interval starting from 00:00
   useEffect(() => {
+
+    
+
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
@@ -329,6 +332,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   };
 
   return (
+    
     <div style={styles.pageBackground}>
       {/* Toast Alert Banner */}
       {toastMessage && (

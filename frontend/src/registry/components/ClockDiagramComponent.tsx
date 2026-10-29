@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type {
   ActivityComponentDefinition,
   StudentBlockProps,
@@ -125,6 +125,11 @@ export const ClockDiagramStudent: React.FC<
   const formatHourLabel = (h: number) => {
     return `${h}`;
   };
+
+
+  useEffect(()=>{
+    window.scroll(0,0);
+  }, [])
 
   return (
     <div style={styles.container}>
