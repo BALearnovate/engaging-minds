@@ -26,6 +26,10 @@ interface StudentStatus {
   totalStars: number;
   totalPoints: number;
   helpRequested?: boolean;
+  activityStatus?: 'Active' | 'Inactive' | 'Left';
+  startedAt?: string;
+  timeSpentMs?: number;
+  completedAt?: string;
 }
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
@@ -55,7 +59,48 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   const [deliveryMode, setDeliveryMode] = useState<string>('Instant Pop-Up');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
+  // Real-time microsecond animation timestamp loop
+  const [nowTimestamp, setNowTimestamp] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 40);
+    return () => clearInterval(timer);
+  }, []);
+
   const selectedStudent = students.find((s) => s.id === selectedStudentId) || null;
+
+  let selectedStudentElapsedMs = 0;
+  if (selectedStudent) {
+    if (selectedStudent.progress >= 100) {
+      if (selectedStudent.completedAt && selectedStudent.startedAt) {
+        selectedStudentElapsedMs = Math.max(0, new Date(selectedStudent.completedAt).getTime() - new Date(selectedStudent.startedAt).getTime());
+      } else if (typeof selectedStudent.timeSpentMs === 'number') {
+        selectedStudentElapsedMs = selectedStudent.timeSpentMs;
+      } else if (selectedStudent.startedAt) {
+        selectedStudentElapsedMs = Math.max(0, nowTimestamp - new Date(selectedStudent.startedAt).getTime());
+      }
+    } else if (selectedStudent.startedAt) {
+      selectedStudentElapsedMs = Math.max(0, nowTimestamp - new Date(selectedStudent.startedAt).getTime());
+    }
+  }
+
+  const formatMicroseconds = (ms: number) => {
+    if (!ms || ms < 0) ms = 0;
+    const totalSeconds = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    const millis = Math.floor(ms % 1000);
+
+    const formattedMins = String(mins).padStart(2, '0');
+    const formattedSecs = String(secs).padStart(2, '0');
+    const formattedMillis = String(millis).padStart(3, '0');
+
+    return `${formattedMins}:${formattedSecs}.${formattedMillis}`;
+  };
+
+  const formattedTimeSpent = formatMicroseconds(selectedStudentElapsedMs);
 
   // Computed Class Status Monitor Metrics
   const totalStudentsCount = students.length;
@@ -428,6 +473,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           targetHelpRequested = true;
         }
 
+        const incomingActStatus = updatedState.activityStatus || prevStudent?.activityStatus || 'Active';
+        const incomingStartedAt = updatedState.startedAt || prevStudent?.startedAt || new Date().toISOString();
+        let incomingCompletedAt = prevStudent?.completedAt;
+        if (newProgress >= 100 && !incomingCompletedAt) {
+          incomingCompletedAt = new Date().toISOString();
+        }
+
         if (existingIndex >= 0) {
           const copy = [...prevStudents];
           copy[existingIndex] = {
@@ -440,6 +492,10 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             progressColor,
             milestone,
             helpRequested: rawStatus === 'COMPLETED' ? false : targetHelpRequested,
+            activityStatus: incomingActStatus,
+            startedAt: incomingStartedAt,
+            timeSpentMs: typeof updatedState.timeSpentMs === 'number' ? updatedState.timeSpentMs : prevStudent?.timeSpentMs,
+            completedAt: incomingCompletedAt,
           };
           return copy;
         } else {
@@ -460,6 +516,10 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             totalStars: 0,
             totalPoints: 0,
             helpRequested: targetHelpRequested,
+            activityStatus: incomingActStatus,
+            startedAt: incomingStartedAt,
+            timeSpentMs: typeof updatedState.timeSpentMs === 'number' ? updatedState.timeSpentMs : undefined,
+            completedAt: incomingCompletedAt,
           };
           return [...prevStudents, newStudent];
         }
@@ -1030,14 +1090,78 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                     </div>
                   </div>
 
-                  <hr style={styles.triDimensionDivider} />
+                  {/* <hr style={styles.triDimensionDivider} /> */}
 
-                  {/* DIMENSION 3: CORRECTNESS */}
+                  {/* DIMENSION 3: CORRECTNESS (Commented out per user request)
                   <div style={styles.triDimensionRow}>
                     <div style={styles.triDimensionHeader}>
                       <span style={styles.triDimensionTitle}>{t('studentPortal.correctnessLabel', 'Correctness')}</span>
                       <span style={{ ...styles.triDimensionValue, color: '#d97706' }}>
                         {selectedStudent.performanceScore}%
+                      </span>
+                    </div>
+                  </div>
+                  */}
+
+                  <hr style={styles.triDimensionDivider} />
+
+                  {/* ITEM 3: TIME SPENT */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>{t('studentPortal.timeSpentLabel', 'Time spent')}</span>
+                      <span style={{ ...styles.triDimensionValue, color: '#0f766e', fontFamily: 'monospace', fontWeight: '800' }}>
+                        ⏱ {formattedTimeSpent}
+                      </span>
+                    </div>
+                  </div>
+
+                  <hr style={styles.triDimensionDivider} />
+
+                  {/* ITEM 4: STATUS */}
+                  <div style={styles.triDimensionRow}>
+                    <div style={styles.triDimensionHeader}>
+                      <span style={styles.triDimensionTitle}>{t('studentPortal.statusLabel', 'Status')}</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          fontSize: '0.8rem',
+                          fontWeight: '800',
+                          backgroundColor:
+                            (selectedStudent.activityStatus || 'Active') === 'Active'
+                              ? '#dcfce7'
+                              : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                              ? '#fef3c7'
+                              : '#fee2e2',
+                          color:
+                            (selectedStudent.activityStatus || 'Active') === 'Active'
+                              ? '#15803d'
+                              : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                              ? '#b45309'
+                              : '#b91c1c',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor:
+                              (selectedStudent.activityStatus || 'Active') === 'Active'
+                                ? '#22c55e'
+                                : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                                ? '#f59e0b'
+                                : '#ef4444',
+                          }}
+                        />
+                        {(selectedStudent.activityStatus || 'Active') === 'Active'
+                          ? t('studentPortal.activeStatus', 'Active')
+                          : (selectedStudent.activityStatus || 'Active') === 'Inactive'
+                          ? t('studentPortal.inactiveStatus', 'Inactive')
+                          : t('studentPortal.leftStatus', 'Left')}
                       </span>
                     </div>
                   </div>

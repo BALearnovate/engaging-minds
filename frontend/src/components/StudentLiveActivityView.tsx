@@ -41,6 +41,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     '';
 
   // Session Timer State (Starts at 00:00)
+  const [sessionStartTimeMs] = useState<number>(() => Date.now());
+  const [, setActivityPresenceStatus] = useState<'Active' | 'Inactive' | 'Left'>('Active');
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [activeTimerMode, setActiveTimerMode] = useState<string | undefined>(timerMode);
   const [loadedContent, setLoadedContent] = useState<ActivityDefinition | null>(initialContent || null);
@@ -183,7 +185,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     };
   }, [shareCode, activityId, currentUser]);
 
-  // Emit real-time progress changes to Socket.IO
+  // Monitor user interaction presence ('Active' | 'Inactive' | 'Left')
   useEffect(() => {
     const actId = (shareCode || activityId || '').trim().toUpperCase();
     if (!actId) return;
@@ -194,15 +196,91 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
       : 'Student';
 
-    socket.emit('update_progress', {
-      activityId: actId,
-      shareCode: actId,
-      studentId,
-      studentName,
-      progress: progressPct,
-      status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
-    });
-  }, [progressPct, shareCode, activityId, currentUser]);
+    let inactiveTimer: ReturnType<typeof setTimeout> | null = null;
+    let currentStatus: 'Active' | 'Inactive' | 'Left' = 'Active';
+
+    const emitStatusUpdate = (newStatus: 'Active' | 'Inactive' | 'Left') => {
+      currentStatus = newStatus;
+      setActivityPresenceStatus(newStatus);
+
+      socket.emit('update_activity_status', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        activityStatus: newStatus,
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+      });
+
+      socket.emit('update_progress', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        studentName,
+        progress: progressPct,
+        status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
+        activityStatus: newStatus,
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+      });
+    };
+
+    const handleUserActivity = () => {
+      if (document.hidden) return;
+
+      if (inactiveTimer) clearTimeout(inactiveTimer);
+
+      if (currentStatus !== 'Active') {
+        emitStatusUpdate('Active');
+      }
+
+      inactiveTimer = setTimeout(() => {
+        if (!document.hidden) {
+          emitStatusUpdate('Inactive');
+        }
+      }, 1000); // Set Inactive after > 1s of no input
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (inactiveTimer) clearTimeout(inactiveTimer);
+        emitStatusUpdate('Left');
+      } else {
+        handleUserActivity();
+      }
+    };
+
+    const handleBlur = () => {
+      if (inactiveTimer) clearTimeout(inactiveTimer);
+      emitStatusUpdate('Left');
+    };
+
+    const handleFocus = () => {
+      handleUserActivity();
+    };
+
+    window.addEventListener('mousemove', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('click', handleUserActivity);
+    window.addEventListener('touchstart', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
+
+    // Initial status emit
+    emitStatusUpdate('Active');
+
+    return () => {
+      if (inactiveTimer) clearTimeout(inactiveTimer);
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('touchstart', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [shareCode, activityId, currentUser, sessionStartTimeMs, progressPct]);
 
   // Listen for real-time awards issued by teacher
   useEffect(() => {

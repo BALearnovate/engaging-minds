@@ -23,6 +23,10 @@ export interface StudentProgressState {
   helpMessage?: string;
   score?: number;
   lastUpdated: string;
+  activityStatus?: 'Active' | 'Inactive' | 'Left';
+  startedAt?: string;
+  timeSpentMs?: number;
+  completedAt?: string;
 }
 
 @WebSocketGateway({
@@ -141,6 +145,13 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     const engagementVal = typeof payload.engagementScore === 'number' ? payload.engagementScore : existing?.engagementScore || 0;
     const performanceVal = typeof payload.performanceScore === 'number' ? payload.performanceScore : existing?.performanceScore || 0;
 
+    const incomingActStatus = (payload as any).activityStatus || existing?.activityStatus || 'Active';
+    const incomingStartedAt = (payload as any).startedAt || existing?.startedAt || new Date().toISOString();
+    let incomingCompletedAt = existing?.completedAt;
+    if (progressVal >= 100 && !incomingCompletedAt) {
+      incomingCompletedAt = new Date().toISOString();
+    }
+
     const updatedState: StudentProgressState = {
       studentId: payload.studentId,
       studentName: payload.studentName,
@@ -153,6 +164,10 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       score: payload.score ?? existing?.score,
       helpMessage: payload.status === 'COMPLETED' ? undefined : existing?.helpMessage,
       lastUpdated: new Date().toISOString(),
+      activityStatus: incomingActStatus,
+      startedAt: incomingStartedAt,
+      timeSpentMs: typeof (payload as any).timeSpentMs === 'number' ? (payload as any).timeSpentMs : existing?.timeSpentMs,
+      completedAt: incomingCompletedAt,
     };
 
     activityStateMap.set(payload.studentId, updatedState);
@@ -165,6 +180,40 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     this.persistStudentProgress(payload, progressVal, engagementVal, performanceVal).catch((err) => {
       console.warn('Failed to persist student progress:', err);
     });
+  }
+
+  @SubscribeMessage('update_activity_status')
+  async handleUpdateActivityStatus(
+    @MessageBody()
+    payload: {
+      activityId: string;
+      studentId: string;
+      activityStatus: 'Active' | 'Inactive' | 'Left';
+      startedAt?: string;
+      timeSpentMs?: number;
+    },
+  ) {
+    const rawId = payload.activityId || (payload as any).shareCode || '';
+    const normalizedActId = rawId.trim().toUpperCase();
+    const roomName = `activity_${normalizedActId}`;
+
+    if (!this.liveTrackingMap.has(normalizedActId)) {
+      this.liveTrackingMap.set(normalizedActId, new Map());
+    }
+
+    const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
+    const existing = activityStateMap.get(payload.studentId);
+
+    if (existing) {
+      existing.activityStatus = payload.activityStatus;
+      if (payload.startedAt) existing.startedAt = payload.startedAt;
+      if (typeof payload.timeSpentMs === 'number') existing.timeSpentMs = payload.timeSpentMs;
+      existing.lastUpdated = new Date().toISOString();
+
+      activityStateMap.set(payload.studentId, existing);
+      this.server.to(roomName).emit('live_student_update', existing);
+      this.server.emit('live_student_update', existing);
+    }
   }
 
   @SubscribeMessage('request_help')

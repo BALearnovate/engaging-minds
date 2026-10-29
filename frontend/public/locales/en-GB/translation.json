@@ -486,7 +486,12 @@
     "triDimensionAnalytics": "STUDENT 3-DIMENSION ANALYTICS",
     "progressLabel": "Progress",
     "engagementLabel": "Engagement",
-    "correctnessLabel": "Correctness"
+    "correctnessLabel": "Correctness",
+    "timeSpentLabel": "Time spent",
+    "statusLabel": "Status",
+    "activeStatus": "Active",
+    "inactiveStatus": "Inactive",
+    "leftStatus": "Left"
   },
   "footer": {
     "cofunded": "Co-funded by",
