@@ -726,148 +726,160 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
               <hr style={styles.fullHrLineTop} />
 
-              {/* 1. Title: High level overview */}
-              <div style={styles.classSectionBox}>
-                <h4 style={styles.classSectionHeading}>
-                  {t('liveDashboard.highLevelOverview', 'High level overview')}
-                </h4>
-                <div style={styles.overviewGrid2x2}>
-                  {/* Card 1: Engaged */}
-                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #2563eb', backgroundColor: '#f0f9ff' }}>
-                    <div style={styles.metricCardLabel}>
-                      <span>🎯</span> {t('liveDashboard.engaged', 'Engaged')}
-                    </div>
-                    <div style={{ ...styles.metricCardValue, color: '#1d4ed8' }}>
-                      {classEngagedPct}%
-                    </div>
-                  </div>
-
-                  {/* Card 2: In Progress */}
-                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #f59e0b', backgroundColor: '#fffbeb' }}>
-                    <div style={styles.metricCardLabel}>
-                      <span>⏳</span> {t('liveDashboard.inProgress', 'In Progress')}
-                    </div>
-                    <div style={{ ...styles.metricCardValue, color: '#d97706' }}>
-                      {classInProgressPct}%
-                    </div>
-                  </div>
-
-                  {/* Card 3: Completed */}
-                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #16a34a', backgroundColor: '#f0fdf4' }}>
-                    <div style={styles.metricCardLabel}>
-                      <span>✅</span> {t('liveDashboard.completed', 'Completed')}
-                    </div>
-                    <div style={{ ...styles.metricCardValue, color: '#15803d' }}>
-                      {classCompletedPct}%
-                    </div>
-                  </div>
-
-                  {/* Card 4: Need Attention */}
-                  <div style={{ ...styles.metricCard, borderLeft: '5px solid #ef4444', backgroundColor: '#fef2f2' }}>
-                    <div style={styles.metricCardLabel}>
-                      <span>⚠️</span> {t('liveDashboard.needAttention', 'Need Attention')}
-                    </div>
-                    <div style={{ ...styles.metricCardValue, color: '#dc2626' }}>
-                      {classNeedAttentionCount}
-                    </div>
-                  </div>
+              {isLoadingStudents ? (
+                <div style={styles.emptyStudentsBox}>
+                  {t('liveDashboard.loadingStudents', 'Loading class students...')}
                 </div>
-              </div>
-
-              {/* 2. Title: Student Progress Distribution */}
-              <div style={styles.classSectionBox}>
-                <h4 style={styles.classSectionHeading}>
-                  {t('liveDashboard.studentProgressDistribution', 'Student Progress Distribution')}
-                </h4>
-                <div style={styles.chartWrapper}>
-                  <svg viewBox="0 0 620 220" style={styles.chartSvg}>
-                    {/* Background Grid Lines */}
-                    {[0, 25, 50, 75, 100].map((pct, idx) => {
-                      const y = 170 - (pct / 100) * 130;
-                      return (
-                        <g key={idx}>
-                          <line x1="50" y1={y} x2="590" y2={y} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth="1" />
-                          <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="600">
-                            {Math.round((pct / 100) * maxBucketCount)}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Bars */}
-                    {distributionBuckets.map((bucket, idx) => {
-                      const barWidth = 62;
-                      const gap = 44;
-                      const startX = 75;
-                      const x = startX + idx * (barWidth + gap);
-                      const barHeight = maxBucketCount > 0 ? (bucket.count / maxBucketCount) * 130 : 0;
-                      const y = 170 - barHeight;
-
-                      return (
-                        <g key={bucket.label}>
-                          {/* Bar Background Track */}
-                          <rect
-                            x={x}
-                            y="40"
-                            width={barWidth}
-                            height="130"
-                            rx="8"
-                            fill="#f8fafc"
-                            stroke="#e2e8f0"
-                            strokeWidth="1"
-                          />
-                          {/* Active Bar */}
-                          <rect
-                            x={x}
-                            y={y}
-                            width={barWidth}
-                            height={Math.max(barHeight, 6)}
-                            rx="8"
-                            fill={bucket.color}
-                            style={{ transition: 'all 0.5s ease' }}
-                          />
-                          {/* Student Count Badge on Top */}
-                          <g transform={`translate(${x + barWidth / 2}, ${Math.max(22, y - 12)})`}>
-                            <rect
-                              x="-18"
-                              y="-12"
-                              width="36"
-                              height="18"
-                              rx="9"
-                              fill="#1e293b"
-                            />
-                            <text
-                              x="0"
-                              y="1"
-                              textAnchor="middle"
-                              alignmentBaseline="middle"
-                              fill="#ffffff"
-                              fontSize="11"
-                              fontWeight="800"
-                            >
-                              {bucket.count}
-                            </text>
-                          </g>
-                          {/* X Axis Range Label */}
-                          <text
-                            x={x + barWidth / 2}
-                            y="195"
-                            textAnchor="middle"
-                            fontSize="11"
-                            fontWeight="800"
-                            fill="#334155"
-                          >
-                            {bucket.label}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Bottom Base Line */}
-                    <line x1="50" y1="170" x2="590" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
-                  </svg>
+              ) : students.length === 0 ? (
+                <div style={styles.emptyStudentsBox}>
+                  {t('liveDashboard.noStudents', 'No students in class yet.')}
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* 1. Title: High level overview */}
+                  <div style={styles.classSectionBox}>
+                    <h4 style={styles.classSectionHeading}>
+                      {t('liveDashboard.highLevelOverview', 'High level overview')}
+                    </h4>
+                    <div style={styles.overviewGrid2x2}>
+                      {/* Card 1: Engaged */}
+                      <div style={{ ...styles.metricCard, borderLeft: '5px solid #2563eb', backgroundColor: '#f0f9ff' }}>
+                        <div style={styles.metricCardLabel}>
+                          <span>🎯</span> {t('liveDashboard.engaged', 'Engaged')}
+                        </div>
+                        <div style={{ ...styles.metricCardValue, color: '#1d4ed8' }}>
+                          {classEngagedPct}%
+                        </div>
+                      </div>
+
+                      {/* Card 2: In Progress */}
+                      <div style={{ ...styles.metricCard, borderLeft: '5px solid #f59e0b', backgroundColor: '#fffbeb' }}>
+                        <div style={styles.metricCardLabel}>
+                          <span>⏳</span> {t('liveDashboard.inProgress', 'In Progress')}
+                        </div>
+                        <div style={{ ...styles.metricCardValue, color: '#d97706' }}>
+                          {classInProgressPct}%
+                        </div>
+                      </div>
+
+                      {/* Card 3: Completed */}
+                      <div style={{ ...styles.metricCard, borderLeft: '5px solid #16a34a', backgroundColor: '#f0fdf4' }}>
+                        <div style={styles.metricCardLabel}>
+                          <span>✅</span> {t('liveDashboard.completed', 'Completed')}
+                        </div>
+                        <div style={{ ...styles.metricCardValue, color: '#15803d' }}>
+                          {classCompletedPct}%
+                        </div>
+                      </div>
+
+                      {/* Card 4: Need Attention */}
+                      <div style={{ ...styles.metricCard, borderLeft: '5px solid #ef4444', backgroundColor: '#fef2f2' }}>
+                        <div style={styles.metricCardLabel}>
+                          <span>⚠️</span> {t('liveDashboard.needAttention', 'Need Attention')}
+                        </div>
+                        <div style={{ ...styles.metricCardValue, color: '#dc2626' }}>
+                          {classNeedAttentionCount}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Title: Student Progress Distribution */}
+                  <div style={styles.classSectionBox}>
+                    <h4 style={styles.classSectionHeading}>
+                      {t('liveDashboard.studentProgressDistribution', 'Student Progress Distribution')}
+                    </h4>
+                    <div style={styles.chartWrapper}>
+                      <svg viewBox="0 0 620 220" style={styles.chartSvg}>
+                        {/* Background Grid Lines */}
+                        {[0, 25, 50, 75, 100].map((pct, idx) => {
+                          const y = 170 - (pct / 100) * 130;
+                          return (
+                            <g key={idx}>
+                              <line x1="50" y1={y} x2="590" y2={y} stroke="#e2e8f0" strokeDasharray="4 3" strokeWidth="1" />
+                              <text x="40" y={y + 4} textAnchor="end" fontSize="10" fill="#94a3b8" fontWeight="600">
+                                {Math.round((pct / 100) * maxBucketCount)}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Bars */}
+                        {distributionBuckets.map((bucket, idx) => {
+                          const barWidth = 62;
+                          const gap = 44;
+                          const startX = 75;
+                          const x = startX + idx * (barWidth + gap);
+                          const barHeight = maxBucketCount > 0 ? (bucket.count / maxBucketCount) * 130 : 0;
+                          const y = 170 - barHeight;
+
+                          return (
+                            <g key={bucket.label}>
+                              {/* Bar Background Track */}
+                              <rect
+                                x={x}
+                                y="40"
+                                width={barWidth}
+                                height="130"
+                                rx="8"
+                                fill="#f8fafc"
+                                stroke="#e2e8f0"
+                                strokeWidth="1"
+                              />
+                              {/* Active Bar */}
+                              <rect
+                                x={x}
+                                y={y}
+                                width={barWidth}
+                                height={Math.max(barHeight, 6)}
+                                rx="8"
+                                fill={bucket.color}
+                                style={{ transition: 'all 0.5s ease' }}
+                              />
+                              {/* Student Count Badge on Top */}
+                              <g transform={`translate(${x + barWidth / 2}, ${Math.max(22, y - 12)})`}>
+                                <rect
+                                  x="-18"
+                                  y="-12"
+                                  width="36"
+                                  height="18"
+                                  rx="9"
+                                  fill="#1e293b"
+                                />
+                                <text
+                                  x="0"
+                                  y="1"
+                                  textAnchor="middle"
+                                  alignmentBaseline="middle"
+                                  fill="#ffffff"
+                                  fontSize="11"
+                                  fontWeight="800"
+                                >
+                                  {bucket.count}
+                                </text>
+                              </g>
+                              {/* X Axis Range Label */}
+                              <text
+                                x={x + barWidth / 2}
+                                y="195"
+                                textAnchor="middle"
+                                fontSize="11"
+                                fontWeight="800"
+                                fill="#334155"
+                              >
+                                {bucket.label}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Bottom Base Line */}
+                        <line x1="50" y1="170" x2="590" y2="170" stroke="#cbd5e1" strokeWidth="1.5" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* 3. Title: Progress Over time */}
               
@@ -899,9 +911,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             <hr style={styles.fullHrLineTop} />
 
             {isLoadingStudents ? (
-              <div style={styles.emptyStudentsBox}>Loading class students...</div>
+              <div style={styles.emptyStudentsBox}>{t('liveDashboard.loadingStudents', 'Loading class students...')}</div>
             ) : students.length === 0 ? (
-              <div style={styles.emptyStudentsBox}>No students in class yet.</div>
+              <div style={styles.emptyStudentsBox}>{t('liveDashboard.noStudents', 'No students in class yet.')}</div>
             ) : (
               <div style={styles.studentCardsContainer}>
                 {students.map((student) => {
