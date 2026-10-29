@@ -148,6 +148,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     };
   }, [(user as any)?.classroomId, activeToken]);
 
+  // Clear modal celebrations/interventions when switching tabs
+  useEffect(() => {
+    if (currentTab === 'student_live_activity') {
+      setInterventionModal(null);
+      setAwardCelebration(null);
+    }
+  }, [currentTab]);
+
   // Listen for real-time awards issued to the student and live updates
   useEffect(() => {
     const socket = getSocket();
@@ -162,6 +170,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       fetchAssignedActivities();
 
       if (data.deliveryMode === 'Silent Archive') return;
+      if (currentTab === 'student_live_activity') return;
 
       const currentUserId = user?.id;
       const currentUserName = (user as any)?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '');
@@ -189,7 +198,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       socket.off('award_issued', handleAwardIssued);
       socket.off('live_student_update', handleLiveStudentUpdate);
     };
-  }, [user, activeToken]);
+  }, [user, activeToken, currentTab]);
 
   // Listen for real-time teacher interventions (Desk check-in & Discreet reminder)
   useEffect(() => {
@@ -204,6 +213,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       message?: string;
       badge?: string;
     }) => {
+      if (currentTab === 'student_live_activity') return;
+
       const currentUserId = user?.id ? String(user.id) : null;
       const currentUserName = user
         ? ((user as any).name || `${user.firstName || ''} ${user.lastName || ''}`).trim().toLowerCase()
@@ -238,7 +249,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       socket.off('teacher_intervention', handleIntervention);
       socket.off('receive_intervention', handleIntervention);
     };
-  }, [user, t]);
+  }, [user, t, currentTab]);
 
   // Fetch Database Activities
   useEffect(() => {

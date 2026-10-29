@@ -364,9 +364,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
         const incomingProgress = typeof updatedState.progress === 'number' ? updatedState.progress : null;
         const newProgress =
-          incomingProgress !== null && (incomingProgress > 0 || rawStatus !== 'STUCK')
+          incomingProgress !== null && incomingProgress > 0
             ? incomingProgress
-            : (prevStudent?.progress || 0);
+            : (prevStudent?.progress || (incomingProgress !== null ? incomingProgress : 0));
 
         const incomingEngagement = typeof updatedState.engagementScore === 'number' ? updatedState.engagementScore : null;
         const newEngagement =
