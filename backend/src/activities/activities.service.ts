@@ -1377,6 +1377,7 @@ export class ActivitiesService {
           some: {
             type: {
               in: [
+                'TEACHER_INTERVENTION',
                 'HINT_SENT',
                 'REMINDER_SENT',
                 'TEACHER_HINT',
@@ -1384,6 +1385,7 @@ export class ActivitiesService {
                 'DISCREET_CHECKIN',
                 'CHECKIN',
                 'SUPPORT_MESSAGE',
+                'AWARD_ISSUED',
               ],
             },
           },
