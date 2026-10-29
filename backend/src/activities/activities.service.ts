@@ -1369,6 +1369,7 @@ export class ActivitiesService {
     });
 
     // 3. Total Engaged Students (distinct students with checkins/hints or session interactions)
+    // Remove the fall back count, which counts all students all students in teacher session
     const distinctEngagedSessions = await this.prisma.studentSession.findMany({
       where: {
         activitySession: { teacherId },
@@ -1397,15 +1398,15 @@ export class ActivitiesService {
     });
 
     let totalEngagedStudents = engagedSet.size;
-    if (totalEngagedStudents === 0) {
-      const allSessions = await this.prisma.studentSession.findMany({
-        where: { activitySession: { teacherId } },
-        select: { studentName: true, studentId: true },
-      });
-      const allSet = new Set<string>();
-      allSessions.forEach((s) => allSet.add(s.studentId || s.studentName));
-      totalEngagedStudents = allSet.size;
-    }
+    // if (totalEngagedStudents === 0) {
+    //   const allSessions = await this.prisma.studentSession.findMany({
+    //     where: { activitySession: { teacherId } },
+    //     select: { studentName: true, studentId: true },
+    //   });
+    //   const allSet = new Set<string>();
+    //   allSessions.forEach((s) => allSet.add(s.studentId || s.studentName));
+    //   totalEngagedStudents = allSet.size;
+    // }
 
     // 4. Your Classes
     const classrooms = await this.prisma.classroom.findMany({
