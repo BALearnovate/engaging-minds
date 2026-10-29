@@ -130,7 +130,7 @@
     "activeActivitiesCount": "{{count}} Active Activities",
     "avgCompletionRate": "{{rate}}% Average Completion",
     "noClassesYet": "No classes found. Create your first class in Classroom Setup.",
-    "top5UsedActivities": "Top 5 Used Activities by You",
+    "top5UsedActivities": "Top 5 Used Activities Used by You",
     "timesUsed": "{{count}} times",
     "noActivitiesYet": "No activities used yet.",
     "recentActivities": "RECENT ACTIVITIES",
