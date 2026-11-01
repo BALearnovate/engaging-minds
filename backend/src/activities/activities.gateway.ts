@@ -304,7 +304,11 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           dbScore = studentSession.score || 0;
           await this.prisma.studentSession.update({
             where: { id: studentSession.id },
-            data: { status: 'STUCK', lastSeenAt: new Date() },
+            data: {
+              status: 'STUCK',
+              lastSeenAt: new Date(),
+              helpRequestCount: { increment: 1 },
+            },
           });
         } else {
           const newSession = await this.prisma.studentSession.create({
@@ -315,6 +319,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
               status: 'STUCK',
               progress: 0,
               score: 0,
+              helpRequestCount: 1,
             },
           });
           dbStudentSessionId = newSession.id;

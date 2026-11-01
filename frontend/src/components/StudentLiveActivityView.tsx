@@ -338,6 +338,39 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     };
   }, [currentUser, t]);
 
+  // Listen for real-time help resolution from teacher
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleHelpResolved = (data: { studentId?: string | null; studentName?: string; helpRequested?: boolean }) => {
+      const currentUserId = currentUser?.id ? String(currentUser.id) : null;
+      const currentUserName = currentUser
+        ? (currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`).trim().toLowerCase()
+        : '';
+
+      const targetStudentId = data.studentId ? String(data.studentId) : null;
+      const targetStudentName = data.studentName ? data.studentName.trim().toLowerCase() : '';
+
+      const isIdMatch = targetStudentId && currentUserId && targetStudentId === currentUserId;
+      const isNameMatch = targetStudentName && currentUserName && (
+        targetStudentName === currentUserName ||
+        currentUserName.includes(targetStudentName) ||
+        targetStudentName.includes(currentUserName)
+      );
+
+      if (isIdMatch || isNameMatch || !data.studentId) {
+        if (data.helpRequested === false || data.helpRequested === undefined) {
+          setHelpRequested(false);
+        }
+      }
+    };
+
+    socket.on('help_resolved', handleHelpResolved);
+    return () => {
+      socket.off('help_resolved', handleHelpResolved);
+    };
+  }, [currentUser]);
+
   const handleAskTeacher = () => {
     setHelpRequested(true);
     const socket = getSocket();
@@ -624,7 +657,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
               <button
                 onClick={handleAskTeacher}
-                style={styles.askTeacherBtn}
+                disabled={helpRequested}
+                style={{
+                  ...styles.askTeacherBtn,
+                  opacity: helpRequested ? 0.6 : 1,
+                  cursor: helpRequested ? 'not-allowed' : 'pointer',
+                }}
               >
                 {helpRequested ? t('studentPortal.helpRequested', 'HELP REQUESTED ⏳') : t('studentPortal.askHelpTeacher', 'ASK HELP FROM TEACHER')}
               </button>
