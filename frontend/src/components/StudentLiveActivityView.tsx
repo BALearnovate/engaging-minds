@@ -51,7 +51,6 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   const [stepIndex, setStepIndex] = useState<number>(1);
   const [totalSteps, setTotalSteps] = useState<number>(1);
   const [completedSteps, setCompletedSteps] = useState<number>(0);
-  const [questionsCorrect, setQuestionsCorrect] = useState<number>(0);
 
   const [helpRequested, setHelpRequested] = useState<boolean>(false);
   const [aiTutorOpen, setAiTutorOpen] = useState<boolean>(false);
@@ -85,7 +84,6 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     // Reset step progress when switching activities
     setStepIndex(1);
     setCompletedSteps(0);
-    setQuestionsCorrect(0);
 
     if (initialContent) {
       setLoadedContent(initialContent);
@@ -377,58 +375,51 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleSubmitAnswer = () => {
-    setToastMessage('✅ Step answer submitted successfully!');
-    const newCompleted = Math.min(completedSteps + 1, totalSteps);
-    setCompletedSteps(newCompleted);
-    setQuestionsCorrect((prev) => Math.min(prev + 1, totalSteps));
+  const triggerActivityCompletion = () => {
+    const timeSpentMs = elapsedSeconds * 1000;
+    const actId = (shareCode || activityId || '').trim().toUpperCase();
+    const socket = getSocket();
+    const studentId = currentUser?.id || 'student_guest';
+    const studentName = currentUser
+      ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+      : 'Student';
 
-    if (stepIndex < totalSteps) {
-      setStepIndex((prev) => prev + 1);
-    } else {
-      const timeSpentMs = elapsedSeconds * 1000;
-      const actId = (shareCode || activityId || '').trim().toUpperCase();
-      const socket = getSocket();
-      const studentId = currentUser?.id || 'student_guest';
-      const studentName = currentUser
-        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
-        : 'Student';
+    if (socket && actId) {
+      socket.emit('update_activity_status', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        activityStatus: 'Left',
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs,
+      });
 
-      if (socket && actId) {
-        socket.emit('update_activity_status', {
-          activityId: actId,
-          shareCode: actId,
-          studentId,
-          activityStatus: 'Left',
-          startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs,
-        });
+      socket.emit('update_progress', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        studentName,
+        progress: 100,
+        status: 'COMPLETED',
+        activityStatus: 'Left',
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs,
+      });
+    }
 
-        socket.emit('update_progress', {
-          activityId: actId,
-          shareCode: actId,
-          studentId,
-          studentName,
-          progress: 100,
-          status: 'COMPLETED',
-          activityStatus: 'Left',
-          startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs,
-        });
-      }
+    window.alert(
+      `🎉 Activity Completed!\n\n` +
+      `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
+      `Progress: 100%\n\n` +
+      `Click OK to return to your dashboard.`
+    );
 
-      window.alert(
-        `🎉 Activity Completed!\n\n` +
-        `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
-        `Progress: 100%\n\n` +
-        `Click OK to return to your dashboard.`
-      );
-
-      if (onExit) {
-        onExit();
-      }
+    if (onExit) {
+      onExit();
     }
   };
+
+
 
   const handleExitActivity = () => {
     if (window.confirm('Are you sure you want to exit this activity?')) {
@@ -565,10 +556,9 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                     setStepIndex(currentStep);
                     setTotalSteps(runtimeTotalSteps);
                     setCompletedSteps(completedCount);
-                    setQuestionsCorrect(completedCount);
                   }}
                   onCompleted={() => {
-                    setToastMessage('🎉 Activity completed!');
+                    triggerActivityCompletion();
                   }}
                 />
               </div>
