@@ -312,6 +312,52 @@ export const ClassroomSetupComponent: React.FC = () => {
             print-color-adjust: exact !important;
           }
         }
+
+       .classroom-split-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.classroom-roster-body-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+.classroom-two-col-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 1300px) {
+  .classroom-split-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .classroom-roster-body-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .classroom-two-col-row {
+    grid-template-columns: 1fr !important;
+  }
+  .classroom-passes-header {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  .classroom-passes-btn {
+    width: 100% !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+}
+
       `}</style>
 
       {/* Main Studio Card Enclosing Whole Page (Header + Content) */}
@@ -329,9 +375,9 @@ export const ClassroomSetupComponent: React.FC = () => {
         </div>
 
         {/* Split Layout: Left Classrooms Column & Right Roster Assignment Column */}
-        <div style={styles.splitGrid}>
+        <div style={styles.splitGrid} className="classroom-split-grid">
         {/* LEFT COLUMN: Instantiate Form & Active Classrooms List */}
-        <div style={styles.leftColumn}>
+        <div style={styles.leftColumn} className="classroom-left-col">
           <div style={styles.leftHeaderRow}>
             <div>
               <h2 style={styles.leftTitle}>{t('classroomSetup.activeClassrooms', 'ACTIVE CLASSROOMS')}</h2>
@@ -463,7 +509,7 @@ export const ClassroomSetupComponent: React.FC = () => {
         </div>
 
         {/* RIGHT COLUMN: Roster Assignment & Roster Preview List */}
-        <div style={styles.rightColumn}>
+        <div style={styles.rightColumn} className="classroom-right-col">
           {/* Top Classroom Title & Subtitle */}
           <div style={styles.rosterHeader}>
             <h1 style={styles.rosterTitle}>
@@ -474,9 +520,9 @@ export const ClassroomSetupComponent: React.FC = () => {
             </p>
           </div>
 
-          <div style={styles.rosterBodyGrid}>
+          <div style={styles.rosterBodyGrid} className="classroom-roster-body-grid">
             {/* Middle Section: Manual Entry & Bulk CSV Tabs + Enrollment Passes */}
-            <div style={styles.entrySection}>
+            <div style={styles.entrySection} className="classroom-entry-section">
               {/* Entry Mode Tabs */}
               <div style={styles.tabRow}>
                 <button
@@ -504,7 +550,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                 <div style={styles.entryBox}>
                   <h3 style={styles.boxTitle}>{t('classroomSetup.addIndividual', 'ADD INDIVIDUAL STUDENT RECORD')}</h3>
                   <form onSubmit={handleAddManualStudent} style={styles.manualForm}>
-                    <div style={styles.twoColRow}>
+                    <div style={styles.twoColRow} className="classroom-two-col-row">
                       <div style={styles.fieldGroup}>
                         <label style={styles.label}>{t('classroomSetup.firstNameLabel', 'FIRST NAME *')}</label>
                         <input
@@ -553,8 +599,8 @@ export const ClassroomSetupComponent: React.FC = () => {
               )}
 
               {/* Enrollment Passes Banner */}
-              <div style={styles.passesCard}>
-                <div style={styles.passesHeader}>
+              <div style={styles.passesCard} className="classroom-passes-card">
+                <div style={styles.passesHeader} className="classroom-passes-header">
                   <span style={styles.passesTitle}>{t('classroomSetup.enrollmentPasses', 'ENROLLMENT PASSES')}</span>
                   <span style={styles.passesBadge}>{t('classroomSetup.printableSlips', 'PRINTABLE SLIPS')}</span>
                 </div>
@@ -570,6 +616,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     setShowPrintModal(true);
                   }}
                   style={styles.passesBtn}
+                  className="classroom-passes-btn"
                 >
                   {t('classroomSetup.generatePassesBtn', '🖨️ GENERATE PRINTABLE STUDENT LOGIN PASSES')}
                 </button>
@@ -577,7 +624,7 @@ export const ClassroomSetupComponent: React.FC = () => {
             </div>
 
             {/* Far Right Column: Roster Preview List */}
-            <div style={styles.previewColumn}>
+            <div style={styles.previewColumn} className="classroom-preview-column">
               <div style={styles.previewHeaderRow}>
                 <h3 style={styles.previewTitle}>{t('classroomSetup.rosterPreview', 'ROSTER PREVIEW')}</h3>
                 <button
@@ -1104,16 +1151,23 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.8rem',
+    boxSizing: 'border-box',
+    width: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   passesHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '0.5rem',
+    flexWrap: 'wrap',
   },
   passesTitle: {
     fontWeight: '800',
     fontSize: '0.85rem',
     letterSpacing: '0.04em',
+    wordBreak: 'break-word',
   },
   passesBadge: {
     backgroundColor: '#0284c7',
@@ -1122,6 +1176,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     fontSize: '0.68rem',
     fontWeight: '800',
+    whiteSpace: 'nowrap',
   },
   passesSub: {
     fontSize: '0.78rem',
@@ -1130,7 +1185,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.4,
   },
   passesBtn: {
-    padding: '0.7rem',
+    padding: '0.7rem 0.85rem',
     backgroundColor: '#0284c7',
     color: '#ffffff',
     border: '1px solid #38bdf8',
@@ -1138,6 +1193,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '800',
     fontSize: '0.82rem',
     cursor: 'pointer',
+    width: '100%',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
   },
 
   /* Preview Column */
@@ -1151,6 +1211,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.8rem',
     boxSizing: 'border-box',
     maxHeight: '480px',
+    width: '100%',
     minWidth: 0,
   },
   previewHeaderRow: {
