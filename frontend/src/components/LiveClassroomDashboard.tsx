@@ -26,11 +26,97 @@ interface StudentStatus {
   totalStars: number;
   totalPoints: number;
   helpRequested?: boolean;
-  activityStatus?: 'Active' | 'Inactive' | 'Left';
+  activityStatus?: 'Active' | 'Inactive' | 'Left' | 'Not Started';
   startedAt?: string;
   timeSpentMs?: number;
   completedAt?: string;
+  lastActiveAt?: number;
 }
+
+export const getStudentIndicatorState = (
+  student: StudentStatus,
+  nowTimestamp: number,
+  t?: (key: string, fallback: string) => string
+) => {
+  let inactiveSec = 0;
+  if (student.lastActiveAt) {
+    inactiveSec = Math.max(0, Math.floor((nowTimestamp - student.lastActiveAt) / 1000));
+  } else if (student.startedAt && student.activityStatus !== 'Active') {
+    inactiveSec = Math.max(0, Math.floor((nowTimestamp - new Date(student.startedAt).getTime()) / 1000));
+  } else if (student.activityStatus === 'Inactive') {
+    inactiveSec = 999;
+  }
+
+  const translate = t || ((_: string, fb: string) => fb);
+
+  // 1. Completed 100% -> Green
+  if (student.progress >= 100) {
+    return {
+      color: 'green' as const,
+      dotColor: '#22c55e',
+      bgColor: '#dcfce7',
+      textColor: '#15803d',
+      statusLabel: translate('liveDashboard.completed', 'Completed'),
+    };
+  }
+
+  // 2. Not started -> Red
+  if (
+    student.progress === 0 ||
+    student.activityStatus === 'Not Started' ||
+    (!student.startedAt && !student.lastActiveAt && student.activityStatus !== 'Active')
+  ) {
+    return {
+      color: 'red' as const,
+      dotColor: '#ef4444',
+      bgColor: '#fee2e2',
+      textColor: '#b91c1c',
+      statusLabel: translate('liveDashboard.notStartedShort', 'Not Started'),
+    };
+  }
+
+  // 3. Exited / Left without 100% completion -> Red
+  if (student.activityStatus === 'Left') {
+    return {
+      color: 'red' as const,
+      dotColor: '#ef4444',
+      bgColor: '#fee2e2',
+      textColor: '#b91c1c',
+      statusLabel: translate('liveDashboard.left', 'Left'),
+    };
+  }
+
+  // 4. Inactive >= 30 seconds -> Red
+  if (inactiveSec >= 30) {
+    return {
+      color: 'red' as const,
+      dotColor: '#ef4444',
+      bgColor: '#fee2e2',
+      textColor: '#b91c1c',
+      statusLabel: translate('liveDashboard.inactive30', 'Inactive (≥30s)'),
+    };
+  }
+
+  // 5. Inactive 15s - 29s -> Orange
+  if (inactiveSec >= 15) {
+    return {
+      color: 'orange' as const,
+      dotColor: '#f59e0b',
+      bgColor: '#fef3c7',
+      textColor: '#b45309',
+      statusLabel: translate('liveDashboard.inactive15', 'Inactive (15s-29s)'),
+    };
+  }
+
+  // 6. Active or inactive <= 14s -> Green
+  return {
+    color: 'green' as const,
+    dotColor: '#22c55e',
+    bgColor: '#dcfce7',
+    textColor: '#15803d',
+    statusLabel: translate('common.active', 'Active'),
+  };
+};
 
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
   const { t } = useTranslation();
@@ -132,7 +218,10 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
   const studentsRequestingHelpCount = students.filter((s) => s.helpRequested).length;
 
   const classNeedAttentionCount = totalStudentsCount > 0
-    ? students.filter((s) => s.helpRequested || s.status === 'ALERT FLAG' || (s.status === 'AT RISK' && s.progress > 0) || s.subtext?.toLowerCase().includes('blocked') || s.subtext?.toLowerCase().includes('assistance')).length
+    ? students.filter((s) => {
+        const ind = getStudentIndicatorState(s, nowTimestamp, t);
+        return s.helpRequested || ind.color === 'red';
+      }).length
     : 0;
 
   // 5 Progress distribution buckets: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%
@@ -233,6 +322,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             startedAt: st.startedAt || undefined,
             timeSpentMs: typeof st.timeSpentMs === 'number' ? st.timeSpentMs : undefined,
             completedAt: st.completedAt || undefined,
+            lastActiveAt: (st.activityStatus === 'Active' || progress > 0) ? Date.now() : undefined,
           };
         });
         setStudents(mappedStudents);
@@ -510,6 +600,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             startedAt: incomingStartedAt,
             timeSpentMs: typeof updatedState.timeSpentMs === 'number' ? updatedState.timeSpentMs : prevStudent?.timeSpentMs,
             completedAt: incomingCompletedAt,
+            lastActiveAt: incomingActStatus === 'Active' ? Date.now() : prevStudent?.lastActiveAt,
           };
           return copy;
         } else {
@@ -992,6 +1083,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               <div style={styles.studentCardsContainer}>
                 {students.map((student) => {
                   const isSelected = student.id === selectedStudentId;
+                  const indicator = getStudentIndicatorState(student, nowTimestamp, t);
 
                   return (
                     <div
@@ -1003,14 +1095,17 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                         backgroundColor: isSelected ? '#f8fdf6' : '#ffffff',
                         opacity: isSelected ? 1 : 0.6,
                         boxShadow: isSelected ? '0 0 0 3px #dcfce7' : 'none',
+                        alignItems: 'center',
+                        textAlign: 'center',
                       }}
                     >
-                      <div style={styles.studentCardTop}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ ...styles.studentCardTop, justifyContent: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           <span
                             style={{
                               ...styles.studentCardName,
                               color: isSelected ? '#1e3a8a' : '#2563eb',
+                              textAlign: 'center',
                             }}
                           >
                             {student.name}
@@ -1038,27 +1133,24 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                             </span>
                           )}
                         </div>
+                      </div>
+
+                      {/* Enlarged Centered Circle Indicator on new line */}
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0.3rem 0' }}>
                         <div
-                          className={
-                            student.status === 'OPTIMAL'
-                              ? 'vibrating-dot-green'
-                              : student.status === 'AT RISK'
-                              ? 'vibrating-dot-yellow'
-                              : 'vibrating-dot-red'
-                          }
-                          title={student.status}
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '50%',
+                            backgroundColor: indicator.dotColor,
+                            boxShadow: `0 0 12px ${indicator.dotColor}80`,
+                            transition: 'all 0.3s ease',
+                          }}
+                          title={indicator.statusLabel}
                         />
                       </div>
-                      <div
-                        style={{
-                          ...styles.studentCardSubtext,
-                          color: isSelected ? '#334155' : '#64748b',
-                          fontWeight: isSelected ? '600' : '500',
-                        }}
-                      >
-                        {student.subtext}
-                      </div>
-                      <div style={styles.cardAwardPill}>
+
+                      <div style={{ ...styles.cardAwardPill, textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
                         ⭐ {student.totalStars} Stars &nbsp;|&nbsp; 🏆 {student.totalPoints} Pts
                       </div>
                     </div>
@@ -1135,48 +1227,34 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                   <div style={styles.triDimensionRow}>
                     <div style={styles.triDimensionHeader}>
                       <span style={styles.triDimensionTitle}>{t('studentPortal.statusLabel', 'Status')}</span>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '3px 10px',
-                          borderRadius: '12px',
-                          fontSize: '0.8rem',
-                          fontWeight: '800',
-                          backgroundColor:
-                            (selectedStudent.activityStatus || 'Inactive') === 'Active'
-                              ? '#dcfce7'
-                              : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
-                              ? '#fef3c7'
-                              : '#fee2e2',
-                          color:
-                            (selectedStudent.activityStatus || 'Inactive') === 'Active'
-                              ? '#15803d'
-                              : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
-                              ? '#b45309'
-                              : '#b91c1c',
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor:
-                              (selectedStudent.activityStatus || 'Inactive') === 'Active'
-                                ? '#22c55e'
-                                : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
-                                ? '#f59e0b'
-                                : '#ef4444',
-                          }}
-                        />
-                        {(selectedStudent.activityStatus || 'Inactive') === 'Active'
-                          ? t('studentPortal.activeStatus', 'Active')
-                          : (selectedStudent.activityStatus || 'Inactive') === 'Inactive'
-                          ? t('studentPortal.inactiveStatus', 'Inactive')
-                          : t('studentPortal.leftStatus', 'Left')}
-                      </span>
+                      {(() => {
+                        const selInd = getStudentIndicatorState(selectedStudent, nowTimestamp, t);
+                        return (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              fontSize: '0.8rem',
+                              fontWeight: '800',
+                              backgroundColor: selInd.bgColor,
+                              color: selInd.textColor,
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                backgroundColor: selInd.dotColor,
+                              }}
+                            />
+                            {selInd.statusLabel}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
