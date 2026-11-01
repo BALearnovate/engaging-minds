@@ -602,12 +602,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   <div style={styles.stepTitleText}>
                     {completedSteps >= totalSteps && totalSteps > 0 ? t('studentPortal.allStepsCompleted', 'All {{count}} Steps Completed', { count: totalSteps }) : t('studentPortal.stepOfSteps', 'Step {{step}} of {{total}} in Progress', { step: stepIndex, total: totalSteps })}
                   </div>
-                  <div style={styles.correctSubText}>{t('studentPortal.questionsCorrect', 'Questions Correct: {{correct}}/{{total}}', { correct: questionsCorrect, total: totalSteps })}</div>
+                  {/* <div style={styles.correctSubText}>{t('studentPortal.questionsCorrect', 'Questions Correct: {{correct}}/{{total}}', { correct: questionsCorrect, total: totalSteps })}</div> */}
                 </div>
               </div>
 
               {/* Progress Fill Bar */}
-              <div style={styles.progressBarWrapper}>
+              {/* <div style={styles.progressBarWrapper}>
                 <div style={styles.progressBarLabel}>{t('studentPortal.pctCompleted', '{{pct}}% COMPLETED', { pct: progressPct })}</div>
                 <div style={styles.barTrack}>
                   <div
@@ -617,7 +617,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                     }}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Spacer to push buttons to bottom right */}
