@@ -1019,11 +1019,33 @@ export class ActivitiesService {
         }
       : null;
 
+    const mappedStudentSessions = allStudentSessions.map((st) => {
+      let effectiveTimeSpentMs = st.timeSpentMs || 0;
+      let effectiveActStatus = st.status === 'EXITED' ? 'Left' : (st.progress > 0 ? 'Active' : 'Inactive');
+
+      const latestEvent = st.events?.[0];
+      if (latestEvent && typeof latestEvent.payload === 'object' && latestEvent.payload !== null) {
+        const payload = latestEvent.payload as any;
+        if (!effectiveTimeSpentMs && typeof payload.timeSpentMs === 'number') {
+          effectiveTimeSpentMs = payload.timeSpentMs;
+        }
+        if (payload.activityStatus) {
+          effectiveActStatus = payload.activityStatus;
+        }
+      }
+
+      return {
+        ...st,
+        timeSpentMs: effectiveTimeSpentMs,
+        activityStatus: effectiveActStatus,
+      };
+    });
+
     return {
       session,
       activityTitle,
       status: session.status,
-      students: allStudentSessions,
+      students: mappedStudentSessions,
       classroom: classroomInfo,
     };
   }

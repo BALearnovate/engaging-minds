@@ -209,6 +209,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         studentId,
         activityStatus: newStatus,
         startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs: elapsedSeconds * 1000,
       });
 
       socket.emit('update_progress', {
@@ -220,6 +221,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
         activityStatus: newStatus,
         startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs: elapsedSeconds * 1000,
       });
     };
 
@@ -369,20 +371,22 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     setAiTutorOpen(true);
   };
 
+  const formatTimeSummary = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   const handleSubmitAnswer = () => {
     setToastMessage('✅ Step answer submitted successfully!');
-    setCompletedSteps((prev) => Math.min(prev + 1, totalSteps));
+    const newCompleted = Math.min(completedSteps + 1, totalSteps);
+    setCompletedSteps(newCompleted);
     setQuestionsCorrect((prev) => Math.min(prev + 1, totalSteps));
+
     if (stepIndex < totalSteps) {
       setStepIndex((prev) => prev + 1);
     } else {
-      setToastMessage('🎉 All activity steps completed! Great work!');
-    }
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  const handleExitActivity = () => {
-    if (window.confirm('Are you sure you want to exit this activity?')) {
+      const timeSpentMs = elapsedSeconds * 1000;
       const actId = (shareCode || activityId || '').trim().toUpperCase();
       const socket = getSocket();
       const studentId = currentUser?.id || 'student_guest';
@@ -397,7 +401,53 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           studentId,
           activityStatus: 'Left',
           startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs: elapsedSeconds * 1000,
+          timeSpentMs,
+        });
+
+        socket.emit('update_progress', {
+          activityId: actId,
+          shareCode: actId,
+          studentId,
+          studentName,
+          progress: 100,
+          status: 'COMPLETED',
+          activityStatus: 'Left',
+          startedAt: new Date(sessionStartTimeMs).toISOString(),
+          timeSpentMs,
+        });
+      }
+
+      window.alert(
+        `🎉 Activity Completed!\n\n` +
+        `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
+        `Progress: 100%\n\n` +
+        `Click OK to return to your dashboard.`
+      );
+
+      if (onExit) {
+        onExit();
+      }
+    }
+  };
+
+  const handleExitActivity = () => {
+    if (window.confirm('Are you sure you want to exit this activity?')) {
+      const timeSpentMs = elapsedSeconds * 1000;
+      const actId = (shareCode || activityId || '').trim().toUpperCase();
+      const socket = getSocket();
+      const studentId = currentUser?.id || 'student_guest';
+      const studentName = currentUser
+        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+        : 'Student';
+
+      if (socket && actId) {
+        socket.emit('update_activity_status', {
+          activityId: actId,
+          shareCode: actId,
+          studentId,
+          activityStatus: 'Left',
+          startedAt: new Date(sessionStartTimeMs).toISOString(),
+          timeSpentMs,
         });
 
         socket.emit('update_progress', {
@@ -406,12 +456,19 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           studentId,
           studentName,
           progress: progressPct,
-          status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
+          status: progressPct === 100 ? 'COMPLETED' : 'IN_PROGRESS',
           activityStatus: 'Left',
           startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs: elapsedSeconds * 1000,
+          timeSpentMs,
         });
       }
+
+      window.alert(
+        `⚠️ Activity Exited\n\n` +
+        `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
+        `Progress: ${progressPct}%\n\n` +
+        `Click OK to return to your dashboard.`
+      );
 
       if (onExit) {
         onExit();
@@ -568,12 +625,12 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 
             {/* Stacked Action Buttons */}
             <div style={styles.actionsStack}>
-              <button
+              {/* <button
                 onClick={handleSubmitAnswer}
                 style={styles.submitBtn}
               >
-                {t('studentPortal.submitAnswer', 'SUBMIT ANSWER')}
-              </button>
+                {t('studentPortal.submitAnswer', 'SUBMIT ANSWER***')}
+              </button> */}
 
               <button
                 onClick={handleAskTeacher}

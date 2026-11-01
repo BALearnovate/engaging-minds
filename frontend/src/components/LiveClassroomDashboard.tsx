@@ -73,16 +73,26 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   let selectedStudentElapsedMs = 0;
   if (selectedStudent) {
-    if (selectedStudent.progress >= 100) {
-      if (selectedStudent.completedAt && selectedStudent.startedAt) {
+    const isCompletedOrExited =
+      selectedStudent.progress >= 100 ||
+      selectedStudent.activityStatus === 'Left';
+
+    if (isCompletedOrExited) {
+      if (typeof selectedStudent.timeSpentMs === 'number' && selectedStudent.timeSpentMs > 0) {
+        selectedStudentElapsedMs = selectedStudent.timeSpentMs;
+      } else if (selectedStudent.completedAt && selectedStudent.startedAt) {
         selectedStudentElapsedMs = Math.max(0, new Date(selectedStudent.completedAt).getTime() - new Date(selectedStudent.startedAt).getTime());
       } else if (typeof selectedStudent.timeSpentMs === 'number') {
         selectedStudentElapsedMs = selectedStudent.timeSpentMs;
       } else if (selectedStudent.startedAt) {
         selectedStudentElapsedMs = Math.max(0, nowTimestamp - new Date(selectedStudent.startedAt).getTime());
       }
-    } else if (selectedStudent.startedAt) {
-      selectedStudentElapsedMs = Math.max(0, nowTimestamp - new Date(selectedStudent.startedAt).getTime());
+    } else {
+      if (selectedStudent.startedAt) {
+        selectedStudentElapsedMs = Math.max(0, nowTimestamp - new Date(selectedStudent.startedAt).getTime());
+      } else if (typeof selectedStudent.timeSpentMs === 'number') {
+        selectedStudentElapsedMs = selectedStudent.timeSpentMs;
+      }
     }
   }
 

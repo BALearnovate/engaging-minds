@@ -93,6 +93,7 @@ model StudentSession {
   behavioralStars   Int             @default(0)
   behavioralPoints  Int             @default(0)
   currentBlockId    String?
+  timeSpentMs       Int             @default(0)
   lastSeenAt        DateTime        @default(now())
 
   events            ActivityEvent[]

@@ -704,9 +704,20 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
         },
       });
 
+      const effectiveTimeSpentMs =
+        typeof payload.timeSpentMs === 'number' && payload.timeSpentMs >= 0
+          ? Math.round(payload.timeSpentMs)
+          : studentSession?.timeSpentMs ?? 0;
+
       const effectiveStatus =
         payload.status ||
-        (progress === 100 ? 'COMPLETED' : progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED');
+        (payload.activityStatus === 'Left'
+          ? 'EXITED'
+          : progress === 100
+          ? 'COMPLETED'
+          : progress > 0
+          ? 'IN_PROGRESS'
+          : 'NOT_STARTED');
 
       if (studentSession) {
         studentSession = await this.prisma.studentSession.update({
@@ -715,6 +726,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
             status: effectiveStatus,
             progress: progress,
             score: payload.score ?? performanceScore ?? studentSession.score,
+            timeSpentMs: effectiveTimeSpentMs,
             lastSeenAt: new Date(),
           },
         });
@@ -730,6 +742,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
             status: effectiveStatus,
             progress: progress,
             score: payload.score ?? performanceScore ?? 0,
+            timeSpentMs: effectiveTimeSpentMs,
           },
         });
       }
