@@ -397,6 +397,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           studentId,
           activityStatus: 'Left',
           startedAt: new Date(sessionStartTimeMs).toISOString(),
+          timeSpentMs: elapsedSeconds * 1000,
         });
 
         socket.emit('update_progress', {
@@ -408,6 +409,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           status: progressPct === 100 ? 'COMPLETED' : progressPct > 0 ? 'IN_PROGRESS' : 'NOT_STARTED',
           activityStatus: 'Left',
           startedAt: new Date(sessionStartTimeMs).toISOString(),
+          timeSpentMs: elapsedSeconds * 1000,
         });
       }
 
@@ -682,13 +684,14 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
 const styles: Record<string, React.CSSProperties> = {
   pageBackground: {
     backgroundColor: '#f2f8eb',
-    minHeight: '100vh',
+    minHeight: 'calc(100vh - 80px)',
+    width: '100%',
     padding: '1.5rem',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    boxSizing: 'border-box',
   },
   toastBanner: {
     position: 'fixed',

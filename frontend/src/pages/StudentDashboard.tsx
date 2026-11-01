@@ -43,9 +43,10 @@ interface StudentActivityItem {
 interface StudentDashboardProps {
   currentTab?: string;
   onSelectTab?: (tab: string) => void;
+  onLiveActivityActiveChange?: (active: boolean) => void;
 }
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, onSelectTab }) => {
+export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, onSelectTab, onLiveActivityActiveChange }) => {
   const { t } = useTranslation();
   const { user, token: authContextToken } = useAuth();
 
@@ -57,6 +58,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
 
   const [showLiveModal, setShowLiveModal] = useState<boolean>(false);
   const [joinedLiveView, setJoinedLiveView] = useState<boolean>(false);
+  const [hasExitedCurrentLive, setHasExitedCurrentLive] = useState<boolean>(false);
+  const [exitedSessionCodes, setExitedSessionCodes] = useState<Set<string>>(new Set());
   const [showAiModal, setShowAiModal] = useState<boolean>(false);
   const [awardCelebration, setAwardCelebration] = useState<{
     studentName: string;
@@ -87,6 +90,16 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     localStorage.getItem('token') ||
     '';
 
+  const isLiveActivityActive = Boolean(
+    currentTab === 'student_live_activity' &&
+    (liveActivityData || joinedLiveView) &&
+    !hasExitedCurrentLive
+  );
+
+  useEffect(() => {
+    onLiveActivityActiveChange?.(isLiveActivityActive);
+  }, [isLiveActivityActive, onLiveActivityActiveChange]);
+
   // Listen for Live Activity broadcasts via Socket and check active classroom assignments
   useEffect(() => {
     const socket = getSocket();
@@ -106,6 +119,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         return;
       }
 
+      const code = (data.shareCode || data.activityId || '').toUpperCase();
+      if (code && exitedSessionCodes.has(code)) {
+        return;
+      }
+
+      setHasExitedCurrentLive(false);
       setLiveActivityData({
         title: data.activityTitle,
         shareCode: data.shareCode,
@@ -125,6 +144,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       activitiesApi.checkClassActiveAssignment(studentClassroomId, activeToken)
         .then((res: any) => {
           if (res && (res.existingActivityTitle || res.assignment?.activity?.title)) {
+            const code = (res.assignment?.shareCode || res.assignment?.activityId || '').toUpperCase();
+            if (code && exitedSessionCodes.has(code)) {
+              return;
+            }
             setLiveActivityData({
               title: res.existingActivityTitle || res.assignment?.activity?.title || 'Live Activity',
               shareCode: res.assignment?.shareCode,
@@ -384,7 +407,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
   }, [activityList]);
 
   if (currentTab === 'student_live_activity') {
-    if (liveActivityData || joinedLiveView) {
+    if ((liveActivityData || joinedLiveView) && !hasExitedCurrentLive) {
       return (
         <StudentLiveActivityView
           activityTitle={liveActivityData?.title || 'Live Interactive Lesson'}
@@ -395,7 +418,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
           rewardMode={liveActivityData?.rewardMode}
           targetScope={liveActivityData?.targetScope}
           onExit={() => {
+            const currentCode = (liveActivityData?.shareCode || liveActivityData?.activityId || '').trim().toUpperCase();
+            if (currentCode) {
+              setExitedSessionCodes((prev) => new Set(prev).add(currentCode));
+            }
+            setHasExitedCurrentLive(true);
             setJoinedLiveView(false);
+            setLiveActivityData(null);
+            setShowLiveModal(false);
             onSelectTab?.('student_home');
           }}
         />
@@ -678,16 +708,25 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
 
       {/* Live Activity Dialog Popup */}
       <LiveActivityPopupModal
-        isOpen={showLiveModal}
+        isOpen={showLiveModal && !hasExitedCurrentLive}
         activityTitle={liveActivityData?.title || 'Interactive Lesson'}
         teacherName={liveActivityData?.teacherName || 'Mrs. Sarah Jenkins'}
         shareCode={liveActivityData?.shareCode}
         onJoin={() => {
           setShowLiveModal(false);
           setJoinedLiveView(true);
+          setHasExitedCurrentLive(false);
           onSelectTab?.('student_live_activity');
         }}
-        onClose={() => setShowLiveModal(false)}
+        onClose={() => {
+          setShowLiveModal(false);
+          const currentCode = (liveActivityData?.shareCode || liveActivityData?.activityId || '').trim().toUpperCase();
+          if (currentCode) {
+            setExitedSessionCodes((prev) => new Set(prev).add(currentCode));
+          }
+          setHasExitedCurrentLive(true);
+          setLiveActivityData(null);
+        }}
       />
 
       {/* Award Celebration Pop-Up for Student */}

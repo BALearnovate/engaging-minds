@@ -177,7 +177,21 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     this.server.emit('live_student_update', updatedState);
 
     // Asynchronously persist progress update to database
-    this.persistStudentProgress(payload, progressVal, engagementVal, performanceVal).catch((err) => {
+    this.persistStudentProgress(
+      {
+        activityId: payload.activityId,
+        studentId: payload.studentId,
+        studentName: payload.studentName,
+        status: payload.status,
+        score: payload.score,
+        activityStatus: incomingActStatus,
+        startedAt: incomingStartedAt,
+        timeSpentMs: typeof (payload as any).timeSpentMs === 'number' ? (payload as any).timeSpentMs : existing?.timeSpentMs,
+      },
+      progressVal,
+      engagementVal,
+      performanceVal,
+    ).catch((err) => {
       console.warn('Failed to persist student progress:', err);
     });
   }
@@ -213,6 +227,22 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       activityStateMap.set(payload.studentId, existing);
       this.server.to(roomName).emit('live_student_update', existing);
       this.server.emit('live_student_update', existing);
+
+      this.persistStudentProgress(
+        {
+          activityId: normalizedActId,
+          studentId: payload.studentId,
+          studentName: existing.studentName,
+          status: existing.status,
+          score: existing.score,
+          activityStatus: payload.activityStatus,
+          startedAt: payload.startedAt || existing.startedAt,
+          timeSpentMs: payload.timeSpentMs ?? existing.timeSpentMs,
+        },
+        existing.progress || 0,
+        existing.engagementScore || 0,
+        existing.performanceScore || 0,
+      ).catch(() => {});
     }
   }
 
@@ -634,6 +664,9 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       studentName: string;
       status?: 'NOT_STARTED' | 'IN_PROGRESS' | 'STUCK' | 'COMPLETED';
       score?: number;
+      activityStatus?: string;
+      startedAt?: string;
+      timeSpentMs?: number;
     },
     progress: number,
     engagementScore: number,
@@ -676,7 +709,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
         (progress === 100 ? 'COMPLETED' : progress > 0 ? 'IN_PROGRESS' : 'NOT_STARTED');
 
       if (studentSession) {
-        await this.prisma.studentSession.update({
+        studentSession = await this.prisma.studentSession.update({
           where: { id: studentSession.id },
           data: {
             status: effectiveStatus,
@@ -686,7 +719,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           },
         });
       } else {
-        await this.prisma.studentSession.create({
+        studentSession = await this.prisma.studentSession.create({
           data: {
             activitySessionId: actSession.id,
             studentId:
@@ -700,6 +733,22 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
           },
         });
       }
+
+      await this.prisma.activityEvent.create({
+        data: {
+          studentSessionId: studentSession.id,
+          type: payload.activityStatus === 'Left' ? 'STUDENT_EXIT' : 'PROGRESS_UPDATE',
+          payload: {
+            progress,
+            status: effectiveStatus,
+            activityStatus: payload.activityStatus || 'Active',
+            startedAt: payload.startedAt,
+            timeSpentMs: payload.timeSpentMs,
+            score: payload.score ?? performanceScore ?? studentSession.score,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
     } catch (err) {
       console.warn('Failed to persist student progress to database:', err);
     }

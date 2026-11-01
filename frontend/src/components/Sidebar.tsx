@@ -5,9 +5,10 @@ import { useTranslation } from '../i18n/useTranslation';
 interface SidebarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
+  isLiveActivityActive?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, isLiveActivityActive }) => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
@@ -132,12 +133,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
           return (
             <button
               key={item.id}
-              onClick={() => onSelectTab(item.id)}
+              onClick={() => {
+                if (isLiveActivityActive && item.id !== currentTab) {
+                  alert(t('studentPortal.exitActivityFirst', 'Please exit the current live activity first before switching tabs.'));
+                  return;
+                }
+                onSelectTab(item.id);
+              }}
               style={{
                 ...styles.menuItem,
                 color: isActive ? '#a3e635' : '#ffffff',
                 fontWeight: isActive ? '700' : '500',
+                opacity: isLiveActivityActive && item.id !== currentTab ? 0.6 : 1,
+                cursor: isLiveActivityActive && item.id !== currentTab ? 'not-allowed' : 'pointer',
               }}
+              title={isLiveActivityActive && item.id !== currentTab ? t('studentPortal.exitActivityFirst', 'Please exit the current live activity first before switching tabs.') : item.label}
             >
               <div style={styles.itemIconBox}>
                 {renderIcon(item.icon, isActive)}

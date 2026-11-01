@@ -16,6 +16,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('home');
+  const [isLiveActivityActive, setIsLiveActivityActive] = useState<boolean>(false);
 
   const handleLoginSuccess = (role: string) => {
     if (role === 'STUDENT') {
@@ -47,7 +48,11 @@ const MainApp: React.FC = () => {
     if (user.role === 'STUDENT' || currentTab === 'student_home' || currentTab === 'student' || currentTab === 'student_live_activity' || currentTab === 'student_support') {
       return (
         <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <StudentDashboard currentTab={currentTab} onSelectTab={setCurrentTab} />
+          <StudentDashboard
+            currentTab={currentTab}
+            onSelectTab={setCurrentTab}
+            onLiveActivityActiveChange={setIsLiveActivityActive}
+          />
         </ProtectedRoute>
       );
     }
@@ -96,7 +101,13 @@ const MainApp: React.FC = () => {
     <div style={styles.appContainer}>
       <LanguageTopBar />
       <div style={styles.appWrapper}>
-        {user && <Sidebar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+        {user && (
+          <Sidebar
+            currentTab={currentTab}
+            onSelectTab={setCurrentTab}
+            isLiveActivityActive={isLiveActivityActive}
+          />
+        )}
 
         <div style={styles.mainLayout}>
           {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
