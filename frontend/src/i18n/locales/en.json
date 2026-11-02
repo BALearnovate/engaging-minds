@@ -320,7 +320,7 @@
     "printableSlips": "PRINTABLE SLIPS",
     "passesSub": "Generate cuttable student login passes with individual names and 4-digit passcodes for secure classroom distribution.",
     "generatePassesBtn": "🖨️ GENERATE PRINTABLE STUDENT LOGIN PASSES",
-    "rosterPreview": "ROSTER PREVIEW",
+    "rosterPreview": "Classroom Preview",
     "revealPasscodes": "👁 Reveal All Passcodes",
     "hidePasscodes": "🔒 Hide Passcodes",
     "rosterEmpty": "ROSTER IS EMPTY",

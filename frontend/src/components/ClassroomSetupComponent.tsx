@@ -671,7 +671,7 @@ export const ClassroomSetupComponent: React.FC = () => {
             {/* Far Right Column: Roster Preview List */}
             <div style={styles.previewColumn} className="classroom-preview-column">
               <div style={styles.previewHeaderRow}>
-                <h3 style={styles.previewTitle}>{t('classroomSetup.rosterPreview', 'ROSTER PREVIEW')}</h3>
+                <h3 style={styles.previewTitle}>{t('classroomSetup.rosterPreview', 'Classroom preview')}</h3>
                 <button
                   onClick={() => setRevealAll(!revealAll)}
                   style={styles.revealAllBtn}
