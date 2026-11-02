@@ -597,7 +597,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                       </div>
                     </div>
                     <button type="submit" style={styles.actionBtn}>
-                      {t('classroomSetup.addStudentBtn', '➕ ADD STUDENT TO ROSTER')}
+                      {t('classroomSetup.addStudentBtn', '➕ Add Student To Classroom')}
                     </button>
                   </form>
                 </div>
@@ -638,7 +638,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     style={styles.textarea}
                   />
                   <button onClick={handleParseBulkCsv} style={styles.actionBtn}>
-                    {t('classroomSetup.parseBulkBtn', 'VALIDATE & PARSE BULK ROWS')}
+                    {t('classroomSetup.parseBulkBtn', '➕Add Students to Classroom')}
                   </button>
                 </div>
               )}
