@@ -646,11 +646,11 @@ export const ClassroomSetupComponent: React.FC = () => {
               {/* Enrollment Passes Banner */}
               <div style={styles.passesCard} className="classroom-passes-card">
                 <div style={styles.passesHeader} className="classroom-passes-header">
-                  <span style={styles.passesTitle}>{t('classroomSetup.enrollmentPasses', 'ENROLLMENT PASSES')}</span>
+                  <span style={styles.passesTitle}>{t('classroomSetup.enrollmentPasses', 'Login Passes')}</span>
                   {/* <span style={styles.passesBadge}>{t('classroomSetup.printableSlips', 'PRINTABLE SLIPS')}</span> */}
                 </div>
                 <p style={styles.passesSub}>
-                  {t('classroomSetup.passesSub', 'Generate cuttable student pass slips with individual names and 4-digit passcodes for secure classroom distribution.')}
+                  {t('classroomSetup.passesSub', 'Generate cuttable student login passes with individual names and 4-digit passcodes for secure classroom distribution.')}
                 </p>
                 <button
                   onClick={() => {
