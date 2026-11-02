@@ -555,7 +555,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(entryMode === 'manual' ? styles.tabBtnActive : {}),
                   }}
                 >
-                  {t('classroomSetup.manualEntryTab', '👤 Manual Entry')}
+                  {t('classroomSetup.manualEntryTab', '👤 Single Entry')}
                 </button>
                 <button
                   onClick={() => setEntryMode('bulk')}
@@ -564,7 +564,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                     ...(entryMode === 'bulk' ? styles.tabBtnActive : {}),
                   }}
                 >
-                  {t('classroomSetup.bulkEntryTab', '📋 Bulk CSV Paste')}
+                  {t('classroomSetup.bulkEntryTab', '📋 Multi Entry')}
                 </button>
               </div>
 
