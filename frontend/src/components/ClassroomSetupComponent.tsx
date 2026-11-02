@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { classroomsApi } from '../api/classrooms';
 import type { ClassroomProfile, StudentRecord } from '../api/classrooms';
@@ -36,8 +36,25 @@ export const ClassroomSetupComponent: React.FC = () => {
 
   // Bulk CSV Paste State
   const [bulkCsvText, setBulkCsvText] = useState<string>(
-    'Leo Vance\nTommy Miller\nPenny Woods',
+    'Leo Vance,Tommy Miller,Penny Woods',
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        setBulkCsvText(content);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   // Privacy & Passcode Visibility State
   const [revealedCodes, setRevealedCodes] = useState<Record<string, boolean>>({});
@@ -147,7 +164,7 @@ export const ClassroomSetupComponent: React.FC = () => {
     if (!bulkCsvText.trim() || !selectedClassroom.id) return;
 
     const lines = bulkCsvText
-      .split('\n')
+      .split(',')
       .map((l) => l.trim())
       .filter((l) => l.length > 0);
 
@@ -323,7 +340,7 @@ export const ClassroomSetupComponent: React.FC = () => {
 .classroom-roster-body-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: start;
   width: 100%;
   box-sizing: border-box;
@@ -334,16 +351,22 @@ export const ClassroomSetupComponent: React.FC = () => {
   gap: 0.75rem;
 }
 
-@media (max-width: 1300px) {
+@media (max-width: 1080px) {
   .classroom-split-grid {
-    grid-template-columns: 1fr !important;
-  }
-  .classroom-roster-body-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
+  .classroom-roster-body-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .classroom-preview-column {
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 550px) {
   .classroom-two-col-row {
     grid-template-columns: 1fr !important;
   }
@@ -448,7 +471,7 @@ export const ClassroomSetupComponent: React.FC = () => {
                 </div>
 
                 <button type="submit" style={styles.submitCreateBtn}>
-                  {t('classroomSetup.confirmInstantiate', 'CONFIRM & INSTANTIATE CLASSROOM')}
+                  {t('classroomSetup.confirmInstantiate', 'Create Classroom')}
                 </button>
               </form>
             </div>
@@ -585,11 +608,33 @@ export const ClassroomSetupComponent: React.FC = () => {
                   <p style={styles.boxSub}>
                     {t('classroomSetup.bulkCsvSub', 'Input student rows as custom comma-separated lines matching: [First Name, Last Surname Initial]')}
                   </p>
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".csv,.txt"
+                    style={{ display: 'none' }}
+                    onChange={handleFileUpload}
+                  />
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={styles.uploadBtn}
+                    >
+                      {t('classroomSetup.uploadCsvBtn', '📁 Upload CSV File')}
+                    </button>
+                    <span style={styles.boxSub}>
+                      {t('classroomSetup.orPasteNotice', 'or paste CSV rows directly into the text box below:')}
+                    </span>
+                  </div>
+
                   <textarea
                     rows={6}
                     value={bulkCsvText}
                     onChange={(e) => setBulkCsvText(e.target.value)}
-                    placeholder="Leo Vance&#10;Tommy Miller&#10;Penny Woods"
+                    placeholder="Leo Vance,Tommy Miller,Penny Woods"
                     style={styles.textarea}
                   />
                   <button onClick={handleParseBulkCsv} style={styles.actionBtn}>
@@ -850,7 +895,6 @@ const styles: Record<string, React.CSSProperties> = {
 
   splitGrid: {
     display: 'grid',
-    gridTemplateColumns: '350px minmax(0, 1fr)',
     gap: '1.25rem',
     boxSizing: 'border-box',
     width: '100%',
@@ -1059,7 +1103,6 @@ const styles: Record<string, React.CSSProperties> = {
 
   rosterBodyGrid: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1fr) 320px',
     gap: '1rem',
     alignItems: 'stretch',
     boxSizing: 'border-box',
@@ -1140,6 +1183,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '800',
     fontSize: '0.82rem',
     cursor: 'pointer',
+  },
+  uploadBtn: {
+    padding: '0.6rem 0.85rem',
+    backgroundColor: '#ffffff',
+    color: '#0284c7',
+    border: '1.5px dashed #0284c7',
+    borderRadius: '6px',
+    fontWeight: '700',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'all 0.15s ease',
   },
 
   /* Enrollment Passes Card */

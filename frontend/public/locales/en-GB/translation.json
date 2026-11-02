@@ -321,6 +321,8 @@
     "addStudentBtn": "➕ ADD STUDENT TO ROSTER",
     "bulkCsvTitle": "PASTE CSV STUDENT REGISTRY ROWS",
     "bulkCsvSub": "Input student rows as custom comma-separated lines matching: [First Name, Last Surname Initial]",
+    "uploadCsvBtn": "📁 Upload CSV File",
+    "orPasteNotice": "or paste CSV rows directly into the text box below:",
     "parseBulkBtn": "VALIDATE & PARSE BULK ROWS",
     "enrollmentPasses": "ENROLLMENT PASSES",
     "printableSlips": "PRINTABLE SLIPS",
