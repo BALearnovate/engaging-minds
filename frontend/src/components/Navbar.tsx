@@ -31,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
       case 'student':
         return t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress');
       default:
-        return t('nav.classroomSetup', 'Classroom & Roster Setup');
+        return t('nav.classroomSetup', 'Classroom Setup');
     }
   };
 

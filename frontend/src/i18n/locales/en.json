@@ -21,7 +21,7 @@
   "nav": {
     "home": "Home",
     "activityReview": "Activity Review",
-    "classroomSetup": "Classroom & Roster Setup",
+    "classroomSetup": "Classroom Setup",
     "activityCreation": "Activity Creation Studio",
     "studentSupport": "Student Support",
     "studentPortal": "Student Portal",
@@ -288,7 +288,7 @@
     "enterStudentPortal": "ENTER STUDENT PORTAL →"
   },
   "classroomSetup": {
-    "bannerTitle": "CLASSROOM SETUP",
+    "bannerTitle": "Classroom Setup",
     "bannerSubtitle": "Configure classrooms and student access credentials.",
     "syncingDb": "⚡ Syncing Database...",
     "savingChanges": "💾 Saving Changes...",
