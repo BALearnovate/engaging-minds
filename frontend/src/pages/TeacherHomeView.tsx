@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { activitiesApi } from '../api/activities';
 import type { TeacherHomeOverviewData } from '../api/activities';
 import { useTranslation } from '../i18n/useTranslation';
+import { useAuth } from '../context/AuthContext';
 
 interface TeacherHomeViewProps {
   onNavigateTab?: (tab: string) => void;
@@ -9,6 +10,7 @@ interface TeacherHomeViewProps {
 
 export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab }) => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [data, setData] = useState<TeacherHomeOverviewData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,9 +65,9 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
     return val < 10 ? `0${val}` : `${val}`;
   };
 
-  const teacherName = data?.teacher
-    ? `${data.teacher.firstName} `.trim()
-    : '';
+  const teacherName = (data?.teacher?.firstName || user?.firstName || '').trim();
+
+    console.log(`Teacher name ${JSON.stringify(data)}`)
 
  
 

@@ -21,6 +21,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   const [portal, setPortal] = useState<'TEACHER' | 'STUDENT'>('TEACHER');
 
   // Teacher Registration State
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -71,6 +73,11 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
     e.preventDefault();
     setError(null);
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('First name and last name are required');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -87,8 +94,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
       const user = await register({
         email,
         password,
-        firstName: school.trim() || 'Teacher',
-        lastName: 'Portal',
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         role: 'TEACHER',
       });
       onSuccess(user.role);
@@ -254,7 +261,31 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
                 <form onSubmit={handleTeacherSubmit} style={styles.form}>
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('login.emailLabel', 'Email:')}</label>
+                    <label style={styles.label}>{t('register.firstNameLabel', 'First Name *')}</label>
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder={t('register.firstNamePlaceholder', 'Enter your first name')}
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.label}>{t('register.lastNameLabel', 'Last Name *')}</label>
+                    <input
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder={t('register.lastNamePlaceholder', 'Enter your last name')}
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.fieldGroup}>
+                    <label style={styles.label}>{t('login.emailLabel', 'Email:')} *</label>
                     <input
                       type="email"
                       required
@@ -266,7 +297,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('login.passwordLabel', 'Password:')}</label>
+                    <label style={styles.label}>{t('login.passwordLabel', 'Password:')} *</label>
                     <input
                       type="password"
                       required
@@ -279,7 +310,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password:')}</label>
+                    <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password:')} *</label>
                     <input
                       type="password"
                       required
