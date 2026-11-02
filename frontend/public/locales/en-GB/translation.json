@@ -302,6 +302,8 @@
     "savingChanges": "💾 Saving Changes...",
     "activeClassrooms": "ACTIVE CLASSROOMS",
     "activeClassroomsSub": "Choose a class profile or create a new class using Create + button",
+    "selectClassroomPlaceholder": "Select a Classroom...",
+    "noClassroomsFound": "No classrooms available. Click + CREATE to add one.",
     "createBtn": "+ CREATE",
     "newProfile": "NEW CLASSROOM PROFILE",
     "closeBtn": "✕ Close",

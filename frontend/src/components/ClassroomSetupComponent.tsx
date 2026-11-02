@@ -59,6 +59,7 @@ export const ClassroomSetupComponent: React.FC = () => {
   // Privacy & Passcode Visibility State
   const [revealedCodes, setRevealedCodes] = useState<Record<string, boolean>>({});
   const [revealAll, setRevealAll] = useState<boolean>(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   // Printable Slips Modal State
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
@@ -403,7 +404,7 @@ export const ClassroomSetupComponent: React.FC = () => {
         <div style={styles.leftColumn} className="classroom-left-col">
           <div style={styles.leftHeaderRow}>
             <div>
-              <h2 style={styles.leftTitle}>{t('classroomSetup.activeClassrooms', 'ACTIVE CLASSROOMS')}</h2>
+              <h2 style={styles.leftTitle}>{t('classroomSetup.activeClassrooms', 'Active Classrooms')}</h2>
               <p style={styles.leftSubtitle}>{t('classroomSetup.activeClassroomsSub', 'Choose a class profile or create a new class using Create + button')}</p>
             </div>
             {!isCreatingClass && (
@@ -477,57 +478,98 @@ export const ClassroomSetupComponent: React.FC = () => {
             </div>
           )}
 
-          {/* List of Existing Active Classrooms (Rendered at the bottom) */}
-          <div style={styles.classList}>
-            {classrooms.map((cls) => {
-              const isSelected = cls.id === selectedClassId;
-              const count = cls.students.length;
-              return (
-                <div
-                  key={cls.id}
-                  onClick={() => setSelectedClassId(cls.id)}
-                  style={{
-                    ...styles.classCard,
-                    ...(isSelected ? styles.classCardSelected : {}),
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div style={styles.classCardInfo}>
-                    <h3 style={styles.classCardTitle}>
-                      {cls.subject} - {cls.grade}
-                    </h3>
-                    <p style={styles.classCardMeta}>
-                      {count === 1
-                        ? t('classroomSetup.studentCount_one', '1 student')
-                        : t('classroomSetup.studentCount_other', '{{count}} students', { count })}
-                    </p>
+         <h2 style={styles.leftTitle}>{t('classroomSetup.yourclasses', 'Your Classes')}</h2>
+
+          {/* Custom Select Dropdown for Active Classrooms */}
+          <div style={styles.dropdownContainer}>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              style={styles.dropdownHeaderBtn}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
+                <span style={styles.dropdownSelectedTitle}>
+                  {selectedClassroom.id
+                    ? `${selectedClassroom.subject} - ${selectedClassroom.grade} (${selectedClassroom.year})`
+                    : t('classroomSetup.selectClassroomPlaceholder', 'Select a Classroom...')}
+                </span>
+                {selectedClassroom.id && (
+                  <span style={styles.dropdownSelectedMeta}>
+                    {selectedClassroom.students.length === 1
+                      ? t('classroomSetup.studentCount_one', '1 student')
+                      : t('classroomSetup.studentCount_other', '{{count}} students', { count: selectedClassroom.students.length })}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '0.85rem', color: '#0369a1', marginLeft: '0.5rem' }}>
+                {isDropdownOpen ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {/* Dropdown Options Popup */}
+            {isDropdownOpen && (
+              <div style={styles.dropdownMenu}>
+                {classrooms.length === 0 ? (
+                  <div style={styles.dropdownEmpty}>
+                    {t('classroomSetup.noClassroomsFound', 'No classrooms available. Click + CREATE to add one.')}
                   </div>
-                  <button
-                    onClick={(e) => handleDeleteClassroom(e, cls.id)}
-                    title={t('classroomSetup.deleteClassroom', 'Delete Classroom')}
-                    style={styles.deleteClassBtn}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#ef4444"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              );
-            })}
+                ) : (
+                  classrooms.map((cls) => {
+                    const isSelected = cls.id === selectedClassId;
+                    const count = cls.students.length;
+                    return (
+                      <div
+                        key={cls.id}
+                        onClick={() => {
+                          setSelectedClassId(cls.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        style={{
+                          ...styles.dropdownItem,
+                          ...(isSelected ? styles.dropdownItemSelected : {}),
+                        }}
+                      >
+                        <div style={styles.dropdownItemInfo}>
+                          <span style={styles.dropdownItemTitle}>
+                            {cls.subject} - {cls.grade} ({cls.year})
+                          </span>
+                          <span style={styles.dropdownItemMeta}>
+                            {count === 1
+                              ? t('classroomSetup.studentCount_one', '1 student')
+                              : t('classroomSetup.studentCount_other', '{{count}} students', { count })}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClassroom(e, cls.id);
+                          }}
+                          title={t('classroomSetup.deleteClassroom', 'Delete Classroom')}
+                          style={styles.deleteClassBtn}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -939,6 +981,87 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '800',
     fontSize: '0.78rem',
     cursor: 'pointer',
+  },
+
+  /* Custom Classroom Dropdown */
+  dropdownContainer: {
+    position: 'relative',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  dropdownHeaderBtn: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.75rem 1rem',
+    backgroundColor: '#ffffff',
+    border: '2px solid #38bdf8',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+    textAlign: 'left',
+  },
+  dropdownSelectedTitle: {
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    color: '#0369a1',
+  },
+  dropdownSelectedMeta: {
+    fontSize: '0.75rem',
+    color: '#64748b',
+    marginTop: '0.15rem',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: '105%',
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    backgroundColor: '#ffffff',
+    border: '1.5px solid #7dd3fc',
+    borderRadius: '10px',
+    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.12)',
+    maxHeight: '280px',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '0.35rem 0',
+  },
+  dropdownEmpty: {
+    padding: '1rem',
+    fontSize: '0.82rem',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  dropdownItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.7rem 1rem',
+    cursor: 'pointer',
+    borderBottom: '1px solid #f1f5f9',
+    transition: 'background-color 0.15s ease',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#f0f9ff',
+    fontWeight: '800',
+  },
+  dropdownItemInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.15rem',
+    overflow: 'hidden',
+  },
+  dropdownItemTitle: {
+    fontSize: '0.88rem',
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  dropdownItemMeta: {
+    fontSize: '0.75rem',
+    color: '#64748b',
   },
 
   /* Class List */
