@@ -138,7 +138,7 @@
     "justNow": "Just now",
     "minutesAgo": "{{min}} min ago",
     "hoursAgo": "{{hrs}} hrs ago",
-    "mostEngagedSchoolActivities": "MOST ENGAGED ACTIVITIES IN SCHOOL",
+    "mostEngagedSchoolActivities": "Activities with Highest Engagement in School",
     "engagementScore": "{{score}}% Engagement",
     "noSchoolActivitiesYet": "No engaged activities recorded in the school yet."
   },

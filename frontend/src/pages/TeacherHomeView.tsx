@@ -242,7 +242,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                       <line x1="6" y1="20" x2="6" y2="14" />
                     </svg>
                     <span style={styles.subHeaderTitle}>
-                      {t('teacherHome.mostEngagedSchoolActivities', 'Activities with Most Engagement in School')}
+                      {t('teacherHome.mostEngagedSchoolActivities', 'Activities with Highest Engagement in School')}
                     </span>
                   </div>
 
