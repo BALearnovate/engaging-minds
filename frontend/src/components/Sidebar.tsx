@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab, isLiv
   return (
     <aside style={{
       ...styles.sidebar,
-      width: collapsed ? '80px' : '260px',
+      width: collapsed ? '80px' : '310px',
       minWidth: collapsed ? '80px' : '260px',
     }}>
       {/* Background Dot Pattern */}
