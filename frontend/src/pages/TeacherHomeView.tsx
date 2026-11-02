@@ -142,7 +142,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                   {formatNumber(data?.stats.totalEngagedStudents)}
                 </div>
                 <div style={styles.cardTitle}>
-                  {t('teacherHome.totalEngagedStudents', 'Total Engaged Students')}
+                  {t('teacherHome.totalEngagedStudents', 'Total Students Engaged')}
                 </div>
               </div>
             </div>
