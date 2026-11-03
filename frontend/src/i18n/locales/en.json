@@ -302,7 +302,7 @@
     "closeBtn": "✕ Close",
     "subjectLabel": "SUBJECT *",
     "subjectPlaceholder": "e.g. Mathematics, Science",
-    "gradeLabel": "GRADE *",
+    "gradeLabel": "Level *",
     "yearLabel": "YEAR *",
     "saveClassroom": "SAVE CLASS PROFILE",
     "confirmInstantiate": "Create Classroom",

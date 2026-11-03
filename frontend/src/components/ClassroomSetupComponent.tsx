@@ -444,18 +444,18 @@ export const ClassroomSetupComponent: React.FC = () => {
                 </div>
 
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>{t('classroomSetup.gradeLabel', 'GRADE *')}</label>
+                  <label style={styles.label}>{t('classroomSetup.gradeLabel', 'Level *')}</label>
                   <select
                     value={newGrade}
                     onChange={(e) => setNewGrade(e.target.value)}
                     style={styles.select}
                   >
-                    <option value="Grade 1">Grade 1</option>
-                    <option value="Grade 2">Grade 2</option>
-                    <option value="Grade 3">Grade 3</option>
-                    <option value="Grade 4">Grade 4</option>
-                    <option value="Grade 5">Grade 5</option>
-                    <option value="Grade 6">Grade 6</option>
+                    <option value="Year 1">Year 1</option>
+                    <option value="Year 2">Year 2</option>
+                    <option value="Year 3">Year 3</option>
+                    <option value="Year 4">Year 4</option>
+                    <option value="Year 5">Year 5</option>
+                    <option value="Year 6">Year 6</option>
                   </select>
                 </div>
 
