@@ -768,7 +768,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
           <div style={styles.sidebarSection}>
             <label style={styles.paramLabel}>{t('activityCreation.setTimer', 'SET TIMER')}</label>
-            <select
+            {/* <select
               value={timerMode}
               onChange={(e) => setTimerMode(e.target.value)}
               style={styles.paramSelect}
@@ -777,7 +777,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               <option value="Timed 15 Minutes">{t('activityCreation.timed15', '15 Minutes')}</option>
               <option value="Timed 30 Minutes">{t('activityCreation.timed30', '30 Minutes')}</option>
               <option value="Timed 45 Minutes">{t('activityCreation.timed45', '45 Minutes')}</option>
-            </select>
+            </select> */}
             <div style={styles.timerStepperContainer}>
               <button
                 type="button"
