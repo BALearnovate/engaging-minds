@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
         return t('nav.liveActivity', 'Live Activity');
       case 'student_home':
       case 'student':
-        return t('nav.studentDashboardAndProgress', 'Student Dashboard and Progress');
+        return t('nav.studentDashboardAndProgress', 'My Dashboard');
       default:
         return t('nav.classroomSetup', 'Classroom Setup');
     }
