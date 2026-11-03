@@ -509,7 +509,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       />
                     </div>
 
-                    <div style={styles.inputGroup}>
+                    {/* <div style={styles.inputGroup}>
                       <label style={styles.inputLabel}>{t('register.studentOptionalEmailLabel', 'STUDENT ID / SCHOOL EMAIL (OPTIONAL)')}</label>
                       <input
                         type="text"
@@ -518,7 +518,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                         placeholder={t('register.studentOptionalEmailPlaceholder', 'e.g. STU-84920 or name@school.edu')}
                         style={styles.studentInput}
                       />
-                    </div>
+                    </div> */}
 
                     <button
                       type="button"
