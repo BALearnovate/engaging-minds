@@ -32,10 +32,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User no longer exists');
+    if (user) {
+      return user;
     }
 
-    return user;
+    // Check Student table for student credentials
+    const student = await this.prisma.student.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (student) {
+      return {
+        id: student.id,
+        email: student.email || `${student.loginCode}@student.em`,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        loginCode: student.loginCode,
+        classroomId: student.classroomId,
+        role: 'STUDENT',
+      };
+    }
+
+    // Support demo/temporary student session tokens
+    if (payload.role === 'STUDENT' || payload.sub?.startsWith('demo_') || payload.sub?.startsWith('temp_')) {
+      return {
+        id: payload.sub,
+        email: payload.email || 'student@student.em',
+        firstName: 'Student',
+        lastName: 'User',
+        role: 'STUDENT',
+      };
+    }
+
+    throw new UnauthorizedException('User no longer exists');
   }
 }

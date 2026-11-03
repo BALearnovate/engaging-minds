@@ -364,9 +364,11 @@ export class ActivitiesService {
       };
     }
 
-    const studentFullName = `${student.firstName} ${student.lastName}`.trim();
+    const studentFullName = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
+    const studentFirstName = (student.firstName || '').trim().toLowerCase();
+    const studentId = (student.id || '').trim().toLowerCase();
 
-    const assignments = await this.prisma.activityAssignment.findMany({
+    const rawAssignments = await this.prisma.activityAssignment.findMany({
       where: { classroomId: student.classroomId },
       include: {
         activity: {
@@ -384,7 +386,7 @@ export class ActivitiesService {
                       where: {
                         OR: [
                           { studentId: student.id },
-                          { studentName: { equals: studentFullName, mode: 'insensitive' } },
+                          { studentName: { equals: `${student.firstName} ${student.lastName}`.trim(), mode: 'insensitive' } },
                         ],
                       },
                     },
@@ -399,6 +401,60 @@ export class ActivitiesService {
         },
       },
       orderBy: { assignedAt: 'desc' },
+    });
+
+    // Strictly filter assignments to only those targeting this student
+    const assignments = rawAssignments.filter((assignment) => {
+      const scope = assignment.targetScope || 'Full Classroom Scope';
+      const targetGroup = assignment.targetGroupStudents;
+
+      // If scope is Full Classroom Scope or no specific targetGroup is set, all classroom students get it
+      if (scope === 'Full Classroom Scope' || !targetGroup) {
+        return true;
+      }
+
+      let studentList: any[] = [];
+      if (Array.isArray(targetGroup)) {
+        studentList = targetGroup;
+      } else if (typeof targetGroup === 'string') {
+        try {
+          const parsed = JSON.parse(targetGroup);
+          if (Array.isArray(parsed)) studentList = parsed;
+        } catch {
+          studentList = [targetGroup];
+        }
+      }
+
+      // If the target list is empty, treat as assigned to full classroom
+      if (studentList.length === 0) {
+        return true;
+      }
+
+      // Check if student matches any entry in targetGroupStudents
+      return studentList.some((item) => {
+        if (!item) return false;
+
+        let valStr = '';
+        if (typeof item === 'string') {
+          valStr = item.trim().toLowerCase();
+        } else if (typeof item === 'object') {
+          valStr = (
+            item.id ||
+            item.name ||
+            `${item.firstName || ''} ${item.lastName || ''}`
+          ).trim().toLowerCase();
+        }
+
+        if (!valStr) return false;
+
+        return (
+          valStr === studentId ||
+          valStr === studentFullName ||
+          valStr === studentFirstName ||
+          studentFullName.includes(valStr) ||
+          valStr.includes(studentFullName)
+        );
+      });
     });
 
     return {

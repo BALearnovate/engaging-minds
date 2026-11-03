@@ -90,11 +90,42 @@ export class AuthService {
       },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User profile not found');
+    if (user) {
+      return user;
     }
 
-    return user;
+    // Check Student table if not found in User table
+    const student = await this.prisma.student.findUnique({
+      where: { id: userId },
+      include: { classroom: true },
+    });
+
+    if (student) {
+      return {
+        id: student.id,
+        email: student.email || `${student.loginCode}@student.em`,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        loginCode: student.loginCode,
+        classroomId: student.classroomId,
+        role: 'STUDENT',
+        avatar: '🎓',
+      };
+    }
+
+    // Support demo/temporary student profile retrieval
+    if (userId?.startsWith('demo_') || userId?.startsWith('temp_')) {
+      return {
+        id: userId,
+        email: 'student@student.em',
+        firstName: 'Student',
+        lastName: 'User',
+        role: 'STUDENT',
+        avatar: '🎓',
+      };
+    }
+
+    throw new UnauthorizedException('User profile not found');
   }
 
   async verifyJoinCode(code: string) {
