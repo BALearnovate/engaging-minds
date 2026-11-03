@@ -1561,6 +1561,7 @@ export class ActivitiesService {
       status: sess.status,
       createdAt: sess.createdAt,
       studentCount: sess.studentSessions.length,
+      activityId: sess.activityVersion.activity.id,
     }));
 
     // 7. Most Engaged Activities in School

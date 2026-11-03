@@ -17,6 +17,19 @@ const MainApp: React.FC = () => {
   const { user } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [isLiveActivityActive, setIsLiveActivityActive] = useState<boolean>(false);
+  const [selectedActivityId, setSelectedActivityId] = useState<string | undefined>(undefined);
+  const [initialPathway, setInitialPathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
+
+  const handleNavigateTab = (tab: string, activityId?: string) => {
+    if (activityId) {
+      setSelectedActivityId(activityId);
+      setInitialPathway('templates');
+    } else {
+      setSelectedActivityId(undefined);
+      setInitialPathway('ai');
+    }
+    setCurrentTab(tab);
+  };
 
   const handleLoginSuccess = (role: string) => {
     if (role === 'STUDENT') {
@@ -60,7 +73,7 @@ const MainApp: React.FC = () => {
     if (currentTab === 'home') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <TeacherHomeView onNavigateTab={setCurrentTab} />
+          <TeacherHomeView onNavigateTab={handleNavigateTab} />
         </ProtectedRoute>
       );
     }
@@ -84,7 +97,11 @@ const MainApp: React.FC = () => {
     if (currentTab === 'activity_creation') {
       return (
         <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-          <ActivityCreationStudio onNavigateToDashboard={() => setCurrentTab('teacher_dashboard')} />
+          <ActivityCreationStudio
+            initialPathway={initialPathway}
+            initialActivityId={selectedActivityId}
+            onNavigateToDashboard={() => setCurrentTab('teacher_dashboard')}
+          />
         </ProtectedRoute>
       );
     }
@@ -92,7 +109,7 @@ const MainApp: React.FC = () => {
     // Default view for teacher
     return (
       <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'STUDENT']} onNavigateToLogin={() => setCurrentTab('login')}>
-        <TeacherHomeView onNavigateTab={setCurrentTab} />
+        <TeacherHomeView onNavigateTab={handleNavigateTab} />
       </ProtectedRoute>
     );
   };
@@ -104,13 +121,13 @@ const MainApp: React.FC = () => {
         {user && (
           <Sidebar
             currentTab={currentTab}
-            onSelectTab={setCurrentTab}
+            onSelectTab={handleNavigateTab}
             isLiveActivityActive={isLiveActivityActive}
           />
         )}
 
         <div style={styles.mainLayout}>
-          {user && <Navbar currentTab={currentTab} onSelectTab={setCurrentTab} />}
+          {user && <Navbar currentTab={currentTab} onSelectTab={handleNavigateTab} />}
           <main style={{ ...styles.mainContent, paddingBottom: !user ? 0 : '3rem' }}>
             {renderContent()}
           </main>

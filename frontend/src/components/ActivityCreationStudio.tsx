@@ -19,14 +19,22 @@ interface DatabaseActivity {
 }
 
 interface ActivityCreationStudioProps {
+  initialPathway?: 'ai' | 'templates' | 'scratch';
+  initialActivityId?: string;
   onNavigateToDashboard?: () => void;
 }
 
-export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ onNavigateToDashboard }) => {
+export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ onNavigateToDashboard, initialPathway, initialActivityId }) => {
   const { t } = useTranslation();
   const { token: authContextToken } = useAuth();
 
-  const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>('ai');
+  const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>(initialPathway || 'ai');
+
+  useEffect(() => {
+    if (initialPathway) {
+      setActivePathway(initialPathway);
+    }
+  }, [initialPathway]);
   const [classrooms, setClassrooms] = useState<ClassroomProfile[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [isLoadingClassrooms, setIsLoadingClassrooms] = useState<boolean>(false);
@@ -247,7 +255,13 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
   // Template / SelectOneMenu State
   const [dbActivities, setDbActivities] = useState<DatabaseActivity[]>([]);
-  const [selectedActivityId, setSelectedActivityId] = useState<string>('');
+  const [selectedActivityId, setSelectedActivityId] = useState<string>(initialActivityId || '');
+
+  useEffect(() => {
+    if (initialActivityId) {
+      setSelectedActivityId(initialActivityId);
+    }
+  }, [initialActivityId]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState<boolean>(false);
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
@@ -290,7 +304,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
     try {
       const data: any = await activitiesApi.getActivities(activeToken);
       setDbActivities(data);
-      if (data.length > 0 && !selectedActivityId) {
+      if (data.length > 0 && !selectedActivityId && !initialActivityId) {
         setSelectedActivityId(data[0].id);
       }
     } catch (err) {

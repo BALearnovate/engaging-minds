@@ -164,6 +164,7 @@ export interface TeacherHomeOverviewData {
     status: string;
     createdAt: string;
     studentCount: number;
+    activityId?: string;
   }>;
   mostEngagedSchoolActivities?: Array<{
     id: string;
