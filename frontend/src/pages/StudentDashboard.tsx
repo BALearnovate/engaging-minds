@@ -295,6 +295,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       if (studentCode) {
         try {
           assignmentsData = await activitiesApi.getStudentAssignments(studentCode, activeToken);
+          
+          // Reviewed the code
+          // Firstly the api fetches the user based on loginCode, if student doesn't exist
+          // it returns null with empty assignments list
+          // If student is found, it finds all the activityassignmetns and activitysessions
+          // for that student, returns all this information and teacher who assigned them
+          console.log(` Student login code ${studentCode} ${JSON.stringify(assignmentsData)}`)
+
         } catch (err) {
           console.warn('Failed to fetch student assigned activities by loginCode/ID:', err);
         }
