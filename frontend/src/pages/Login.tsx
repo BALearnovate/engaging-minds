@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../api/auth';
 import bgImage from '../assets/teacher-reg-bg.png';
@@ -96,6 +96,43 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
       }
     }
   };
+
+  // Global Keyboard Listener for Student Login PIN Entry
+  useEffect(() => {
+    if (portal !== 'STUDENT') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is focused inside a text or email input or textarea (e.g. Student Code input)
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        setPin((prev) => (prev.length < 4 ? prev + e.key : prev));
+        setStudentError(null);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        setPin((prev) => prev.slice(0, -1));
+        setStudentError(null);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (pin.length === 4) {
+          handleStudentSubmit();
+        } else {
+          setStudentError(t('login.pinLengthError', 'Please enter your 4-digit PIN!'));
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setPin('');
+        setStudentError(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [portal, pin, studentCode]);
 
   const fillQuickAccount = (role: 'TEACHER_ILSE' | 'STUDENT_ILSE' | 'TEACHER_JANE' | 'STUDENT_JANE' | 'ADMIN') => {
     switch (role) {

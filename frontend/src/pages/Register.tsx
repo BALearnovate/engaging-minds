@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import bgImage from '../assets/teacher-reg-bg.png';
 import studentBgImage from '../assets/student_reg_bg.png';
@@ -148,7 +148,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
       if (pin.length === 4) {
         handleCompleteStudentOnboarding();
       } else {
-        setStudentError('PIN must be exactly 4 digits');
+        setStudentError(t('register.pinLengthError', 'PIN must be exactly 4 digits'));
       }
     } else {
       if (pin.length < 4) {
@@ -157,6 +157,43 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
       }
     }
   };
+
+  // Global Keyboard Listener for Step 3 Quick PIN Entry
+  useEffect(() => {
+    if (portal !== 'STUDENT' || step !== 3) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is focused inside a text or email input or textarea
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        setPin((prev) => (prev.length < 4 ? prev + e.key : prev));
+        setStudentError(null);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        setPin((prev) => prev.slice(0, -1));
+        setStudentError(null);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (pin.length === 4) {
+          handleCompleteStudentOnboarding();
+        } else {
+          setStudentError(t('register.pinLengthError', 'PIN must be exactly 4 digits'));
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setPin('');
+        setStudentError(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [portal, step, pin, verifiedStudent, customDisplayName, studentOptionalEmail, useMonogram, selectedAvatar]);
 
   // Final Step 3: Complete Student Onboarding
   const handleCompleteStudentOnboarding = async () => {
