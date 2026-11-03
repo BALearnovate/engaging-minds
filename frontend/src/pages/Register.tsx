@@ -74,17 +74,22 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
     setError(null);
 
     if (!firstName.trim() || !lastName.trim()) {
-      setError('First name and last name are required');
+      setError(t('register.nameRequired', 'First name and last name are required'));
+      return;
+    }
+
+    if (!school.trim()) {
+      setError(t('register.schoolRequired', 'School / Organization is required'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.passwordMismatch', 'Passwords do not match'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('register.passwordTooShort', 'Password must be at least 6 characters'));
       return;
     }
 
@@ -96,6 +101,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         password,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        school: school.trim(),
         role: 'TEACHER',
       });
       onSuccess(user.role);
@@ -323,7 +329,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   </div>
 
                   <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.schoolLabel', 'School / Organization:')}</label>
+                    <label style={styles.label}>{t('register.schoolLabel', 'School / Organization *')}</label>
                     <input
                       type="text"
                       required
@@ -544,8 +550,8 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       <div style={{ color: '#16a34a', fontWeight: 800, fontSize: '0.95rem' }}>
                         {t('register.schoolConnected', '✓ School Connected')}
                       </div>
-                      <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem', marginTop: '0.3rem' }}>
-                        {verifiedClassroom?.schoolName || 'Westbridge High School'}
+                      <div style={{ fontWeight: 900, color: '#1e293b', fontSize: '1.0rem', marginTop: '0.3rem' }}>
+                        {verifiedClassroom?.schoolName || 'Engaging Minds School'}
                       </div>
                       <div style={{ color: '#64748b', fontSize: '0.82rem', marginTop: '0.15rem' }}>
                         {verifiedClassroom?.details || 'Year 10 Mathematics (Mr. Harris)'}

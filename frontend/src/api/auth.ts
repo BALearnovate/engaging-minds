@@ -7,6 +7,7 @@ export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
+  school?: string;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT';
   avatar?: string;
   createdAt?: string;
@@ -24,6 +25,7 @@ export const authApi = {
     password: string;
     firstName: string;
     lastName: string;
+    school?: string;
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   }): Promise<AuthResponse> {
     return apiFetch<AuthResponse>('/auth/register', {

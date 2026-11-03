@@ -11,6 +11,7 @@ interface AuthContextType {
     password: string;
     firstName: string;
     lastName: string;
+    school?: string;
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   }) => Promise<UserProfile>;
   setSession: (user: UserProfile, accessToken: string) => void;
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string;
     firstName: string;
     lastName: string;
+    school?: string;
     role?: 'ADMIN' | 'TEACHER' | 'STUDENT';
   }) => {
     const res = await authApi.register(data);

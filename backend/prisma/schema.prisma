@@ -19,6 +19,7 @@ model User {
   password  String
   firstName String
   lastName  String
+  school    String?
   role      Role     @default(STUDENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
