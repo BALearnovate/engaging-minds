@@ -535,14 +535,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       {isVerifyingCode ? t('register.verifying', 'VERIFYING...') : t('register.verifyCodeBtn', 'VERIFY JOIN CODE')}
                     </button>
 
-                    <div style={styles.orDivider}>{t('register.or', '— OR —')}</div>
+                    {/* <div style={styles.orDivider}>{t('register.or', '— OR —')}</div> */}
 
-                    <div style={styles.dashedBox}>
+                    {/* <div style={styles.dashedBox}>
                       <span style={{ fontSize: '1.4rem' }}>📷</span>
                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>
                         {t('register.scanPassCard', 'Scan Student ID / Pass Card')}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 ) : (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
@@ -678,12 +678,12 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       </button>
                     </div>
 
-                    <div style={styles.dashedBox}>
+                    {/* <div style={styles.dashedBox}>
                       <span style={{ fontSize: '1.2rem' }}>☁️</span>
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0369a1' }}>
                         {t('register.uploadPhoto', 'Upload ID Photo or Badge (.PNG / .JPG)')}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 )}
 
