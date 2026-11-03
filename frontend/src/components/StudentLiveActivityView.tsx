@@ -134,20 +134,30 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getTimedMinutes = (mode?: string): number | null => {
+  const getTimedSeconds = (mode?: string): number | null => {
     if (!mode) return null;
     const lower = mode.toLowerCase();
-    if (lower.includes('unlimited') || lower.includes('untimed')) return null;
+    if (lower.includes('unlimited') || lower.includes('untimed') || lower.includes('00:00')) return null;
+
+    // Check for MM:SS format (e.g. "05:00", "12:30", "99:59")
+    const colonMatch = mode.match(/(\d+):(\d+)/);
+    if (colonMatch) {
+      const mins = parseInt(colonMatch[1], 10);
+      const secs = parseInt(colonMatch[2], 10);
+      const total = mins * 60 + secs;
+      return total > 0 ? total : null;
+    }
+
+    // Fallback for legacy "15 Minutes" or "Timed 15 Minutes"
     const match = mode.match(/(\d+)/);
     if (match && match[1]) {
       const mins = parseInt(match[1], 10);
-      return mins > 0 ? mins : null;
+      return mins > 0 ? mins * 60 : null;
     }
     return null;
   };
 
-  const timedMinutes = getTimedMinutes(activeTimerMode || timerMode);
-  const targetSeconds = timedMinutes ? timedMinutes * 60 : null;
+  const targetSeconds = getTimedSeconds(activeTimerMode || timerMode);
   const remainingSeconds = targetSeconds !== null ? Math.max(0, targetSeconds - elapsedSeconds) : null;
   const isLowTime = remainingSeconds !== null && remainingSeconds > 0 && remainingSeconds <= 120;
   const isTimeUp = remainingSeconds !== null && remainingSeconds === 0;

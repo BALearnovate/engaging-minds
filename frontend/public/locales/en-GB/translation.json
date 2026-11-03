@@ -418,7 +418,9 @@
     "assignedToLabel": "Assigned to:",
     "dismiss": "Dismiss",
     "copyJoinCode": "Copy Join Code 📋",
-    "copiedCodeNotice": "📋 Copied share code \"{{code}}\" to clipboard!"
+    "copiedCodeNotice": "📋 Copied share code \"{{code}}\" to clipboard!",
+    "decreaseTimer": "Decrease timer",
+    "increaseTimer": "Increase timer"
   },
   "studentPortal": {
     "dashboardTitle": "Student Progress Dashboard",

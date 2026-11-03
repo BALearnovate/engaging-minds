@@ -43,7 +43,52 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   );
   const [subject] = useState<string>('Science');
   const [gradeLevel] = useState<string>('Grade 6');
-  const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
+  // const [timerMode, setTimerMode] = useState<string>('Untimed Practice Session');
+  const [timerMinutes, setTimerMinutes] = useState<number>(5);
+  const [timerSeconds, setTimerSeconds] = useState<number>(0);
+  const timerMode = `${String(timerMinutes).padStart(2, '0')}:${String(timerSeconds).padStart(2, '0')}`;
+
+  const handleIncrementTimer = () => {
+    if (timerMinutes >= 99 && timerSeconds >= 59) return;
+    setTimerMinutes((prevM) => {
+      if (prevM >= 99) {
+        setTimerSeconds(59);
+        return 99;
+      }
+      return prevM + 1;
+    });
+  };
+
+  const handleDecrementTimer = () => {
+    if (timerMinutes <= 0 && timerSeconds <= 0) return;
+    setTimerMinutes((prevM) => {
+      if (prevM <= 0) {
+        setTimerSeconds(0);
+        return 0;
+      }
+      return prevM - 1;
+    });
+  };
+
+  const handleMinutesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawStr = e.target.value.replace(/\D/g, '');
+    if (!rawStr) {
+      setTimerMinutes(0);
+      return;
+    }
+    const val = parseInt(rawStr, 10);
+    setTimerMinutes(Math.min(99, Math.max(0, val)));
+  };
+
+  const handleSecondsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawStr = e.target.value.replace(/\D/g, '');
+    if (!rawStr) {
+      setTimerSeconds(0);
+      return;
+    }
+    const val = parseInt(rawStr, 10);
+    setTimerSeconds(Math.min(59, Math.max(0, val)));
+  };
   const [rewardMode, setRewardMode] = useState<string>('Engagement Points + Stars');
   const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
   const [isGroupModalOpen, setIsGroupModalOpen] = useState<boolean>(false);
@@ -733,6 +778,45 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               <option value="Timed 30 Minutes">{t('activityCreation.timed30', '30 Minutes')}</option>
               <option value="Timed 45 Minutes">{t('activityCreation.timed45', '45 Minutes')}</option>
             </select>
+            <div style={styles.timerStepperContainer}>
+              <button
+                type="button"
+                onClick={handleDecrementTimer}
+                style={styles.timerBtn}
+                title={t('activityCreation.decreaseTimer', 'Decrease timer')}
+                aria-label="Decrease timer"
+              >
+                −
+              </button>
+              <div style={styles.timerDisplayWrapper}>
+                <input
+                  type="text"
+                  maxLength={2}
+                  value={String(timerMinutes).padStart(2, '0')}
+                  onChange={handleMinutesChange}
+                  style={styles.timerInput}
+                  aria-label="Timer Minutes"
+                />
+                <span style={styles.timerColon}>:</span>
+                <input
+                  type="text"
+                  maxLength={2}
+                  value={String(timerSeconds).padStart(2, '0')}
+                  onChange={handleSecondsChange}
+                  style={styles.timerInput}
+                  aria-label="Timer Seconds"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleIncrementTimer}
+                style={styles.timerBtn}
+                title={t('activityCreation.increaseTimer', 'Increase timer')}
+                aria-label="Increase timer"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           <div style={styles.sidebarSection}>
@@ -1277,6 +1361,53 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#64748b',
     backgroundColor: '#ffffff',
     outline: 'none',
+  },
+  timerStepperContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '8px',
+    padding: '0.4rem 0.75rem',
+    height: '42px',
+  },
+  timerBtn: {
+    background: 'none',
+    border: 'none',
+    fontSize: '1.4rem',
+    fontWeight: '700',
+    color: '#0055a5',
+    cursor: 'pointer',
+    padding: '0 0.5rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    userSelect: 'none',
+  },
+  timerDisplayWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.15rem'
+  },
+  timerInput: {
+    width: '2.4rem',
+    textAlign: 'center',
+    border: 'none',
+    outline: 'none',
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#0055a5',
+    backgroundColor: 'transparent',
+    fontFamily: 'inherit',
+    padding: 0,
+  },
+  timerColon: {
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#0055a5',
+    userSelect: 'none',
   },
   configureGroupBtn: {
     marginTop: '0.4rem',
