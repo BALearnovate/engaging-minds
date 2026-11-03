@@ -100,7 +100,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     onLiveActivityActiveChange?.(isLiveActivityActive);
   }, [isLiveActivityActive, onLiveActivityActiveChange]);
 
-  // Listen for Live Activity broadcasts via Socket and check active classroom assignments
+  // Listen for Live Activity broadcasts via Socket (only shown in real-time when teacher publishes)
   useEffect(() => {
     const socket = getSocket();
     const studentClassroomId = (user as any)?.classroomId;
@@ -139,32 +139,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     };
 
     socket.on('activity_published', handleActivityPublished);
-
-    if (studentClassroomId) {
-      activitiesApi.checkClassActiveAssignment(studentClassroomId, activeToken)
-        .then((res: any) => {
-          if (res && (res.existingActivityTitle || res.assignment?.activity?.title)) {
-            const code = (res.assignment?.shareCode || res.assignment?.activityId || '').toUpperCase();
-            if (code && exitedSessionCodes.has(code)) {
-              return;
-            }
-            setLiveActivityData({
-              title: res.existingActivityTitle || res.assignment?.activity?.title || 'Live Activity',
-              shareCode: res.assignment?.shareCode,
-              teacherName: res.assignment?.teacher
-                ? `${res.assignment.teacher.firstName} ${res.assignment.teacher.lastName}`.trim()
-                : 'Mrs. Sarah Jenkins',
-              activityId: res.assignment?.activityId,
-              classroomId: res.assignment?.classroomId,
-              timerMode: res.assignment?.timerMode,
-              rewardMode: res.assignment?.rewardMode,
-              targetScope: res.assignment?.targetScope,
-            });
-            setShowLiveModal(true);
-          }
-        })
-        .catch(() => {});
-    }
 
     return () => {
       socket.off('activity_published', handleActivityPublished);
