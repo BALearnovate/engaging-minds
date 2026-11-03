@@ -324,8 +324,10 @@ export class AuthService {
       },
     });
 
+    console.log(`Student is ${JSON.stringify(student)}`)
+
     if (student) {
-      if (student.pin && student.pin !== pin) {
+      if (student.pin && student.pin !== pin || student.pin === null) {
         throw new UnauthorizedException('That code or PIN doesn’t seem right. Please try again or check with your teacher!');
       }
 
