@@ -299,7 +299,15 @@
     "nextCustomizeProfile": "Next: Customise Profile →",
     "continueToSecuritySetup": "CONTINUE TO SECURITY SETUP →",
     "enteringPortal": "ENTERING PORTAL...",
-    "enterStudentPortal": "ENTER STUDENT PORTAL →"
+    "enterStudentPortal": "ENTER STUDENT PORTAL →",
+    "verifyEmailTitle": "Verify your email address",
+    "verifyEmailSubtitle": "We sent a 6-digit verification code to",
+    "enterOtpCode": "Enter 6-digit verification code",
+    "incorrectCode": "Please enter correct code",
+    "continue": "Continue",
+    "resendCodeIn": "Resend code in {{seconds}}s",
+    "resendCode": "Resend Code",
+    "backToRegistration": "← Back to registration"
   },
   "classroomSetup": {
     "bannerTitle": "Classroom Setup",

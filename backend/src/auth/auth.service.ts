@@ -1,6 +1,7 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from './mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role } from '@prisma/client';
@@ -11,7 +12,55 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
+
+  async sendOtp(email: string) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('An account with this email address already exists');
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await this.prisma.emailVerification.upsert({
+      where: { email: cleanEmail },
+      update: { code: otpCode, expiresAt },
+      create: { email: cleanEmail, code: otpCode, expiresAt },
+    });
+
+    await this.mailService.sendOtpEmail(cleanEmail, otpCode);
+
+    return { message: 'Verification code sent successfully' };
+  }
+
+  async verifyOtp(email: string, code: string) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    const cleanCode = (code || '').trim();
+
+    if (!cleanEmail || !cleanCode) {
+      throw new BadRequestException('Please enter correct code');
+    }
+
+    const record = await this.prisma.emailVerification.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!record || record.code !== cleanCode || record.expiresAt < new Date()) {
+      throw new BadRequestException('Please enter correct code');
+    }
+
+    return { message: 'Code verified successfully', verified: true };
+  }
 
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findUnique({
@@ -43,6 +92,14 @@ export class AuthService {
         createdAt: true,
       },
     });
+
+    try {
+      await this.prisma.emailVerification.delete({
+        where: { email: dto.email.toLowerCase() },
+      });
+    } catch (e) {
+      // Ignore
+    }
 
     const token = this.generateToken(user.id, user.email, user.role);
 

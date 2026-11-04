@@ -30,6 +30,13 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // OTP Verification State
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
   // Student 3-Step Registration State
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [joinCode, setJoinCode] = useState('');
@@ -68,7 +75,20 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   // Available avatars
   const avatarOptions = ['🎓', '🚀', '⚡', '💻', '🦊', '🏆', '🧬', '🎧'];
 
-  // Handle Teacher Registration Form Submit
+  // OTP Countdown Timer Effect
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isVerifyingOtp && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [isVerifyingOtp, resendTimer]);
+
+  // Handle Teacher Registration Form Submit (Step 1 - Send OTP)
   const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -96,17 +116,58 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
     setIsSubmitting(true);
 
     try {
-      const user = await register({
-        email,
-        password,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        school: school.trim(),
-        role: 'TEACHER',
-      });
-      onSuccess(user.role);
+      await authApi.sendOtp(email.trim());
+      setIsVerifyingOtp(true);
+      setResendTimer(60);
+      setCanResend(false);
+      setOtpError(null);
+      setOtpCode('');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpError(null);
+    setCanResend(false);
+    setResendTimer(60);
+    try {
+      await authApi.sendOtp(email.trim());
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to resend code');
+    }
+  };
+
+  const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError(null);
+
+    if (!otpCode.trim() || otpCode.trim().length !== 6) {
+      setOtpError(t('register.incorrectCode', 'Please enter correct code'));
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const verifyRes = await authApi.verifyOtp({ email: email.trim(), code: otpCode.trim() });
+      if (verifyRes && verifyRes.verified) {
+        const user = await register({
+          email: email.trim(),
+          password,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          school: school.trim(),
+          role: 'TEACHER',
+        });
+        onSuccess(user.role);
+      } else {
+        setOtpError(t('register.incorrectCode', 'Please enter correct code'));
+      }
+    } catch (err: any) {
+      setOtpError(t('register.incorrectCode', 'Please enter correct code'));
     } finally {
       setIsSubmitting(false);
     }
@@ -298,100 +359,186 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   </button>
                 </div>
 
-                <h2 style={styles.formTitle}>{t('register.teacherRegistrationTitle', 'Teacher Registration')}</h2>
+                {isVerifyingOtp ? (
+                  <div>
+                    <h2 style={styles.formTitle}>{t('register.verifyEmailTitle', 'Verify your email address')}</h2>
+                    <p style={{ color: '#475569', fontSize: '0.92rem', marginBottom: '1.25rem', textAlign: 'center', lineHeight: '1.4' }}>
+                      {t('register.verifyEmailSubtitle', 'We sent a 6-digit verification code to')}{' '}
+                      <strong style={{ color: '#1e293b' }}>{email}</strong>
+                    </p>
 
-                {error && <div style={styles.errorBox}>{error}</div>}
+                    {otpError && <div style={styles.errorBox}>{otpError}</div>}
 
-                <form onSubmit={handleTeacherSubmit} style={styles.form}>
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.firstNameLabel', 'First Name *')}</label>
-                    <input
-                      type="text"
-                      required
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder={t('register.firstNamePlaceholder', 'Enter your first name')}
-                      style={styles.input}
-                    />
+                    <form onSubmit={handleVerifyOtpSubmit} style={styles.form}>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.enterOtpCode', 'Enter 6-digit verification code')}</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={otpCode}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                            setOtpCode(val);
+                            setOtpError(null);
+                          }}
+                          placeholder="123456"
+                          style={{
+                            ...styles.input,
+                            fontSize: '1.5rem',
+                            letterSpacing: '8px',
+                            textAlign: 'center',
+                            fontWeight: '700',
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        style={{ ...styles.submitBtn, opacity: isSubmitting ? 0.8 : 1 }}
+                      >
+                        {isSubmitting ? t('register.verifying', 'Verifying...') : t('register.continue', 'Continue')}
+                      </button>
+                    </form>
+
+                    <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.88rem' }}>
+                      {!canResend ? (
+                        <span style={{ color: '#64748b' }}>
+                          {t('register.resendCodeIn', 'Resend code in {{seconds}}s', { seconds: resendTimer })}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResendOtp}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#2563eb',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {t('register.resendCode', 'Resend Code')}
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsVerifyingOtp(false)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748b',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {t('register.backToRegistration', '← Back to registration')}
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <h2 style={styles.formTitle}>{t('register.teacherRegistrationTitle', 'Teacher Registration')}</h2>
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.lastNameLabel', 'Last Name *')}</label>
-                    <input
-                      type="text"
-                      required
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder={t('register.lastNamePlaceholder', 'Enter your last name')}
-                      style={styles.input}
-                    />
-                  </div>
+                    {error && <div style={styles.errorBox}>{error}</div>}
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('login.emailLabel', 'Email:')} *</label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
-                      style={styles.input}
-                    />
-                  </div>
+                    <form onSubmit={handleTeacherSubmit} style={styles.form}>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.firstNameLabel', 'First Name *')}</label>
+                        <input
+                          type="text"
+                          required
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder={t('register.firstNamePlaceholder', 'Enter your first name')}
+                          style={styles.input}
+                        />
+                      </div>
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('login.passwordLabel', 'Password:')} *</label>
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={t('login.passwordPlaceholder', 'Enter password')}
-                      style={styles.input}
-                    />
-                  </div>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.lastNameLabel', 'Last Name *')}</label>
+                        <input
+                          type="text"
+                          required
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder={t('register.lastNamePlaceholder', 'Enter your last name')}
+                          style={styles.input}
+                        />
+                      </div>
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password:')} *</label>
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder={t('register.confirmPasswordPlaceholder', 'Confirm password')}
-                      style={styles.input}
-                    />
-                  </div>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('login.emailLabel', 'Email:')} *</label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
+                          style={styles.input}
+                        />
+                      </div>
 
-                  <div style={styles.fieldGroup}>
-                    <label style={styles.label}>{t('register.schoolLabel', 'School / Organization *')}</label>
-                    <input
-                      type="text"
-                      required
-                      value={school}
-                      onChange={(e) => setSchool(e.target.value)}
-                      placeholder={t('register.schoolPlaceholder', 'Enter school name')}
-                      style={styles.input}
-                    />
-                  </div>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('login.passwordLabel', 'Password:')} *</label>
+                        <input
+                          type="password"
+                          required
+                          minLength={6}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={t('login.passwordPlaceholder', 'Enter password')}
+                          style={styles.input}
+                        />
+                      </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    style={{ ...styles.submitBtn, opacity: isSubmitting ? 0.8 : 1 }}
-                  >
-                    {isSubmitting ? t('register.registering', 'Registering...') : t('register.registerAsTeacher', 'Register as Teacher')}
-                  </button>
-                </form>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password:')} *</label>
+                        <input
+                          type="password"
+                          required
+                          minLength={6}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder={t('register.confirmPasswordPlaceholder', 'Confirm password')}
+                          style={styles.input}
+                        />
+                      </div>
 
-                <div style={styles.loginRedirect}>
-                  {t('register.alreadyHaveAccount', 'Already have an account?')}{' '}
-                  <span onClick={onNavigateToLogin} style={styles.loginLink}>
-                    {t('register.loginNow', 'Login now')}
-                  </span>
-                </div>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.schoolLabel', 'School / Organization *')}</label>
+                        <input
+                          type="text"
+                          required
+                          value={school}
+                          onChange={(e) => setSchool(e.target.value)}
+                          placeholder={t('register.schoolPlaceholder', 'Enter school name')}
+                          style={styles.input}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        style={{ ...styles.submitBtn, opacity: isSubmitting ? 0.8 : 1 }}
+                      >
+                        {isSubmitting ? t('register.registering', 'Registering...') : t('register.registerAsTeacher', 'Register as Teacher')}
+                      </button>
+                    </form>
+
+                    <div style={styles.loginRedirect}>
+                      {t('register.alreadyHaveAccount', 'Already have an account?')}{' '}
+                      <span onClick={onNavigateToLogin} style={styles.loginLink}>
+                        {t('register.loginNow', 'Login now')}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div style={styles.footer}>

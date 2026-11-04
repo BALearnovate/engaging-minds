@@ -20,6 +20,20 @@ export interface AuthResponse {
 }
 
 export const authApi = {
+  async sendOtp(email: string): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async verifyOtp(data: { email: string; code: string }): Promise<{ message: string; verified: boolean }> {
+    return apiFetch<{ message: string; verified: boolean }>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   async register(data: {
     email: string;
     password: string;

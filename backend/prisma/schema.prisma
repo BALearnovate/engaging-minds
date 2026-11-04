@@ -183,3 +183,13 @@ model ActivityAssignment {
 
   @@map("activity_assignments")
 }
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verifications")
+}
