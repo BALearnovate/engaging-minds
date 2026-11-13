@@ -9,23 +9,28 @@ import type {
   ValidationResult,
   ClockHourSlot,
 } from '../../types/activityDsl';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const ClockDiagramStudent: React.FC<
   StudentBlockProps<ClockDiagramConfig, Record<number, string>>
 > = ({ block, config, studentState, onAnswerSubmit, isTeacherView }) => {
+  const { t } = useTranslation();
   const [hourActivities, setHourActivities] = useState<Record<number, string>>(() => {
     return (studentState.response as Record<number, string>) || {};
   });
-  const [selectedHour, setSelectedHour] = useState<number>(0);
+  const [selectedHour, setSelectedHour] = useState<number>(
+    config.clockType === '12_hour' ? 1 : 0
+  );
   const [activeModalHour, setActiveModalHour] = useState<number | null>(null);
   const [modalInputValue, setModalInputValue] = useState<string>('');
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
   const [feedback, setFeedback] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
-  // ALWAYS generate all 24 hour slots (0 to 23) unless explicitly 12_hour
-  const numSlots = config.clockType === '12_hour' ? 12 : 24;
+  const is12Hour = config.clockType === '12_hour';
+  const numSlots = is12Hour ? 12 : 24;
+
   const hourSlots: ClockHourSlot[] = Array.from({ length: numSlots }, (_, i) => {
-    const hourVal = config.clockType === '12_hour' ? i + 1 : i;
+    const hourVal = is12Hour ? i + 1 : i;
     const custom = config.hours?.find(
       (h) => h.hour === hourVal || (hourVal === 0 && h.hour === 24)
     );
@@ -39,7 +44,9 @@ export const ClockDiagramStudent: React.FC<
   });
 
   const totalHours = hourSlots.length;
-  const filledCount = Object.values(hourActivities).filter((val) => val && val.trim().length > 0).length;
+  const filledCount = Object.values(hourActivities).filter(
+    (val) => val && val.trim().length > 0
+  ).length;
 
   const openModalForHour = (hour: number) => {
     setSelectedHour(hour);
@@ -51,8 +58,10 @@ export const ClockDiagramStudent: React.FC<
     if (activeModalHour === null) return;
     const nextActivities = { ...hourActivities, [activeModalHour]: modalInputValue };
     setHourActivities(nextActivities);
-    
-    const filledCountUpdated = Object.values(nextActivities).filter((val) => val && val.trim().length > 0).length;
+
+    const filledCountUpdated = Object.values(nextActivities).filter(
+      (val) => val && val.trim().length > 0
+    ).length;
     const score = Math.round((filledCountUpdated / totalHours) * 100);
     onAnswerSubmit(nextActivities, true, score);
     setActiveModalHour(null);
@@ -72,12 +81,20 @@ export const ClockDiagramStudent: React.FC<
       });
       score = Math.round((correctMatches / totalHours) * 100);
       setFeedback({
-        text: `🎯 24-Hour Schedule Evaluated! Score: ${score}% (${correctMatches} of ${totalHours} expected activities matched).`,
+        text: t(
+          'clockDiagram.quizEvaluated',
+          '🎯 {{total}}-Hour Schedule Evaluated! Score: {{score}}% ({{correct}} of {{total}} expected activities matched).',
+          { score, correct: correctMatches, total: totalHours }
+        ),
         type: 'success',
       });
     } else {
       setFeedback({
-        text: `🎉 24-Hour Clock Diagram Schedule Saved! (${filledCount} of ${totalHours} hours filled).`,
+        text: t(
+          'clockDiagram.scheduleSaved',
+          '🎉 {{total}}-Hour Clock Diagram Schedule Saved! ({{filled}} of {{total}} hours filled).',
+          { filled: filledCount, total: totalHours }
+        ),
         type: 'success',
       });
     }
@@ -97,8 +114,15 @@ export const ClockDiagramStudent: React.FC<
     };
   };
 
-  // Sector wedge path generator for 24-hour clock sectors
-  const getSectorPath = (index: number, total: number, rInner: number, rOuter: number, cx = 490, cy = 490) => {
+  // Sector wedge path generator for clock sectors
+  const getSectorPath = (
+    index: number,
+    total: number,
+    rInner: number,
+    rOuter: number,
+    cx = 490,
+    cy = 490
+  ) => {
     const startAngleDeg = (index / total) * 360 - 90;
     const endAngleDeg = ((index + 1) / total) * 360 - 90;
 
@@ -122,37 +146,47 @@ export const ClockDiagramStudent: React.FC<
     return `M ${x1} ${y1} L ${x2} ${y2} A ${rOuter} ${rOuter} 0 ${largeArcFlag} 1 ${x3} ${y3} L ${x4} ${y4} A ${rInner} ${rInner} 0 ${largeArcFlag} 0 ${x1} ${y1} Z`;
   };
 
-  const formatHourLabel = (h: number) => {
-    return `${h}`;
-  };
+  const formatHourLabel = (h: number) => `${h}`;
 
-
-  useEffect(()=>{
-    window.scroll(0,0);
-  }, [])
+  useEffect(() => {
+    window.scroll(0, 0);
+  }, []);
 
   return (
     <div style={styles.container}>
       <div style={styles.headerBox}>
-        <div style={styles.badge}>🕒 COMPLETE 24-HOUR RADIAL CLOCK DIAGRAM</div>
-        <h3 style={styles.title}>{block.title || '24-Hour Daily Schedule Activity'}</h3>
+        <div style={styles.badge}>
+          {t(
+            'clockDiagram.badge',
+            `🕒 COMPLETE ${totalHours}-HOUR RADIAL CLOCK DIAGRAM`
+          )}
+        </div>
+        <h3 style={styles.title}>
+          {block.title ||
+            t('clockDiagram.defaultTitle', `${totalHours}-Hour Daily Schedule Activity`)}
+        </h3>
         <p style={styles.instructions}>
           {config.instructions ||
-            'Click on any radial hour sector below to enter or edit your activity.'}
+            t(
+              'clockDiagram.defaultInstructions',
+              'Click on any radial hour sector below to enter or edit your activity.'
+            )}
         </p>
       </div>
 
-      {/* 24-Hour Radial Clock Visual Diagram Container */}
+      {/* Radial Clock Visual Diagram Container */}
       <div style={styles.radialClockCard}>
         <div style={styles.radialWrapper}>
-          <svg width="980" height="980" viewBox="0 0 980 980" style={styles.clockSvg}>
+          <svg viewBox="0 0 980 980" style={styles.clockSvg}>
             {/* Solid Clock Base Circle */}
             <circle cx="490" cy="490" r="383" fill="#ffffff" />
 
-            {/* Clickable Sector Wedges for each hour (extended rInner=86, rOuter=383 to eliminate gaps) */}
+            {/* Clickable Sector Wedges for each hour */}
             {hourSlots.map((slot, idx) => {
               const sectorPath = getSectorPath(idx, totalHours, 86, 383, 490, 490);
-              const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
+              const isFilled = Boolean(
+                hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0
+              );
               const isSelected = selectedHour === slot.hour;
 
               return (
@@ -167,13 +201,25 @@ export const ClockDiagramStudent: React.FC<
                   }}
                   onClick={() => !submitted && openModalForHour(slot.hour)}
                 >
-                  <title>{`Hour ${formatHourLabel(slot.hour)}: ${hourActivities[slot.hour] || 'Click to add activity'}`}</title>
+                  <title>{`Hour ${formatHourLabel(slot.hour)}: ${
+                    hourActivities[slot.hour] ||
+                    t('clockDiagram.addActivityTooltip', 'Click to add activity')
+                  }`}</title>
                 </path>
               );
             })}
 
             {/* Dashed Intermediate Guide Circle */}
-            <circle cx="490" cy="490" r="235" fill="none" stroke="#0284c7" strokeWidth="2" strokeDasharray="5 5" style={{ pointerEvents: 'none' }} />
+            <circle
+              cx="490"
+              cy="490"
+              r="235"
+              fill="none"
+              stroke="#0284c7"
+              strokeWidth="2"
+              strokeDasharray="5 5"
+              style={{ pointerEvents: 'none' }}
+            />
 
             {/* Bold Radial Hour Divider Lines & Outer Hour Labels */}
             {hourSlots.map((slot, idx) => {
@@ -181,12 +227,13 @@ export const ClockDiagramStudent: React.FC<
               const linePosOuter = getPolarPos(idx, totalHours, 381, 490, 490);
               const outerHourPos = getPolarPos(idx + 0.5, totalHours, 422, 490, 490);
 
-              const isFilled = Boolean(hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0);
+              const isFilled = Boolean(
+                hourActivities[slot.hour] && hourActivities[slot.hour].trim().length > 0
+              );
               const isSelected = selectedHour === slot.hour;
 
               return (
                 <g key={slot.hour} style={{ pointerEvents: 'none' }}>
-                  {/* Bold Radial Divider Line separating hours */}
                   <line
                     x1={linePosInner.x}
                     y1={linePosInner.y}
@@ -196,7 +243,6 @@ export const ClockDiagramStudent: React.FC<
                     strokeWidth="2.5"
                   />
 
-                  {/* Prominent Outer Hour Label (0 .. 23) outside circle */}
                   <text
                     x={outerHourPos.x}
                     y={outerHourPos.y + 8}
@@ -211,19 +257,51 @@ export const ClockDiagramStudent: React.FC<
               );
             })}
 
-            {/* Solid Outer Circle Border ON TOP (r=380, width=6) */}
-            <circle cx="490" cy="490" r="380" fill="none" stroke="#0055a5" strokeWidth="6" style={{ pointerEvents: 'none' }} />
+            {/* Solid Outer Circle Border */}
+            <circle
+              cx="490"
+              cy="490"
+              r="380"
+              fill="none"
+              stroke="#0055a5"
+              strokeWidth="6"
+              style={{ pointerEvents: 'none' }}
+            />
 
-            {/* Enlarged Center Clock Hub ON TOP & Text */}
-            <circle cx="490" cy="490" r="90" fill="#0055a5" stroke="#ffffff" strokeWidth="5" style={{ pointerEvents: 'none' }} />
-            <text x="490" y="482" textAnchor="middle" fill="#ffffff" fontSize="18" fontWeight="900" style={{ pointerEvents: 'none' }}>
-              24-HOUR
+            {/* Enlarged Center Clock Hub & Text */}
+            <circle
+              cx="490"
+              cy="490"
+              r="90"
+              fill="#0055a5"
+              stroke="#ffffff"
+              strokeWidth="5"
+              style={{ pointerEvents: 'none' }}
+            />
+            <text
+              x="490"
+              y="482"
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize="18"
+              fontWeight="900"
+              style={{ pointerEvents: 'none' }}
+            >
+              {t('clockDiagram.centerLabel', `${totalHours}-HOUR`)}
             </text>
-            <text x="490" y="505" textAnchor="middle" fill="#bae6fd" fontSize="14" fontWeight="800" style={{ pointerEvents: 'none' }}>
-              CLOCK
+            <text
+              x="490"
+              y="505"
+              textAnchor="middle"
+              fill="#bae6fd"
+              fontSize="14"
+              fontWeight="800"
+              style={{ pointerEvents: 'none' }}
+            >
+              {t('clockDiagram.centerSublabel', 'CLOCK')}
             </text>
 
-            {/* Clean Large-Font Activity Text with High Contrast Along Radial Sectors */}
+            {/* Activity Text Along Radial Sectors */}
             {hourSlots.map((slot, idx) => {
               const activityText = hourActivities[slot.hour];
               if (!activityText || activityText.trim().length === 0) return null;
@@ -274,46 +352,45 @@ export const ClockDiagramStudent: React.FC<
         </div>
 
         <div style={styles.clockFooterNote}>
-          <span>Selected Hour Slot: <strong>Hour {formatHourLabel(selectedHour)}</strong> ({filledCount} of {totalHours} hours filled)</span>
+          <span>
+            {t(
+              'clockDiagram.selectedSlot',
+              'Selected Hour Slot: Hour {{hour}} ({{filled}} of {{total}} hours filled)',
+              {
+                hour: formatHourLabel(selectedHour),
+                filled: filledCount,
+                total: totalHours,
+              }
+            )}
+          </span>
           {!isTeacherView && !submitted && (
-            <button
-              onClick={handleSubmit}
-              style={{
-                marginLeft: '1rem',
-                padding: '0.4rem 0.8rem',
-                backgroundColor: '#0066b2',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: '700',
-                cursor: 'pointer',
-              }}
-            >
-              💾 Save & Submit Schedule
+            <button onClick={handleSubmit} style={styles.submitScheduleBtn}>
+              {t('clockDiagram.saveSchedule', '💾 Save & Submit Schedule')}
             </button>
           )}
         </div>
       </div>
 
-      {/* Application Style Modal Overlay Dialog for Hour Activity Entry */}
+      {/* Modal Overlay Dialog for Hour Activity Entry */}
       {activeModalHour !== null && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
             <div style={styles.modalHeader}>
               <h4 style={styles.modalTitle}>
-                🕒 Set Activity for Hour {formatHourLabel(activeModalHour)}
+                {t('clockDiagram.modalTitle', '🕒 Set Activity for Hour {{hour}}', {
+                  hour: formatHourLabel(activeModalHour),
+                })}
               </h4>
-              <button
-                style={styles.closeBtn}
-                onClick={() => setActiveModalHour(null)}
-              >
+              <button style={styles.closeBtn} onClick={() => setActiveModalHour(null)}>
                 ✕
               </button>
             </div>
 
             <div style={styles.modalBody}>
               <label style={styles.inputLabel}>
-                Describe your activity during Hour {formatHourLabel(activeModalHour)}:
+                {t('clockDiagram.modalLabel', 'Describe your activity during Hour {{hour}}:', {
+                  hour: formatHourLabel(activeModalHour),
+                })}
               </label>
               <input
                 type="text"
@@ -330,7 +407,9 @@ export const ClockDiagramStudent: React.FC<
               {/* Quick Activity Options Chips inside Modal */}
               {config.allowedOptions && config.allowedOptions.length > 0 && (
                 <div style={styles.modalOptionsWrap}>
-                  <span style={styles.optionsLabel}>💡 Quick Select Activity:</span>
+                  <span style={styles.optionsLabel}>
+                    {t('clockDiagram.quickSelect', '💡 Quick Select Activity:')}
+                  </span>
                   <div style={styles.chipsWrap}>
                     {config.allowedOptions.map((option, idx) => (
                       <button
@@ -353,17 +432,11 @@ export const ClockDiagramStudent: React.FC<
             </div>
 
             <div style={styles.modalFooter}>
-              <button
-                style={styles.cancelBtn}
-                onClick={() => setActiveModalHour(null)}
-              >
-                Cancel
+              <button style={styles.cancelBtn} onClick={() => setActiveModalHour(null)}>
+                {t('common.cancel', 'Cancel')}
               </button>
-              <button
-                style={styles.saveBtn}
-                onClick={handleSaveModal}
-              >
-                Save Activity
+              <button style={styles.saveBtn} onClick={handleSaveModal}>
+                {t('common.save', 'Save Activity')}
               </button>
             </div>
           </div>
@@ -379,11 +452,12 @@ export const ClockDiagramStudent: React.FC<
 export const ClockDiagramTeacherEditor: React.FC<TeacherEditorProps<ClockDiagramConfig>> = ({
   config,
 }) => {
+  const defaultSlots = config.clockType === '12_hour' ? 12 : 24;
   return (
     <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-      <h4>24-Hour Radial Clock Diagram Configuration</h4>
+      <h4>{defaultSlots}-Hour Radial Clock Diagram Configuration</h4>
       <p style={{ fontSize: '0.88rem', color: '#64748b' }}>
-        Configured with {config.hours?.length || 24} radial hour slots.
+        Configured with {config.hours?.length || defaultSlots} radial hour slots.
         {config.allowedOptions && ` Options: ${config.allowedOptions.join(', ')}`}
       </p>
     </div>
@@ -396,7 +470,7 @@ export const clockDiagramDefinition: ActivityComponentDefinition<
 > = {
   type: 'clock_diagram',
   label: '24-Hour Clock Diagram',
-  description: 'Learners write activities directly in front of each of the 24 radial clock sectors.',
+  description: 'Learners write activities directly in front of each of the radial clock sectors.',
 
   validate(config: unknown): ValidationResult {
     const cfg = config as ClockDiagramConfig;
@@ -423,7 +497,7 @@ export const clockDiagramDefinition: ActivityComponentDefinition<
 
   calculateProgress(state, config) {
     const responses = (state.response as Record<number, string>) || {};
-    const total = config.hours?.length || 24;
+    const total = config.clockType === '12_hour' ? 12 : config.hours?.length || 24;
     const filledCount = Object.values(responses).filter((v) => v && v.trim().length > 0).length;
     const percentage = Math.round((filledCount / total) * 100);
 
@@ -454,46 +528,41 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.25rem',
+    gap: '0.75rem',
     backgroundColor: '#ffffff',
-    padding: '1.5rem',
+    padding: '1rem',
     borderRadius: '12px',
     border: '1px solid #e2e8f0',
+    maxWidth: '960px',
+    margin: '0 auto',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   headerBox: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.3rem',
+    gap: '0.25rem',
   },
   badge: {
     display: 'inline-block',
     backgroundColor: '#e0f2fe',
     color: '#0369a1',
-    padding: '0.25rem 0.65rem',
+    padding: '0.2rem 0.6rem',
     borderRadius: '12px',
     fontSize: '0.75rem',
     fontWeight: '800',
     width: 'fit-content',
   },
   title: {
-    fontSize: '1.2rem',
+    fontSize: '1.15rem',
     fontWeight: '800',
     color: '#0f172a',
     margin: 0,
   },
   instructions: {
-    fontSize: '0.9rem',
+    fontSize: '0.88rem',
     color: '#475569',
     margin: 0,
-  },
-  optionsSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.4rem',
-    backgroundColor: '#f8fafc',
-    padding: '0.85rem 1rem',
-    borderRadius: '10px',
-    border: '1px solid #e2e8f0',
   },
   optionsLabel: {
     fontSize: '0.8rem',
@@ -520,85 +589,56 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
     border: '1px solid #e2e8f0',
-    padding: '1.5rem',
+    padding: '0.85rem 1rem',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1rem',
+    gap: '0.75rem',
     boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   radialWrapper: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    overflowX: 'auto',
+    width: '100%',
     maxWidth: '100%',
+    maxHeight: 'min(580px, 55vh)',
+    overflow: 'hidden',
   },
   clockSvg: {
     userSelect: 'none',
+    width: '100%',
+    height: 'auto',
+    maxWidth: 'min(580px, 100%)',
+    maxHeight: 'min(580px, 55vh)',
+    display: 'block',
+    margin: '0 auto',
   },
   clockFooterNote: {
-    fontSize: '0.9rem',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    fontSize: '0.88rem',
     color: '#334155',
     backgroundColor: '#f1f5f9',
-    padding: '0.5rem 1.25rem',
+    padding: '0.5rem 1rem',
     borderRadius: '20px',
     border: '1px solid #cbd5e1',
   },
-  tableCard: {
-    backgroundColor: '#f8fafc',
-    borderRadius: '12px',
-    padding: '1.25rem',
-    border: '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.85rem',
-  },
-  tableTitle: {
-    fontSize: '0.95rem',
-    fontWeight: '800',
-    color: '#1e293b',
-    margin: 0,
-  },
-  tableGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-    gap: '0.5rem',
-  },
-  tableRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.6rem',
-    backgroundColor: '#ffffff',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    cursor: 'pointer',
-  },
-  tableRowActive: {
-    borderColor: '#0066b2',
-    backgroundColor: '#f0f9ff',
-  },
-  tableHour: {
-    fontSize: '0.8rem',
-    fontWeight: '800',
-    color: '#0066b2',
-    backgroundColor: '#e0f2fe',
-    padding: '0.15rem 0.4rem',
-    borderRadius: '4px',
-  },
-  tableTextFilled: {
+  submitScheduleBtn: {
+    padding: '0.4rem 0.85rem',
+    backgroundColor: '#0066b2',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontWeight: '700',
     fontSize: '0.85rem',
-    color: '#1e293b',
-    fontWeight: '600',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  tableTextEmpty: {
-    fontSize: '0.82rem',
-    color: '#94a3b8',
-    fontStyle: 'italic',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0, 102, 178, 0.2)',
   },
   feedbackBanner: {
     backgroundColor: '#f0fdf4',
@@ -621,18 +661,22 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     zIndex: 1000,
     backdropFilter: 'blur(3px)',
+    padding: '1rem',
+    boxSizing: 'border-box',
   },
   modalContent: {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
-    width: '90%',
+    width: '100%',
     maxWidth: '480px',
-    padding: '1.5rem',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    padding: '1.25rem',
     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.25rem',
-    animation: 'fadeIn 0.15s ease-out',
+    gap: '1rem',
+    boxSizing: 'border-box',
   },
   modalHeader: {
     display: 'flex',
@@ -659,7 +703,7 @@ const styles: Record<string, React.CSSProperties> = {
   modalBody: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '0.85rem',
   },
   inputLabel: {
     fontSize: '0.88rem',
@@ -691,7 +735,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'flex-end',
     gap: '0.75rem',
     borderTop: '1px solid #f1f5f9',
-    paddingTop: '1rem',
+    paddingTop: '0.75rem',
   },
   cancelBtn: {
     backgroundColor: '#f1f5f9',
@@ -713,36 +757,5 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     cursor: 'pointer',
     boxShadow: '0 2px 8px rgba(0, 102, 178, 0.25)',
-  },
-  submitRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-  },
-  submitBtn: {
-    backgroundColor: '#0066b2',
-    color: '#ffffff',
-    border: 'none',
-    padding: '0.85rem 1.75rem',
-    borderRadius: '10px',
-    fontWeight: '800',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 102, 178, 0.25)',
-  },
-  submitBtnDisabled: {
-    backgroundColor: '#94a3b8',
-    cursor: 'not-allowed',
-    boxShadow: 'none',
-  },
-  helpBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
-    color: '#374151',
-    padding: '0.5rem 1rem',
-    borderRadius: '8px',
-    fontWeight: '600',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
   },
 };

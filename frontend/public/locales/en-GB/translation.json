@@ -521,6 +521,21 @@
     "inactiveStatus": "Inactive",
     "leftStatus": "Left"
   },
+  "clockDiagram": {
+    "badge": "🕒 COMPLETE 24-HOUR RADIAL CLOCK DIAGRAM",
+    "defaultTitle": "24-Hour Daily Schedule Activity",
+    "defaultInstructions": "Click on any radial hour sector below to enter or edit your activity.",
+    "addActivityTooltip": "Click to add activity",
+    "centerLabel": "24-HOUR",
+    "centerSublabel": "CLOCK",
+    "selectedSlot": "Selected Hour Slot: Hour {{hour}} ({{filled}} of {{total}} hours filled)",
+    "saveSchedule": "💾 Save & Submit Schedule",
+    "modalTitle": "🕒 Set Activity for Hour {{hour}}",
+    "modalLabel": "Describe your activity during Hour {{hour}}:",
+    "quickSelect": "💡 Quick Select Activity:",
+    "quizEvaluated": "🎯 24-Hour Schedule Evaluated! Score: {{score}}% ({{correct}} of {{total}} expected activities matched).",
+    "scheduleSaved": "🎉 24-Hour Clock Diagram Schedule Saved! ({{filled}} of {{total}} hours filled)."
+  },
   "footer": {
     "cofunded": "Co-funded by",
     "eu": "the European Union",
