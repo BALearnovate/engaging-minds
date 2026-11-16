@@ -21,6 +21,18 @@ export class AuthController {
     return this.authService.verifyOtp(dto.email, dto.code);
   }
 
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password/send-code')
+  async sendForgotPasswordCode(@Body('email') email: string) {
+    return this.authService.sendPasswordResetCode(email);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password/reset')
+  async resetPassword(@Body() dto: { email: string; code: string; newPassword: string }) {
+    return this.authService.resetPassword(dto);
+  }
+
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);

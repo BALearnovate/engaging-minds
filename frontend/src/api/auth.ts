@@ -90,4 +90,18 @@ export const authApi = {
       body: JSON.stringify(data),
     });
   },
+
+  async sendForgotPasswordCode(email: string): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>('/auth/forgot-password/send-code', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(data: { email: string; code: string; newPassword: string }): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>('/auth/forgot-password/reset', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

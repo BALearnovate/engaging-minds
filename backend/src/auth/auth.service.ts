@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from './mail.service';
@@ -452,6 +452,81 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('That code or PIN doesn’t seem right. Please try again or check with your teacher!');
+  }
+
+  async sendPasswordResetCode(email: string) {
+    const cleanEmail = (email || '').toLowerCase().trim();
+    if (!cleanEmail) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user || (user.role !== Role.TEACHER && user.role !== Role.ADMIN)) {
+      throw new NotFoundException('No teacher or admin account found with this email address');
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await this.prisma.passwordReset.upsert({
+      where: { email: cleanEmail },
+      update: { code: otpCode, expiresAt },
+      create: { email: cleanEmail, code: otpCode, expiresAt },
+    });
+
+    await this.mailService.sendPasswordResetEmail(cleanEmail, otpCode);
+
+    return { message: 'Password reset code sent successfully' };
+  }
+
+  async resetPassword(dto: { email: string; code: string; newPassword: string }) {
+    const cleanEmail = (dto.email || '').toLowerCase().trim();
+    const cleanCode = (dto.code || '').trim();
+    const newPassword = dto.newPassword || '';
+
+    if (!cleanEmail || !cleanCode || !newPassword) {
+      throw new BadRequestException('Please enter all required fields');
+    }
+
+    if (newPassword.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    const resetRecord = await this.prisma.passwordReset.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!resetRecord || resetRecord.code !== cleanCode || resetRecord.expiresAt < new Date()) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: cleanEmail },
+    });
+
+    if (!user || (user.role !== Role.TEACHER && user.role !== Role.ADMIN)) {
+      throw new NotFoundException('Account not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { email: cleanEmail },
+      data: { password: hashedPassword },
+    });
+
+    try {
+      await this.prisma.passwordReset.delete({
+        where: { email: cleanEmail },
+      });
+    } catch (e) {
+      // Ignore cleanup error if already removed
+    }
+
+    return { message: 'Password reset successfully' };
   }
 
   private generateToken(userId: string, email: string, role: string): string {

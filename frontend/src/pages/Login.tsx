@@ -25,6 +25,118 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
   const [teacherError, setTeacherError] = useState<string | null>(null);
   const [isTeacherSubmitting, setIsTeacherSubmitting] = useState(false);
 
+  // Forgot Password State
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCode, setForgotCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleSendResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    if (!forgotEmail.trim()) {
+      setForgotError(t('login.emailRequired', 'Email is required'));
+      return;
+    }
+
+    setIsSendingCode(true);
+    try {
+      await authApi.sendForgotPasswordCode(forgotEmail.trim());
+      setForgotStep(2);
+      setResendCooldown(60);
+      setForgotSuccess(
+        t('login.codeSentNotice', 'A 6-digit verification code has been sent to {{email}}.', { email: forgotEmail.trim() })
+      );
+    } catch (err: any) {
+      setForgotError(err.message || 'Failed to send verification code');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || isSendingCode) return;
+    setForgotError(null);
+    setForgotSuccess(null);
+    setIsSendingCode(true);
+    try {
+      await authApi.sendForgotPasswordCode(forgotEmail.trim());
+      setResendCooldown(60);
+      setForgotSuccess(
+        t('login.codeSentNotice', 'A 6-digit verification code has been sent to {{email}}.', { email: forgotEmail.trim() })
+      );
+    } catch (err: any) {
+      setForgotError(err.message || 'Failed to resend verification code');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    if (!forgotCode.trim() || forgotCode.trim().length !== 6) {
+      setForgotError(t('login.invalidCodeError', 'Please enter the 6-digit code'));
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      setForgotError(t('register.passwordTooShort', 'Password must be at least 6 characters'));
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setForgotError(t('register.passwordMismatch', 'Passwords do not match'));
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await authApi.resetPassword({
+        email: forgotEmail.trim(),
+        code: forgotCode.trim(),
+        newPassword,
+      });
+      setIsForgotPasswordMode(false);
+      setEmail(forgotEmail.trim());
+      setPassword('');
+      setForgotStep(1);
+      setForgotEmail('');
+      setForgotCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTeacherError(null);
+      alert(
+        t(
+          'login.passwordResetSuccess',
+          'Your password has been reset successfully! You can now sign in with your new password.'
+        )
+      );
+    } catch (err: any) {
+      setForgotError(err.message || 'Failed to reset password');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   // Student Login State
   const [studentCode, setStudentCode] = useState('');
   const [pin, setPin] = useState('');
@@ -371,125 +483,276 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
             {/* Form Body */}
             <div style={styles.formSection}>
-              {/* Portal Switcher Tabs */}
-              <div style={styles.portalToggleWrapper}>
-                <button
-                  type="button"
-                  onClick={() => setPortal('TEACHER')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...styles.toggleBtnActive,
-                  }}
-                >
-                  {t('login.teacherPortal', 'Teacher Portal')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPortal('STUDENT')}
-                  style={{
-                    ...styles.toggleBtn,
-                    ...styles.toggleBtnInactive,
-                  }}
-                >
-                  {t('login.studentPortal', 'Student Portal')}
-                </button>
-              </div>
-
-              <h2 style={styles.formTitle}>{t('login.teacherLoginTitle', 'Teacher Login')}</h2>
-
-              {teacherError && <div style={styles.errorBox}>{teacherError}</div>}
-
-              <form onSubmit={handleTeacherSubmit} style={styles.form}>
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>{t('login.emailLabel', 'Email:')}</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>{t('login.passwordLabel', 'Password:')}</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('login.passwordPlaceholder', 'Enter password')}
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.forgotPasswordRow}>
-                  <a
-                    href="#forgot"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert(t('login.forgotPasswordNotice', 'Please contact your school administrator or teacher to reset your password.'));
+              {!isForgotPasswordMode && (
+                <div style={styles.portalToggleWrapper}>
+                  <button
+                    type="button"
+                    onClick={() => setPortal('TEACHER')}
+                    style={{
+                      ...styles.toggleBtn,
+                      ...styles.toggleBtnActive,
                     }}
-                    style={styles.forgotPasswordLink}
                   >
-                    {t('login.forgotPasswordPrompt', 'Forget your password?')}
-                  </a>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isTeacherSubmitting}
-                  style={{
-                    ...styles.submitBtn,
-                    opacity: isTeacherSubmitting ? 0.8 : 1,
-                  }}
-                >
-                  {isTeacherSubmitting ? t('login.loggingIn', 'Logging in...') : t('login.loginAsTeacher', 'Login as Teacher')}
-                </button>
-              </form>
-
-              <div style={styles.registerRedirect}>
-                {t('login.dontHaveAccount', "Don't have an account?")}{' '}
-                <span onClick={onNavigateToRegister} style={styles.registerLink}>
-                  {t('login.registerHere', 'Register here')}
-                </span>
-              </div>
-
-              {/* Quick Account Switcher Chips */}
-              <div style={styles.quickAccountsSection}>
-                <div style={styles.quickAccountsTitle}>{t('login.quickDemoLogin', '⚡ Quick Demo Login:')}</div>
-                <div style={styles.quickChipsGrid}>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickAccount('TEACHER_ILSE')}
-                    style={styles.quickChip}
-                  >
-                    Ilse (Teacher)
+                    {t('login.teacherPortal', 'Teacher Portal')}
                   </button>
                   <button
                     type="button"
-                    onClick={() => fillQuickAccount('STUDENT_ILSE')}
-                    style={styles.quickChip}
+                    onClick={() => setPortal('STUDENT')}
+                    style={{
+                      ...styles.toggleBtn,
+                      ...styles.toggleBtnInactive,
+                    }}
                   >
-                    Ilse (Student)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickAccount('TEACHER_JANE')}
-                    style={styles.quickChip}
-                  >
-                    Jane (Teacher)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickAccount('STUDENT_JANE')}
-                    style={styles.quickChip}
-                  >
-                    Jane (Student)
+                    {t('login.studentPortal', 'Student Portal')}
                   </button>
                 </div>
-              </div>
+              )}
+
+              {isForgotPasswordMode ? (
+                <div>
+                  <h2 style={styles.formTitle}>
+                    {forgotStep === 1
+                      ? t('login.forgotPasswordTitle', 'Reset Your Password')
+                      : t('login.resetPasswordTitle', 'Set New Password')}
+                  </h2>
+
+                  <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.83rem', textAlign: 'center', marginBottom: '1.2rem', lineHeight: 1.4 }}>
+                    {forgotStep === 1
+                      ? t('login.forgotPasswordSub', 'Enter your registered educator email address to receive a 6-digit verification code.')
+                      : t('login.forgotPasswordStep2Sub', 'Enter the 6-digit code sent to your email and set your new password.')}
+                  </p>
+
+                  {forgotError && <div style={styles.errorBox}>{forgotError}</div>}
+                  {forgotSuccess && (
+                    <div style={{ ...styles.errorBox, backgroundColor: 'rgba(22, 163, 74, 0.9)' }}>
+                      {forgotSuccess}
+                    </div>
+                  )}
+
+                  {forgotStep === 1 ? (
+                    <form onSubmit={handleSendResetCode} style={styles.form}>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('login.emailLabel', 'Work Email Address:')}</label>
+                        <input
+                          type="email"
+                          required
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
+                          style={styles.input}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSendingCode}
+                        style={{
+                          ...styles.submitBtn,
+                          opacity: isSendingCode ? 0.8 : 1,
+                        }}
+                      >
+                        {isSendingCode ? t('login.sendingCode', 'SENDING CODE...') : t('login.sendCode', 'SEND RESET CODE →')}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleResetPassword} style={styles.form}>
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('login.resetCodeLabel', 'VERIFICATION CODE (6 DIGITS):')}</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={forgotCode}
+                          onChange={(e) => setForgotCode(e.target.value)}
+                          placeholder="e.g. 123456"
+                          style={{ ...styles.input, letterSpacing: '4px', textAlign: 'center', fontWeight: 'bold' }}
+                        />
+                      </div>
+
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('login.newPasswordLabel', 'New Password:')}</label>
+                        <input
+                          type="password"
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder={t('login.newPasswordPlaceholder', 'Enter new password')}
+                          style={styles.input}
+                        />
+                      </div>
+
+                      <div style={styles.fieldGroup}>
+                        <label style={styles.label}>{t('register.confirmPasswordLabel', 'Confirm Password *')}</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder={t('register.confirmPasswordPlaceholder', 'Confirm password')}
+                          style={styles.input}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '-0.2rem' }}>
+                        <span style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.8rem' }}>
+                          {resendCooldown > 0 ? t('login.resendIn', 'Resend code in {{seconds}}s', { seconds: resendCooldown }) : ''}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={resendCooldown > 0 || isSendingCode}
+                          onClick={handleResendCode}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: resendCooldown > 0 ? 'rgba(255, 255, 255, 0.5)' : '#bae6fd',
+                            fontSize: '0.82rem',
+                            fontWeight: '700',
+                            cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                        >
+                          {t('login.resendCode', 'Resend Code')}
+                        </button>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isResettingPassword}
+                        style={{
+                          ...styles.submitBtn,
+                          opacity: isResettingPassword ? 0.8 : 1,
+                        }}
+                      >
+                        {isResettingPassword ? t('login.resettingPassword', 'RESETTING PASSWORD...') : t('login.resetPasswordButton', 'RESET PASSWORD')}
+                      </button>
+                    </form>
+                  )}
+
+                  <div style={{ textAlign: 'center', marginTop: '1.2rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPasswordMode(false);
+                        setForgotError(null);
+                        setForgotSuccess(null);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ffffff',
+                        fontWeight: '700',
+                        fontSize: '0.88rem',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      {t('login.backToLogin', '← Back to Login')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 style={styles.formTitle}>{t('login.teacherLoginTitle', 'Teacher Login')}</h2>
+
+                  {teacherError && <div style={styles.errorBox}>{teacherError}</div>}
+
+                  <form onSubmit={handleTeacherSubmit} style={styles.form}>
+                    <div style={styles.fieldGroup}>
+                      <label style={styles.label}>{t('login.emailLabel', 'Email:')}</label>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={t('login.emailPlaceholder', 'Enter your log in email')}
+                        style={styles.input}
+                      />
+                    </div>
+
+                    <div style={styles.fieldGroup}>
+                      <label style={styles.label}>{t('login.passwordLabel', 'Password:')}</label>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={t('login.passwordPlaceholder', 'Enter password')}
+                        style={styles.input}
+                      />
+                    </div>
+
+                    <div style={styles.forgotPasswordRow}>
+                      <a
+                        href="#forgot"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setIsForgotPasswordMode(true);
+                          setForgotStep(1);
+                          setForgotEmail(email || '');
+                          setForgotError(null);
+                          setForgotSuccess(null);
+                        }}
+                        style={styles.forgotPasswordLink}
+                      >
+                        {t('login.forgotPasswordPrompt', 'Forget your password?')}
+                      </a>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isTeacherSubmitting}
+                      style={{
+                        ...styles.submitBtn,
+                        opacity: isTeacherSubmitting ? 0.8 : 1,
+                      }}
+                    >
+                      {isTeacherSubmitting ? t('login.loggingIn', 'Logging in...') : t('login.loginAsTeacher', 'Login as Teacher')}
+                    </button>
+                  </form>
+
+                  <div style={styles.registerRedirect}>
+                    {t('login.dontHaveAccount', "Don't have an account?")}{' '}
+                    <span onClick={onNavigateToRegister} style={styles.registerLink}>
+                      {t('login.registerHere', 'Register here')}
+                    </span>
+                  </div>
+
+                  {/* Quick Account Switcher Chips */}
+                  <div style={styles.quickAccountsSection}>
+                    <div style={styles.quickAccountsTitle}>{t('login.quickDemoLogin', '⚡ Quick Demo Login:')}</div>
+                    <div style={styles.quickChipsGrid}>
+                      <button
+                        type="button"
+                        onClick={() => fillQuickAccount('TEACHER_ILSE')}
+                        style={styles.quickChip}
+                      >
+                        Ilse (Teacher)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillQuickAccount('STUDENT_ILSE')}
+                        style={styles.quickChip}
+                      >
+                        Ilse (Student)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillQuickAccount('TEACHER_JANE')}
+                        style={styles.quickChip}
+                      >
+                        Jane (Teacher)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fillQuickAccount('STUDENT_JANE')}
+                        style={styles.quickChip}
+                      >
+                        Jane (Student)
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer Links */}
