@@ -1,9 +1,15 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 import {
   ActivityDefinition,
   ActivityBlock,
 } from '../types/activityDsl';
 import { ActivityValidator } from '../validation/activityValidator';
+
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export interface ActivityGenerator {
   generate(prompt: string, subject?: string, gradeLevel?: string): Promise<ActivityDefinition>;
@@ -19,7 +25,10 @@ export class AiActivityGeneratorService implements ActivityGenerator {
     subject?: string,
     gradeLevel?: string,
   ): Promise<ActivityDefinition> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const rawKey = process.env.GEMINI_API_KEY || '';
+    const apiKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
+
+    this.logger.log(`[Gemini API Config Check] Raw Key Present: ${!!rawKey} | Sanitized Length: ${apiKey.length}`);
 
     if (apiKey && apiKey.trim().length > 0) {
       try {

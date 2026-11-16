@@ -169,6 +169,8 @@ export const ActivityEditor: React.FC<ActivityEditorProps> = ({
         title: definition.title,
         description: definition.description,
         definition,
+        inputTokens: (definition as any)?.inputTokens,
+        outputTokens: (definition as any)?.outputTokens,
       });
 
       const currentActId = draftData.activity.id;

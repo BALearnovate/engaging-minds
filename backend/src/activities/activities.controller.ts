@@ -40,7 +40,15 @@ export class ActivitiesController {
   @Roles(Role.TEACHER, Role.ADMIN)
   async saveDraft(
     @CurrentUser('id') teacherId: string,
-    @Body() body: { activityId?: string; title: string; description?: string; definition: any },
+    @Body()
+    body: {
+      activityId?: string;
+      title: string;
+      description?: string;
+      definition: any;
+      inputTokens?: number;
+      outputTokens?: number;
+    },
   ) {
     return this.activitiesService.saveDraft(
       teacherId,
@@ -48,6 +56,8 @@ export class ActivitiesController {
       body.title,
       body.description,
       body.definition,
+      body.inputTokens,
+      body.outputTokens,
     );
   }
 

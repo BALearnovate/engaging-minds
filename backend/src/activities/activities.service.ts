@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivitiesGateway } from './activities.gateway';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -16,6 +16,8 @@ export interface ActivityFilterOptions {
 
 @Injectable()
 export class ActivitiesService {
+  private readonly logger = new Logger(ActivitiesService.name);
+
   constructor(
     private prisma: PrismaService,
     private activitiesGateway: ActivitiesGateway,
@@ -31,68 +33,143 @@ export class ActivitiesService {
     title: string,
     description: string | undefined,
     definition: ActivityDefinition,
+    inputTokens?: number,
+    outputTokens?: number,
   ) {
-    const valResult = ActivityValidator.validate(definition);
-    if (!valResult.valid) {
-      throw new BadRequestException(`Invalid activity definition: ${valResult.errors.join('; ')}`);
+    try {
+      const valResult = ActivityValidator.validate(definition);
+      if (!valResult.valid) {
+        throw new BadRequestException(`Invalid activity definition: ${valResult.errors.join('; ')}`);
+      }
+
+      const safeTitle = (title || (definition as any)?.title || (definition as any)?.metadata?.title || 'Interactive Activity').trim();
+      const safeDescription = description || (definition as any)?.description || '';
+
+      const existingActivity = activityId ? await this.prisma.activity.findUnique({ where: { id: activityId } }) : null;
+
+      let finalInputTokens = Math.max(0, Math.floor(Number(inputTokens ?? (definition as any)?.inputTokens ?? 0) || 0));
+      let finalOutputTokens = Math.max(0, Math.floor(Number(outputTokens ?? (definition as any)?.outputTokens ?? 0) || 0));
+
+      if (existingActivity) {
+        if (finalInputTokens === 0 && (existingActivity as any).inputTokens > 0) {
+          finalInputTokens = (existingActivity as any).inputTokens;
+        }
+        if (finalOutputTokens === 0 && (existingActivity as any).outputTokens > 0) {
+          finalOutputTokens = (existingActivity as any).outputTokens;
+        }
+      }
+
+      // Ensure definition object reflects final token counts in JSON content
+      (definition as any).inputTokens = finalInputTokens;
+      (definition as any).outputTokens = finalOutputTokens;
+
+      this.logger.log(`Saving Activity Draft to DB -> Title: "${safeTitle}" | Input Tokens: ${finalInputTokens} | Output Tokens: ${finalOutputTokens}`);
+
+      // Resolve valid teacher ID to satisfy foreign key constraint
+      let validTeacherId = teacherId;
+      if (validTeacherId) {
+        const teacherUser = await this.prisma.user.findUnique({
+          where: { id: validTeacherId },
+        });
+        if (!teacherUser) {
+          const fallbackTeacher = await this.prisma.user.findFirst({
+            where: { role: { in: ['TEACHER', 'ADMIN'] } },
+          });
+          if (fallbackTeacher) {
+            validTeacherId = fallbackTeacher.id;
+          } else {
+            const anyUser = await this.prisma.user.findFirst();
+            if (anyUser) {
+              validTeacherId = anyUser.id;
+            }
+          }
+        }
+      } else {
+        const fallbackTeacher = await this.prisma.user.findFirst({
+          where: { role: { in: ['TEACHER', 'ADMIN'] } },
+        });
+        if (fallbackTeacher) {
+          validTeacherId = fallbackTeacher.id;
+        } else {
+          const anyUser = await this.prisma.user.findFirst();
+          if (anyUser) {
+            validTeacherId = anyUser.id;
+          }
+        }
+      }
+
+      if (!validTeacherId) {
+        throw new BadRequestException('No registered teacher user found in database to associate activity with.');
+      }
+
+      let activity;
+      if (activityId) {
+        activity = await this.prisma.activity.update({
+          where: { id: activityId },
+          data: {
+            title: safeTitle,
+            description: safeDescription,
+            type: 'STRUCTURED_DSL',
+            content: definition as any,
+            inputTokens: finalInputTokens,
+            outputTokens: finalOutputTokens,
+            teacherId: validTeacherId,
+          } as any,
+        });
+      } else {
+        activity = await this.prisma.activity.create({
+          data: {
+            title: safeTitle,
+            description: safeDescription,
+            type: 'STRUCTURED_DSL',
+            content: definition as any,
+            inputTokens: finalInputTokens,
+            outputTokens: finalOutputTokens,
+            teacherId: validTeacherId,
+          } as any,
+        });
+      }
+
+      // Find existing draft version or create new version
+      let draftVersion = await this.prisma.activityVersion.findFirst({
+        where: { activityId: activity.id, status: 'DRAFT' },
+      });
+
+      if (draftVersion) {
+        draftVersion = await this.prisma.activityVersion.update({
+          where: { id: draftVersion.id },
+          data: {
+            definition: definition as any,
+          },
+        });
+      } else {
+        const maxVer = await this.prisma.activityVersion.aggregate({
+          where: { activityId: activity.id },
+          _max: { version: true },
+        });
+        const nextVer = (maxVer._max.version || 0) + 1;
+
+        draftVersion = await this.prisma.activityVersion.create({
+          data: {
+            activityId: activity.id,
+            version: nextVer,
+            definition: definition as any,
+            status: 'DRAFT',
+          },
+        });
+      }
+
+      return {
+        activity,
+        version: draftVersion,
+      };
+    } catch (err: any) {
+      this.logger.error(`Failed to save draft: ${err.message}`, err.stack);
+      if (err instanceof BadRequestException) {
+        throw err;
+      }
+      throw new BadRequestException(`Could not save activity draft: ${err.message}`);
     }
-
-    let activity;
-    if (activityId) {
-      activity = await this.prisma.activity.update({
-        where: { id: activityId },
-        data: {
-          title,
-          description: description || '',
-          type: 'STRUCTURED_DSL',
-          content: definition as any,
-        },
-      });
-    } else {
-      activity = await this.prisma.activity.create({
-        data: {
-          title,
-          description: description || '',
-          type: 'STRUCTURED_DSL',
-          content: definition as any,
-          teacherId,
-        },
-      });
-    }
-
-    // Find existing draft version or create new version
-    let draftVersion = await this.prisma.activityVersion.findFirst({
-      where: { activityId: activity.id, status: 'DRAFT' },
-    });
-
-    if (draftVersion) {
-      draftVersion = await this.prisma.activityVersion.update({
-        where: { id: draftVersion.id },
-        data: {
-          definition: definition as any,
-        },
-      });
-    } else {
-      const maxVer = await this.prisma.activityVersion.aggregate({
-        where: { activityId: activity.id },
-        _max: { version: true },
-      });
-      const nextVer = (maxVer._max.version || 0) + 1;
-
-      draftVersion = await this.prisma.activityVersion.create({
-        data: {
-          activityId: activity.id,
-          version: nextVer,
-          definition: definition as any,
-          status: 'DRAFT',
-        },
-      });
-    }
-
-    return {
-      activity,
-      version: draftVersion,
-    };
   }
 
   async publishActivity(

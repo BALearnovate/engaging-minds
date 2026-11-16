@@ -82,6 +82,8 @@ export interface SaveDraftPayload {
   title: string;
   description?: string;
   definition: ActivityDefinition | any;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface PublishActivityPayload {
