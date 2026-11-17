@@ -306,11 +306,12 @@ export class AuthService {
       const nameParts = dto.displayName ? dto.displayName.trim().split(' ') : [];
       const updatedFirstName = nameParts[0] || student.firstName;
       const updatedLastName = nameParts.slice(1).join(' ') || student.lastName;
+      const hashedPin = dto.pin ? await bcrypt.hash(dto.pin.trim(), 10) : student.pin;
 
       const updated = await this.prisma.student.update({
         where: { id: student.id },
         data: {
-          pin: dto.pin,
+          pin: hashedPin,
           email: dto.email ? dto.email.toLowerCase() : student.email,
           firstName: updatedFirstName,
           lastName: updatedLastName,
@@ -388,7 +389,16 @@ export class AuthService {
     console.log(`Student is ${JSON.stringify(student)}`)
 
     if (student) {
-      if (student.pin && student.pin !== pin || student.pin === null) {
+      let isPinValid = false;
+      if (student.pin) {
+        if (student.pin.startsWith('$2a$') || student.pin.startsWith('$2b$')) {
+          isPinValid = await bcrypt.compare(pin, student.pin);
+        } else {
+          isPinValid = student.pin === pin;
+        }
+      }
+
+      if (!isPinValid) {
         throw new UnauthorizedException('That code or PIN doesn’t seem right. Please try again or check with your teacher!');
       }
 

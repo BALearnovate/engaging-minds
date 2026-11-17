@@ -144,6 +144,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
   const [studentError, setStudentError] = useState<string | null>(null);
   const [isStudentSubmitting, setIsStudentSubmitting] = useState(false);
   const [keepMeSignedIn, setKeepMeSignedIn] = useState(true);
+  const [showStudentForgotPinModal, setShowStudentForgotPinModal] = useState<boolean>(false);
 
   // Teacher Form Submit
   const handleTeacherSubmit = async (e: React.FormEvent) => {
@@ -407,9 +408,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
                 <button
                   type="button"
-                  onClick={() =>
-                    alert(t('login.forgotPinNotice', 'Please ask your teacher or school administrator to look up or reset your 4-digit PIN!'))
-                  }
+                  onClick={() => setShowStudentForgotPinModal(true)}
                   style={styles.forgotPinLink}
                 >
                   {t('login.forgotPin', 'Forgot PIN?')}
@@ -442,6 +441,46 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
             </div>
           </div>
         </div>
+
+        {/* STUDENT FORGOT PIN MODAL DIALOG */}
+        {showStudentForgotPinModal && (
+          <div style={styles.confirmModalOverlay}>
+            <div style={styles.warningModalCard}>
+              {/* Top Icon Badge */}
+              <div style={styles.confirmBadgeRow}>
+                <div style={styles.warningIconCircle}>
+                  ⚠️
+                </div>
+                <div style={styles.warningPillBadge}>
+                  {t('login.forgotPinTag', 'FORGOT STUDENT PIN')}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={styles.confirmTitleSection}>
+                <h2 style={styles.confirmActivityTitle}>
+                  {t('login.forgotPinTitle', 'Forgot Your 4-Digit PIN?')}
+                </h2>
+              </div>
+
+              {/* Subtitle / Notice */}
+              <p style={styles.confirmSubTitle}>
+                {t('login.forgotPinNotice', 'Please ask your teacher to give you the 4-digit PIN!')}
+              </p>
+
+              {/* Action Buttons */}
+              <div style={styles.confirmActionsRow}>
+                <button
+                  type="button"
+                  onClick={() => setShowStudentForgotPinModal(false)}
+                  style={styles.warningActionBtn}
+                >
+                  {t('common.close', 'Close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* European Union Co-Funded Footer */}
         <EuFooter />
@@ -1335,5 +1374,102 @@ const styles: Record<string, React.CSSProperties> = {
   toggleBtnInactive: {
     backgroundColor: 'transparent',
     color: 'rgba(255, 255, 255, 0.8)',
+  },
+
+  // Modal Dialog Styling
+  confirmModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: '1.5rem',
+  },
+  warningModalCard: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 45%, #dc2626 100%)',
+    borderRadius: '24px',
+    border: '2px solid #fde047',
+    padding: '2.5rem 2rem',
+    maxWidth: '520px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(245, 158, 11, 0.35)',
+    color: '#ffffff',
+  },
+  confirmBadgeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.75rem',
+    marginBottom: '1.25rem',
+  },
+  warningIconCircle: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+  warningPillBadge: {
+    padding: '0.4rem 1rem',
+    borderRadius: '20px',
+    border: '1.5px solid rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  confirmTitleSection: {
+    marginBottom: '0.75rem',
+  },
+  confirmActivityTitle: {
+    fontSize: '1.75rem',
+    fontWeight: '900',
+    color: '#ffffff',
+    margin: 0,
+    lineHeight: '1.25',
+    textShadow: '0 2px 4px rgba(0, 0, 0, 0.15)',
+  },
+  confirmSubTitle: {
+    fontSize: '1.05rem',
+    color: 'rgba(255, 255, 255, 0.95)',
+    margin: '0 0 2rem 0',
+    lineHeight: '1.5',
+    fontWeight: '500',
+  },
+  confirmActionsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+    width: '100%',
+  },
+  warningActionBtn: {
+    backgroundColor: '#ffffff',
+    color: '#c2410c',
+    border: '2px solid #fed7aa',
+    padding: '0.85rem 2.5rem',
+    borderRadius: '24px',
+    fontSize: '1rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
+    transition: 'all 0.2s ease',
   },
 };

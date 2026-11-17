@@ -195,6 +195,8 @@
     "forgotPasswordPrompt": "Forget your password?",
     "forgotPasswordNotice": "Please contact your school administrator or teacher to reset your password.",
     "forgotPinNotice": "Please ask your teacher or school administrator to look up or reset your 4-digit PIN!",
+    "forgotPinTag": "FORGOT STUDENT PIN",
+    "forgotPinTitle": "Forgot Your 4-Digit PIN?",
     "pinLengthError": "Please enter your 4-digit PIN!",
     "forgotPin": "Forgot PIN?",
     "loggingIn": "Logging in...",

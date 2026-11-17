@@ -186,7 +186,7 @@
     "passwordPlaceholder": "Enter password",
     "forgotPasswordPrompt": "Forget your password?",
     "forgotPasswordNotice": "Please contact your school administrator or teacher to reset your password.",
-    "forgotPinNotice": "Please ask your teacher or school administrator to look up or reset your 4-digit PIN!",
+    "forgotPinNotice": "Please ask your teacher to give you the 4-digit PIN!",
     "forgotPin": "Forgot PIN?",
     "loggingIn": "Logging in...",
     "loginAsTeacher": "Login as Teacher",
