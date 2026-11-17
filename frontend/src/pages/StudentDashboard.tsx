@@ -252,7 +252,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchAssignedActivities();
-  }, [user, activeToken, currentTab]);
+  }, [user, activeToken, currentTab, hasExitedCurrentLive, activePlayingActivity]);
+
+  // Re-fetch when browser window/tab regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchAssignedActivities();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, activeToken]);
 
   const fetchAssignedActivities = async () => {
     setIsLoading(true);
@@ -582,13 +594,37 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
 
           {/* Section Title */}
           <div style={styles.assignedTitleRow}>
-            <div>
-              <h2 style={styles.assignedHeading}>
-                {t('studentPortal.assignedActivities', 'Assigned activities')}
-              </h2>
-              <p style={styles.clickTipText}>
-                {t('studentPortal.clickActivityToView', '💡 Click any activity to view its progress on left')}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={styles.assignedHeading}>
+                  {t('studentPortal.assignedActivities', 'Assigned activities')}
+                </h2>
+                <p style={styles.clickTipText}>
+                  {t('studentPortal.clickActivityToView', '💡 Click any activity to view its progress on left')}
+                </p>
+              </div>
+              <button
+                onClick={() => fetchAssignedActivities()}
+                disabled={isLoading}
+                style={{
+                  backgroundColor: '#f0fdf4',
+                  color: '#16a34a',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '20px',
+                  padding: '0.4rem 0.85rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  opacity: isLoading ? 0.7 : 1,
+                }}
+              >
+                {isLoading ? t('studentPortal.refreshing', '🔄 Refreshing...') : t('studentPortal.refreshActivities', '🔄 Refresh Activities')}
+              </button>
             </div>
           </div>
 

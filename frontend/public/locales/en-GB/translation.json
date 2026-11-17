@@ -468,6 +468,8 @@
     "timeElapsed": "⏱ Time Elapsed: {{time}}",
     "activityLogsAndHistory": "Activity Logs & History",
     "assignedActivities": "Assigned activities",
+    "refreshActivities": "🔄 Refresh Activities",
+    "refreshing": "🔄 Refreshing...",
     "clickActivityToView": "💡 Click any activity to view its progress on left",
     "selected": "Selected ✓",
     "select": "Select →",
