@@ -29,7 +29,7 @@ export class MailService {
   }
 
   async sendOtpEmail(toEmail: string, otpCode: string): Promise<boolean> {
-    const from = process.env.SMTP_FROM || 'Engaging Minds <noreply@engagingminds.com>';
+    const from = process.env.SMTP_FROM || 'Engaging Minds <noreply@engagingminds.learnovatecentre.org>';
     const subject = 'Your Engaging Minds Verification Code';
     const text = `Hello,\n\nYour 6-digit verification code is: ${otpCode}\n\nThis code will expire in 10 minutes. If you did not request this code, please ignore this email.`;
     const html = `
@@ -68,7 +68,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(toEmail: string, otpCode: string): Promise<boolean> {
-    const from = process.env.SMTP_FROM || 'Engaging Minds <noreply@engagingminds.com>';
+    const from = process.env.SMTP_FROM || 'Engaging Minds <noreply@engagingminds.learnovatecentre.org>';
     const subject = 'Your Engaging Minds Password Reset Code';
     const text = `Hello,\n\nYour 6-digit password reset code is: ${otpCode}\n\nThis code will expire in 10 minutes. If you did not request a password reset, please ignore this email.`;
     const html = `
