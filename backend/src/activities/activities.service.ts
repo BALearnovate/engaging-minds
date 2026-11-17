@@ -423,7 +423,7 @@ export class ActivitiesService {
   async getAssignmentsForStudent(loginCode: string) {
     const cleanId = (loginCode || '').trim();
 
-    const student = await this.prisma.student.findFirst({
+    let student = await this.prisma.student.findFirst({
       where: {
         OR: [
           { loginCode: { equals: cleanId, mode: 'insensitive' } },
@@ -434,19 +434,56 @@ export class ActivitiesService {
       include: { classroom: true },
     });
 
-    if (!student) {
+    let targetClassroomId = student?.classroomId;
+
+    if (!targetClassroomId) {
+      const cls = await this.prisma.classroom.findUnique({
+        where: { id: cleanId },
+      });
+      if (cls) {
+        targetClassroomId = cls.id;
+      }
+    }
+
+    if (!targetClassroomId) {
       return {
-        student: null,
+        student: student || null,
         assignments: [],
       };
     }
 
-    const studentFullName = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
-    const studentFirstName = (student.firstName || '').trim().toLowerCase();
-    const studentId = (student.id || '').trim().toLowerCase();
+    const studentFullName = student ? `${student.firstName} ${student.lastName}`.trim().toLowerCase() : '';
+    const studentFirstName = student ? (student.firstName || '').trim().toLowerCase() : '';
+    const studentId = student ? (student.id || '').trim().toLowerCase() : '';
+
+    const studentSessionOrFilter: any[] = [];
+    if (student?.id) {
+      studentSessionOrFilter.push({ studentId: student.id });
+    }
+    if (student?.firstName) {
+      studentSessionOrFilter.push({
+        studentName: {
+          equals: `${student.firstName} ${student.lastName || ''}`.trim(),
+          mode: 'insensitive' as const,
+        },
+      });
+    }
+    if (student?.loginCode) {
+      studentSessionOrFilter.push({
+        studentName: { equals: student.loginCode.trim(), mode: 'insensitive' as const },
+      });
+    }
+    if (student?.email) {
+      studentSessionOrFilter.push({
+        studentName: { equals: student.email.trim(), mode: 'insensitive' as const },
+      });
+    }
+    if (studentSessionOrFilter.length === 0) {
+      studentSessionOrFilter.push({ studentId: cleanId });
+    }
 
     const rawAssignments = await this.prisma.activityAssignment.findMany({
-      where: { classroomId: student.classroomId },
+      where: { classroomId: targetClassroomId },
       include: {
         activity: {
           include: {
@@ -461,10 +498,7 @@ export class ActivitiesService {
                   include: {
                     studentSessions: {
                       where: {
-                        OR: [
-                          { studentId: student.id },
-                          { studentName: { equals: `${student.firstName} ${student.lastName}`.trim(), mode: 'insensitive' } },
-                        ],
+                        OR: studentSessionOrFilter,
                       },
                     },
                   },
@@ -1369,6 +1403,20 @@ export class ActivitiesService {
       include: {
         teacher: {
           select: { id: true, firstName: true, lastName: true, email: true },
+        },
+        versions: {
+          where: { status: 'PUBLISHED' },
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: {
+            sessions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              include: {
+                studentSessions: true,
+              },
+            },
+          },
         },
         _count: {
           select: { submissions: true },

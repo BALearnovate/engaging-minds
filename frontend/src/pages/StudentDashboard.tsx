@@ -252,7 +252,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchAssignedActivities();
-  }, [user, activeToken]);
+  }, [user, activeToken, currentTab]);
 
   const fetchAssignedActivities = async () => {
     setIsLoading(true);
@@ -269,24 +269,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       if (studentCode) {
         try {
           assignmentsData = await activitiesApi.getStudentAssignments(studentCode, activeToken);
-          
-          // Reviewed the code
-          // Firstly the api fetches the user based on loginCode, if student doesn't exist
-          // it returns null with empty assignments list
-          // If student is found, it finds all the activityassignmetns and activitysessions
-          // for that student, returns all this information and teacher who assigned them
-          console.log(` Student login code ${studentCode} ${JSON.stringify(assignmentsData)}`)
-
+          console.log(` Student login code ${studentCode} ${JSON.stringify(assignmentsData)}`);
         } catch (err) {
           console.warn('Failed to fetch student assigned activities by loginCode/ID:', err);
         }
       }
 
-      if (assignmentsData && Array.isArray(assignmentsData.assignments)) {
-        setDbActivities(assignmentsData.assignments);
+      const assignedList = assignmentsData?.assignments;
+
+      // Only load activities from the class which the student is part of
+      if (Array.isArray(assignedList)) {
+        setDbActivities(assignedList);
       } else {
-        const data: any = await activitiesApi.getActivities(activeToken);
-        setDbActivities(Array.isArray(data) ? data : []);
+        setDbActivities([]);
       }
     } catch (err) {
       console.error('Failed to fetch assigned activities from DB:', err);
@@ -303,6 +298,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       const timeB = new Date(b.assignedAt || b.createdAt || 0).getTime();
       return timeB - timeA;
     });
+
+    const currentUserId = user?.id ? String(user.id) : '';
+    const currentUserName = user
+      ? ((user as any).name || `${user.firstName || ''} ${user.lastName || ''}`).trim().toLowerCase()
+      : '';
+    const currentLoginCode = ((user as any)?.loginCode || '').trim().toLowerCase();
 
     return sortedDb.map((item: any) => {
       const assignment = item.activity ? item : null;
@@ -328,7 +329,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       const sessions = latestVer?.sessions || [];
       const activeSession = sessions[0];
       const studentSessions = activeSession?.studentSessions || [];
-      const stSession = studentSessions[0];
+      
+      const stSession = studentSessions.find((s: any) => {
+        if (!s) return false;
+        const sStudentId = s.studentId ? String(s.studentId) : '';
+        const sStudentName = s.studentName ? s.studentName.trim().toLowerCase() : '';
+        return (
+          (currentUserId && sStudentId === currentUserId) ||
+          (currentUserName && sStudentName === currentUserName) ||
+          (currentLoginCode && sStudentName === currentLoginCode)
+        );
+      }) || studentSessions[0];
 
       if (stSession) {
         const academicStars = stSession.academicStars || 0;
@@ -370,7 +381,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         completionPct: stSession?.progress || 0,
       };
     });
-  }, [dbActivities]);
+  }, [dbActivities, user]);
 
   // Set default selected activity if none selected
   useEffect(() => {
@@ -409,6 +420,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
             setLiveActivityData(null);
             setShowLiveModal(false);
             onSelectTab?.('student_home');
+            fetchAssignedActivities();
           }}
         />
       );
@@ -442,7 +454,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       <div style={styles.runtimeContainer}>
         <div style={styles.runtimeHeaderBar}>
           <button
-            onClick={() => setActivePlayingActivity(null)}
+            onClick={() => {
+              setActivePlayingActivity(null);
+              fetchAssignedActivities();
+            }}
             style={styles.backBtn}
           >
             {t('studentPortal.backToAssigned', '← Back to My Assigned Activities')}
@@ -459,6 +474,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
             onCompleted={() => {
               alert(t('studentPortal.activityCompletedAlert', '🎉 Activity completed successfully! Great work!'));
               setActivePlayingActivity(null);
+              fetchAssignedActivities();
             }}
           />
         </div>
