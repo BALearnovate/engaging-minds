@@ -61,6 +61,12 @@ export const ClassroomSetupComponent: React.FC = () => {
   const [revealAll, setRevealAll] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
+  // Clear revealed states on classroom change
+  useEffect(() => {
+    setRevealedCodes({});
+    setRevealAll(false);
+  }, [selectedClassId]);
+
   // Printable Slips Modal State
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   const [printMode, setPrintMode] = useState<'slips' | 'master'>('slips');
@@ -240,11 +246,29 @@ export const ClassroomSetupComponent: React.FC = () => {
     }
   };
 
+  const isStudentCodeRevealed = (studentId: string): boolean => {
+    if (studentId in revealedCodes) {
+      return revealedCodes[studentId];
+    }
+    return revealAll;
+  };
+
   const toggleSingleCodeReveal = (studentId: string) => {
+    const currentlyRevealed = isStudentCodeRevealed(studentId);
     setRevealedCodes((prev) => ({
       ...prev,
-      [studentId]: !prev[studentId],
+      [studentId]: !currentlyRevealed,
     }));
+  };
+
+  const handleToggleRevealAll = () => {
+    if (revealAll) {
+      setRevealAll(false);
+      setRevealedCodes({});
+    } else {
+      setRevealAll(true);
+      setRevealedCodes({});
+    }
   };
 
   const handleTriggerPrint = () => {
@@ -715,7 +739,7 @@ export const ClassroomSetupComponent: React.FC = () => {
               <div style={styles.previewHeaderRow}>
                 <h3 style={styles.previewTitle}>{t('classroomSetup.rosterPreview', 'Classroom preview')}</h3>
                 <button
-                  onClick={() => setRevealAll(!revealAll)}
+                  onClick={handleToggleRevealAll}
                   style={styles.revealAllBtn}
                   title="Toggle show/hide passcodes on screen"
                 >
@@ -734,7 +758,7 @@ export const ClassroomSetupComponent: React.FC = () => {
               ) : (
                 <div style={styles.studentCardsList}>
                   {selectedClassroom.students.map((st) => {
-                    const isCodeRevealed = revealAll || revealedCodes[st.id];
+                    const isCodeRevealed = isStudentCodeRevealed(st.id);
                     return (
                       <div key={st.id} style={styles.studentCard}>
                         <div style={styles.studentAvatar}>
