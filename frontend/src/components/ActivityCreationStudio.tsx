@@ -487,7 +487,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
         <div style={styles.mainStudioCard}>
           {/* Header */}
           <div style={styles.headerBox}>
-            <h1 style={styles.studioTitle}>{t('activityCreation.bannerTitle', 'ACTIVITY GENERATION STUDIO')}***</h1>
+            <h1 style={styles.studioTitle}>{t('activityCreation.bannerTitle', 'ACTIVITY GENERATION STUDIO')}</h1>
             <p style={styles.studioSubtitle}>
               {t('activityCreation.bannerSubtitle', 'Pick a baseline setup pathway to draft interactive student activities.')}
             </p>
