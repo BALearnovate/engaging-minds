@@ -68,6 +68,14 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     icon: string;
   } | null>(null);
 
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState<boolean>(false);
+  const [sessionSummaryModal, setSessionSummaryModal] = useState<{
+    isOpen: boolean;
+    isCompletion: boolean;
+    timeSpent: string;
+    progressPct: number;
+  } | null>(null);
+
   // Timer Interval starting from 00:00
   useEffect(() => {
 
@@ -450,63 +458,63 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       });
     }
 
-    window.alert(
-      `🎉 Activity Completed!\n\n` +
-      `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
-      `Progress: 100%\n\n` +
-      `Click OK to return to your dashboard.`
-    );
-
-    if (onExit) {
-      onExit();
-    }
+    setSessionSummaryModal({
+      isOpen: true,
+      isCompletion: true,
+      timeSpent: formatTimeSummary(elapsedSeconds),
+      progressPct: 100,
+    });
   };
 
-
-
   const handleExitActivity = () => {
-    if (window.confirm('Are you sure you want to exit this activity?')) {
-      const timeSpentMs = elapsedSeconds * 1000;
-      const actId = (shareCode || activityId || '').trim().toUpperCase();
-      const socket = getSocket();
-      const studentId = currentUser?.id || 'student_guest';
-      const studentName = currentUser
-        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
-        : 'Student';
+    setShowExitConfirmModal(true);
+  };
 
-      if (socket && actId) {
-        socket.emit('update_activity_status', {
-          activityId: actId,
-          shareCode: actId,
-          studentId,
-          activityStatus: 'Left',
-          startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs,
-        });
+  const handleConfirmExit = () => {
+    setShowExitConfirmModal(false);
+    const timeSpentMs = elapsedSeconds * 1000;
+    const actId = (shareCode || activityId || '').trim().toUpperCase();
+    const socket = getSocket();
+    const studentId = currentUser?.id || 'student_guest';
+    const studentName = currentUser
+      ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+      : 'Student';
 
-        socket.emit('update_progress', {
-          activityId: actId,
-          shareCode: actId,
-          studentId,
-          studentName,
-          progress: progressPct,
-          status: progressPct === 100 ? 'COMPLETED' : 'IN_PROGRESS',
-          activityStatus: 'Left',
-          startedAt: new Date(sessionStartTimeMs).toISOString(),
-          timeSpentMs,
-        });
-      }
+    if (socket && actId) {
+      socket.emit('update_activity_status', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        activityStatus: 'Left',
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs,
+      });
 
-      window.alert(
-        `⚠️ Activity Exited\n\n` +
-        `Time Spent: ${formatTimeSummary(elapsedSeconds)}\n` +
-        `Progress: ${progressPct}%\n\n` +
-        `Click OK to return to your dashboard.`
-      );
+      socket.emit('update_progress', {
+        activityId: actId,
+        shareCode: actId,
+        studentId,
+        studentName,
+        progress: progressPct,
+        status: progressPct === 100 ? 'COMPLETED' : 'IN_PROGRESS',
+        activityStatus: 'Left',
+        startedAt: new Date(sessionStartTimeMs).toISOString(),
+        timeSpentMs,
+      });
+    }
 
-      if (onExit) {
-        onExit();
-      }
+    setSessionSummaryModal({
+      isOpen: true,
+      isCompletion: false,
+      timeSpent: formatTimeSummary(elapsedSeconds),
+      progressPct,
+    });
+  };
+
+  const handleCloseSummary = () => {
+    setSessionSummaryModal(null);
+    if (onExit) {
+      onExit();
     }
   };
 
@@ -767,6 +775,109 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                 style={styles.confirmContinueBtn}
               >
                 {t('studentPortal.gotIt', 'Got it! 👍')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Orange Warning Modal for Exit Confirmation */}
+      {showExitConfirmModal && (
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.warningModalCard}>
+            {/* Top Icon Circle & Pill Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.warningFireCircle}>
+                ⚠️
+              </div>
+              <div style={styles.warningPillBadge}>
+                {t('studentPortal.exitConfirmBadge', '⚠️ EXIT ACTIVITY')}
+              </div>
+            </div>
+
+            {/* Title Section */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {t('studentPortal.exitConfirmTitle', 'Exit Live Activity?')}
+              </h2>
+            </div>
+
+            {/* Message Subtitle */}
+            <p style={styles.confirmSubTitle}>
+              {t('studentPortal.exitConfirmMessage', 'Are you sure you want to exit this activity? Your session progress will be recorded.')}
+            </p>
+
+            {/* Action Buttons */}
+            <div style={styles.confirmActionsRow}>
+              <button
+                onClick={() => setShowExitConfirmModal(false)}
+                style={styles.warningCancelBtn}
+              >
+                {t('studentPortal.exitConfirmCancel', 'Stay in Activity')}
+              </button>
+              <button
+                onClick={handleConfirmExit}
+                style={styles.warningConfirmBtn}
+              >
+                {t('studentPortal.exitConfirmBtn', 'Exit Activity')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Green Success/Summary Modal for Activity Exit/Completion */}
+      {sessionSummaryModal?.isOpen && (
+        <div style={styles.confirmModalOverlay}>
+          <div style={styles.confirmModalCard}>
+            {/* Top Icon Circle & Pill Badge */}
+            <div style={styles.confirmBadgeRow}>
+              <div style={styles.confirmFireCircle}>
+                {sessionSummaryModal.isCompletion ? '🎉' : '📊'}
+              </div>
+              <div style={styles.confirmPillBadge}>
+                {sessionSummaryModal.isCompletion
+                  ? t('studentPortal.completionSummaryBadge', '🎉 ACTIVITY COMPLETED')
+                  : t('studentPortal.exitSummaryBadge', '📊 ACTIVITY SUMMARY')}
+              </div>
+            </div>
+
+            {/* Title Section */}
+            <div style={styles.confirmTitleSection}>
+              <h2 style={styles.confirmActivityTitle}>
+                {sessionSummaryModal.isCompletion
+                  ? t('studentPortal.completionSummaryTitle', 'Activity Completed!')
+                  : t('studentPortal.exitSummaryTitle', 'Activity Exited')}
+              </h2>
+            </div>
+
+            {/* Stats Overview Grid */}
+            <div style={styles.summaryStatsGrid}>
+              <div style={styles.summaryStatBox}>
+                <span style={styles.summaryStatLabel}>
+                  ⏱️ {t('studentPortal.summaryTimeSpent', 'Time Spent')}
+                </span>
+                <span style={styles.summaryStatValue}>
+                  {sessionSummaryModal.timeSpent}
+                </span>
+              </div>
+              <div style={styles.summaryStatBox}>
+                <span style={styles.summaryStatLabel}>
+                  📊 {t('studentPortal.summaryProgress', 'Progress')}
+                </span>
+                <span style={styles.summaryStatValue}>
+                  {sessionSummaryModal.progressPct}%
+                </span>
+              </div>
+            </div>
+
+            {/* Return to Dashboard Button */}
+            <div style={styles.confirmActionsRow}>
+              <button
+                onClick={handleCloseSummary}
+                style={styles.confirmContinueBtn}
+              >
+                {t('studentPortal.returnToDashboard', 'Return to Dashboard ➔')}
               </button>
             </div>
           </div>
@@ -1212,5 +1323,95 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
     transition: 'all 0.2s ease',
+  },
+  warningModalCard: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 45%, #dc2626 100%)',
+    borderRadius: '24px',
+    border: '2px solid #fde047',
+    padding: '2.5rem 2rem',
+    maxWidth: '520px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35), 0 0 25px rgba(245, 158, 11, 0.4)',
+    color: '#ffffff',
+  },
+  warningFireCircle: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    border: '1.5px solid rgba(255, 255, 255, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.4rem',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+  },
+  warningPillBadge: {
+    padding: '0.4rem 1rem',
+    borderRadius: '20px',
+    border: '1.5px solid rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    color: '#ffffff',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  },
+  warningCancelBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: '#ffffff',
+    border: '1.5px solid rgba(255, 255, 255, 0.5)',
+    padding: '0.85rem 1.8rem',
+    borderRadius: '24px',
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  warningConfirmBtn: {
+    backgroundColor: '#ffffff',
+    color: '#c2410c',
+    border: '2px solid #fde047',
+    padding: '0.85rem 2.2rem',
+    borderRadius: '24px',
+    fontSize: '0.98rem',
+    fontWeight: '900',
+    cursor: 'pointer',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+    transition: 'all 0.2s ease',
+  },
+  summaryStatsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '1rem',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backdropFilter: 'blur(4px)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    padding: '1.25rem',
+    margin: '1rem 0 1.75rem 0',
+  },
+  summaryStatBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.35rem',
+  },
+  summaryStatLabel: {
+    fontSize: '0.78rem',
+    fontWeight: '800',
+    color: 'rgba(255, 255, 255, 0.9)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+  },
+  summaryStatValue: {
+    fontSize: '1.4rem',
+    fontWeight: '900',
+    color: '#ffffff',
   },
 };

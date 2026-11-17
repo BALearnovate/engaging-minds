@@ -539,7 +539,19 @@
     "statusLabel": "Status",
     "activeStatus": "Active",
     "inactiveStatus": "Inactive",
-    "leftStatus": "Left"
+    "leftStatus": "Left",
+    "exitConfirmBadge": "⚠️ EXIT ACTIVITY",
+    "exitConfirmTitle": "Exit Live Activity?",
+    "exitConfirmMessage": "Are you sure you want to exit this activity? Your session progress will be recorded.",
+    "exitConfirmCancel": "Stay in Activity",
+    "exitConfirmBtn": "Exit Activity",
+    "exitSummaryBadge": "📊 ACTIVITY SUMMARY",
+    "completionSummaryBadge": "🎉 ACTIVITY COMPLETED",
+    "exitSummaryTitle": "Activity Exited",
+    "completionSummaryTitle": "Activity Completed!",
+    "summaryTimeSpent": "Time Spent",
+    "summaryProgress": "Progress",
+    "returnToDashboard": "Return to Dashboard ➔"
   },
   "clockDiagram": {
     "badge": "🕒 COMPLETE 24-HOUR RADIAL CLOCK DIAGRAM",
