@@ -800,6 +800,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                         onChange={(e) => setCustomDisplayName(e.target.value)}
                         placeholder="Alex Morgan"
                         style={styles.studentInput}
+                        disabled
                       />
                     </div>
 
