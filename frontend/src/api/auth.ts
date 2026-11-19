@@ -104,4 +104,11 @@ export const authApi = {
       body: JSON.stringify(data),
     });
   },
+
+  async resetStudentPin(data: { studentCode: string; newPin: string }): Promise<{ message: string }> {
+    return apiFetch<{ message: string }>('/auth/reset-student-pin', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };

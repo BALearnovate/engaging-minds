@@ -195,3 +195,13 @@ model EmailVerification {
 
   @@map("email_verifications")
 }
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_resets")
+}
