@@ -15,6 +15,65 @@ const timeUseOptions = [
 ];
 
 export const SEED_ACTIVITIES: ActivityDefinition[] = [
+  // Group Activity: Welcoming First-Year Students
+  {
+    schemaVersion: '1.0',
+    title: 'Welcoming First-Year Students: Propose 3 Feasible Changes',
+    description: 'Collaborative group activity where students brainstorm ideas to welcome new first-year students, agree on the top 3 feasible changes as a team, present their proposal, and reflect privately on their contribution.',
+    subject: 'Life Skills',
+    gradeLevel: 'Year 7',
+    estimatedDurationMinutes: 20,
+    blocks: [
+      {
+        id: 'fyw_ideas_voting',
+        type: 'open_response',
+        title: '1. Group Idea Submission & Voting',
+        instructions: 'Work with your group members. Propose feasible changes to welcome new first-year students to our school, discuss ideas together, and agree on the top 3 changes.',
+        config: {
+          prompt: 'Our school is welcoming new first-year students: propose three feasible changes.',
+          instructions: 'Submit your initial ideas, collaborate with your group, and vote to select the top 3 feasible changes.',
+          prompts: [
+            'Propose feasible change #1 to welcome first-year students:',
+            'Propose feasible change #2 to welcome first-year students:',
+            'Propose feasible change #3 to welcome first-year students:',
+            'Group Consensus & Agreement Notes:',
+          ],
+          placeholder: 'Type a feasible change or group agreement note...',
+        },
+      },
+      {
+        id: 'fyw_presentation',
+        type: 'open_response',
+        title: '2. Team Proposal Presentation',
+        instructions: 'Summarise your group’s agreed 3 feasible changes and prepare a short pitch explaining why these changes will benefit new first-year students.',
+        config: {
+          prompt: 'Present your group’s top 3 agreed changes to the class:',
+          prompts: [
+            'Change 1 & Implementation Details:',
+            'Change 2 & Implementation Details:',
+            'Change 3 & Implementation Details:',
+            'Why these 3 changes will make first-year students feel welcomed:',
+          ],
+          placeholder: 'Write your group pitch summary here...',
+        },
+      },
+      {
+        id: 'fyw_private_reflection',
+        type: 'open_response',
+        title: '3. Private Reflection',
+        instructions: 'Reflect individually on your group’s collaboration and your personal thoughts about welcoming new students.',
+        config: {
+          prompt: 'Reflect privately on your experience:',
+          prompts: [
+            'What was your personal contribution to your group’s top 3 changes?',
+            'How will these changes improve the first-year student experience at school?',
+            'What is one action you personally will take to help new students feel welcomed?',
+          ],
+          placeholder: 'Write your private reflection here...',
+        },
+      },
+    ],
+  },
   // 1. Life Skills - Time Audit using Clock Diagram (Complete 5-Section Audit)
   {
     schemaVersion: '1.0',

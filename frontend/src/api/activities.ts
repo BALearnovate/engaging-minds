@@ -267,6 +267,9 @@ export const activitiesApi = {
     session: any;
     activityTitle?: string;
     status?: string;
+    targetScope?: string;
+    targetGroupStudents?: any;
+    groups?: any;
     students: any[];
     classroom?: { id: string; subject: string; grade: string; year: string } | null;
   }> {
@@ -274,6 +277,9 @@ export const activitiesApi = {
       session: any;
       activityTitle?: string;
       status?: string;
+      targetScope?: string;
+      targetGroupStudents?: any;
+      groups?: any;
       students: any[];
       classroom?: { id: string; subject: string; grade: string; year: string } | null;
     }>(`/activities/session/${shareCode}/dashboard`, { token });

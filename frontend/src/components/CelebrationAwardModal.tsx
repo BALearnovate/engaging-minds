@@ -51,16 +51,19 @@ export const CelebrationAwardModal: React.FC<CelebrationAwardModalProps> = ({
           100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 0 20px #f59e0b); }
         }
         @keyframes floatParticle1 {
-          0% { transform: translate(0, 0) scale(1); opacity: 1; }
-          100% { transform: translate(-100px, -80px) scale(1.4); opacity: 0; }
+          0% { transform: translate(-10px, 0) scale(0.8); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translate(-140px, -80px) scale(1.3); opacity: 0; }
         }
         @keyframes floatParticle2 {
-          0% { transform: translate(0, 0) scale(1); opacity: 1; }
-          100% { transform: translate(100px, -80px) scale(1.4); opacity: 0; }
+          0% { transform: translate(10px, 0) scale(0.8); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translate(140px, -80px) scale(1.3); opacity: 0; }
         }
         @keyframes floatParticle3 {
-          0% { transform: translate(0, 0) scale(1); opacity: 1; }
-          100% { transform: translate(0px, -110px) scale(1.5); opacity: 0; }
+          0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+          30% { opacity: 1; }
+          100% { transform: translate(0px, -130px) scale(1.2); opacity: 0; }
         }
         @keyframes spinCoin {
           0% { transform: rotateY(0deg) scale(0.2); opacity: 0; }
@@ -72,7 +75,7 @@ export const CelebrationAwardModal: React.FC<CelebrationAwardModalProps> = ({
         <div style={styles.particlesContainer}>
           <span style={{ ...styles.particle, ...styles.p1 }}>✨</span>
           <span style={{ ...styles.particle, ...styles.p2 }}>🎉</span>
-          <span style={{ ...styles.particle, ...styles.p3 }}>⭐</span>
+          <span style={{ ...styles.particle, ...styles.p3 }}>{isStar ? '⭐' : '🏆'}</span>
         </div>
 
         <div style={styles.iconCircle}>
@@ -135,7 +138,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   particlesContainer: {
     position: 'absolute',
-    top: '18%',
+    top: '55px',
     left: '50%',
     transform: 'translate(-50%, -50%)',
     pointerEvents: 'none',
@@ -181,7 +184,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
     position: 'relative',
-    zIndex: 2,
+    zIndex: 10,
   },
   detailsBox: {
     backgroundColor: '#fffbeb',

@@ -38,6 +38,8 @@ interface StudentActivityItem {
   content: ActivityDefinition;
   xpPoints?: number;
   completionPct?: number;
+  targetScope?: string;
+  isGroup?: boolean;
 }
 
 interface StudentDashboardProps {
@@ -82,6 +84,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
     timerMode?: string;
     rewardMode?: string;
     targetScope?: string;
+    groups?: any[];
   } | null>(null);
 
   const activeToken =
@@ -114,6 +117,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       timerMode?: string;
       rewardMode?: string;
       targetScope?: string;
+      targetGroupStudents?: any[];
+      groups?: any[];
     }) => {
       if (data.classroomId && studentClassroomId && data.classroomId !== studentClassroomId) {
         return;
@@ -123,6 +128,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       if (code && exitedSessionCodes.has(code)) {
         return;
       }
+
+      const parsedGroups = Array.isArray(data.groups)
+        ? data.groups
+        : Array.isArray(data.targetGroupStudents)
+        ? data.targetGroupStudents
+        : undefined;
 
       setHasExitedCurrentLive(false);
       setLiveActivityData({
@@ -134,6 +145,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         timerMode: data.timerMode,
         rewardMode: data.rewardMode,
         targetScope: data.targetScope,
+        groups: parsedGroups,
       });
       setShowLiveModal(true);
     };
@@ -376,6 +388,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         year: 'numeric',
       });
 
+      const targetScope = activeSession?.targetScope || assignment?.targetScope || content?.targetScope || act?.targetScope;
+      const isGroup = Boolean(
+        targetScope?.toLowerCase().includes('group') ||
+        (Array.isArray(activeSession?.groups) && activeSession.groups.length > 0) ||
+        (Array.isArray(content?.groups) && content.groups.length > 0)
+      );
+
       return {
         id: assignment ? assignment.id : act.id,
         title: act.title || content.title || 'Interactive Learning Module',
@@ -391,6 +410,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         content,
         xpPoints,
         completionPct: stSession?.progress || 0,
+        targetScope,
+        isGroup,
       };
     });
   }, [dbActivities, user]);
@@ -422,6 +443,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
           timerMode={liveActivityData?.timerMode}
           rewardMode={liveActivityData?.rewardMode}
           targetScope={liveActivityData?.targetScope}
+          groups={liveActivityData?.groups}
           onExit={() => {
             const currentCode = (liveActivityData?.shareCode || liveActivityData?.activityId || '').trim().toUpperCase();
             if (currentCode) {
@@ -654,8 +676,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
                     {/* Line 1: Title & Selection Badge */}
                     <div style={styles.itemLine1}>
                       <div style={styles.itemTitleGroup}>
-                        <span style={styles.sessionTypePill}>
-                          Live Classroom Session
+                        <span
+                          style={{
+                            ...styles.sessionTypePill,
+                            backgroundColor: item.isGroup ? '#fef3c7' : '#eff6ff',
+                            color: item.isGroup ? '#b45309' : '#1d4ed8',
+                            border: item.isGroup ? '1px solid #fde68a' : '1px solid #bfdbfe',
+                          }}
+                        >
+                          {item.isGroup ? '👥 Group-Based Session' : 'Live Classroom Session'}
                         </span>
                         <h3 style={styles.itemTitleText}>
                           {item.title}

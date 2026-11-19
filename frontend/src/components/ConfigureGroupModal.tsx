@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 
 export interface ConfigureGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (groupName: string, selectedStudents: string[]) => void;
+  onConfirm: (
+    groupsOrName: any,
+    students?: string[]
+  ) => void;
+  classStudents?: Array<{ id: string; firstName?: string; lastName?: string; name?: string }>;
   initialGroupName?: string;
   initialStudents?: string[];
+  initialGroups?: Array<{ groupId: string; groupName: string; studentIds: string[]; studentNames: string[] }>;
 }
 
 const DEFAULT_ROSTER = [
@@ -19,26 +24,158 @@ const DEFAULT_ROSTER = [
 ];
 
 export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
-  ...props
+  isOpen,
+  onClose,
+  onConfirm,
+  classStudents,
+  initialStudents,
+  initialGroups,
 }) => {
   const { t } = useTranslation();
-  const { isOpen, onClose, onConfirm, initialGroupName = 'Support Group Alpha', initialStudents = ['Leo Vance', 'Tommy Miller'] } = props;
 
-  const [groupName, setGroupName] = useState<string>(initialGroupName);
-  const [selectedStudents, setSelectedStudents] = useState<string[]>(initialStudents);
+  // Normalize student roster names
+  const allRosterNames: string[] = React.useMemo(() => {
+    if (Array.isArray(classStudents) && classStudents.length > 0) {
+      return classStudents.map((s) => s.name || `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Student');
+    }
+    if (Array.isArray(initialStudents) && initialStudents.length > 0) {
+      return initialStudents;
+    }
+    return DEFAULT_ROSTER.map((s) => s.name);
+  }, [classStudents, initialStudents]);
+
+  const [mode, setMode] = useState<'auto_split' | 'custom_builder'>('auto_split');
+  const [numGroups, setNumGroups] = useState<number>(2);
+
+  interface GroupSection {
+    id: string;
+    name: string;
+    studentNames: string[];
+  }
+
+  const [groups, setGroups] = useState<GroupSection[]>([]);
+
+  // Auto-split logic helper
+  const generateAutoSplitGroups = (count: number, roster: string[]): GroupSection[] => {
+    const defaultPrefixes = ['Team Alpha', 'Team Beta', 'Team Gamma', 'Team Delta', 'Team Epsilon', 'Team Zeta'];
+    const newGroups: GroupSection[] = Array.from({ length: Math.max(1, count) }, (_, i) => ({
+      id: `group-${i + 1}`,
+      name: `Group ${i + 1}: ${defaultPrefixes[i % defaultPrefixes.length]}`,
+      studentNames: [],
+    }));
+
+    roster.forEach((stName, idx) => {
+      const groupIdx = idx % count;
+      newGroups[groupIdx].studentNames.push(stName);
+    });
+
+    return newGroups;
+  };
+
+  // Initialize or re-split when modal opens or roster changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (Array.isArray(initialGroups) && initialGroups.length > 0) {
+      setGroups(
+        initialGroups.map((g, idx) => ({
+          id: g.groupId || `group-${idx + 1}`,
+          name: g.groupName || `Group ${idx + 1}`,
+          studentNames: Array.isArray(g.studentNames) ? g.studentNames : [],
+        })),
+      );
+      setMode('custom_builder');
+      return;
+    }
+
+    const autoGroups = generateAutoSplitGroups(numGroups, allRosterNames);
+    setGroups(autoGroups);
+  }, [isOpen, allRosterNames, initialGroups]);
+
+  // Handle number of groups change in auto-split mode
+  const handleNumGroupsChange = (count: number) => {
+    const validCount = Math.max(1, Math.min(10, count));
+    setNumGroups(validCount);
+    const newGroups = generateAutoSplitGroups(validCount, allRosterNames);
+    setGroups(newGroups);
+  };
+
+  // Compute unassigned students in custom builder mode
+  const assignedSet = new Set(groups.flatMap((g) => g.studentNames));
+  const unassignedStudents = allRosterNames.filter((st) => !assignedSet.has(st));
 
   if (!isOpen) return null;
 
-  const toggleStudent = (name: string) => {
-    if (selectedStudents.includes(name)) {
-      setSelectedStudents(selectedStudents.filter((s) => s !== name));
-    } else {
-      setSelectedStudents([...selectedStudents, name]);
+  const handleRenameGroup = (groupId: string, newName: string) => {
+    setGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? { ...g, name: newName } : g)),
+    );
+  };
+
+  const handleAddGroupSection = () => {
+    const nextIdx = groups.length + 1;
+    const newG: GroupSection = {
+      id: `group-${Date.now()}-${nextIdx}`,
+      name: `Group ${nextIdx}: Section ${nextIdx}`,
+      studentNames: [],
+    };
+    setGroups((prev) => [...prev, newG]);
+  };
+
+  const handleRemoveGroupSection = (groupId: string) => {
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+  };
+
+  const handleAssignStudentToGroup = (studentName: string, targetGroupId: string) => {
+    setGroups((prev) =>
+      prev.map((g) => {
+        // Remove from all groups first
+        const filtered = g.studentNames.filter((s) => s !== studentName);
+        if (g.id === targetGroupId) {
+          return { ...g, studentNames: [...filtered, studentName] };
+        }
+        return { ...g, studentNames: filtered };
+      }),
+    );
+  };
+
+  const handleUnassignStudent = (studentName: string) => {
+    setGroups((prev) =>
+      prev.map((g) => ({
+        ...g,
+        studentNames: g.studentNames.filter((s) => s !== studentName),
+      })),
+    );
+  };
+
+  const handleAutoAssignRemaining = () => {
+    if (unassignedStudents.length === 0) return;
+    let targetList = [...groups];
+    if (targetList.length === 0) {
+      targetList = generateAutoSplitGroups(2, allRosterNames);
+      setGroups(targetList);
+      return;
     }
+
+    const updated = targetList.map((g) => ({ ...g, studentNames: [...g.studentNames] }));
+    unassignedStudents.forEach((st, idx) => {
+      const groupIdx = idx % updated.length;
+      updated[groupIdx].studentNames.push(st);
+    });
+
+    setGroups(updated);
   };
 
   const handleConfirm = () => {
-    onConfirm(groupName, selectedStudents);
+    const formattedGroups = groups.map((g) => ({
+      groupId: g.id,
+      groupName: g.name.trim() || 'Classroom Group',
+      studentIds: [],
+      studentNames: g.studentNames,
+    }));
+
+    // Call onConfirm with both formats for full backward compatibility
+    onConfirm(formattedGroups, groups[0]?.studentNames || []);
     onClose();
   };
 
@@ -48,79 +185,185 @@ export const ConfigureGroupModal: React.FC<ConfigureGroupModalProps> = ({
         {/* Header */}
         <div style={styles.headerRow}>
           <div style={styles.headerTitle}>
-            <span style={styles.headerIcon}>👥</span> {t('teacherDashboard.configureGroup', 'CONFIGURE SPECIFIC GROUP')}
+            <span style={styles.headerIcon}>👥</span>{' '}
+            {t('teacherDashboard.configureGroupsTitle', 'CONFIGURE CLASSROOM GROUPS')}
           </div>
-          <button onClick={onClose} style={styles.closeBtn}>{t('common.close', '✕ Close')}</button>
+          <button onClick={onClose} style={styles.closeBtn}>
+            {t('common.close', '✕ Close')}
+          </button>
         </div>
 
         <div style={styles.divider} />
 
-        {/* Form Body */}
-        <div style={styles.bodyContent}>
-          {/* Group Name Input */}
-          <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>{t('teacherDashboard.groupName', 'GROUP NAME *')}</label>
-            <input
-              type="text"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-              placeholder={t('teacherDashboard.groupNamePlaceholder', 'e.g. Support Group Alpha')}
-              style={styles.textInput}
-            />
-          </div>
-
-          {/* Students Roster Selection */}
-          <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>{t('teacherDashboard.checkRoster', 'CHECK/UNCHECK STUDENTS ROSTER:')}</label>
-            <div style={styles.rosterCard}>
-              {DEFAULT_ROSTER.map((st) => {
-                const isChecked = selectedStudents.includes(st.name);
-                return (
-                  <label
-                    key={st.id}
-                    onClick={() => toggleStudent(st.name)}
-                    style={{
-                      ...styles.studentRow,
-                      ...(isChecked ? styles.studentRowSelected : {}),
-                    }}
-                  >
-                    <div
-                      style={{
-                        ...styles.customCheckbox,
-                        ...(isChecked ? styles.customCheckboxChecked : {}),
-                      }}
-                    >
-                      {isChecked && <span style={styles.checkmark}>✓</span>}
-                    </div>
-                    <span
-                      style={{
-                        ...styles.studentName,
-                        ...(isChecked ? styles.studentNameSelected : styles.studentNameUnselected),
-                      }}
-                    >
-                      {st.name}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
+        {/* Mode Selector */}
+        <div style={styles.modeTabsRow}>
+          <button
+            onClick={() => {
+              setMode('auto_split');
+              setGroups(generateAutoSplitGroups(numGroups, allRosterNames));
+            }}
+            style={{
+              ...styles.modeTabBtn,
+              ...(mode === 'auto_split' ? styles.modeTabActive : styles.modeTabInactive),
+            }}
+          >
+            {t('teacherDashboard.autoSplitMode', '⚡ Quick Auto-Split')}
+          </button>
+          <button
+            onClick={() => setMode('custom_builder')}
+            style={{
+              ...styles.modeTabBtn,
+              ...(mode === 'custom_builder' ? styles.modeTabActive : styles.modeTabInactive),
+            }}
+          >
+            {t('teacherDashboard.customBuilderMode', '🖐️ Custom Drag / Section Builder')}
+          </button>
         </div>
+
+        {/* Mode 1: Auto-Split Controls */}
+        {mode === 'auto_split' && (
+          <div style={styles.autoSplitBox}>
+            <div style={styles.numGroupsRow}>
+              <label style={styles.fieldLabel}>
+                {t('teacherDashboard.numberOfGroups', 'NUMBER OF GROUPS:')}
+              </label>
+              <div style={styles.stepperContainer}>
+                <button
+                  onClick={() => handleNumGroupsChange(numGroups - 1)}
+                  disabled={numGroups <= 1}
+                  style={styles.stepperBtn}
+                >
+                  -
+                </button>
+                <span style={styles.numDisplay}>{numGroups} Groups</span>
+                <button
+                  onClick={() => handleNumGroupsChange(numGroups + 1)}
+                  disabled={numGroups >= 10}
+                  style={styles.stepperBtn}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <p style={styles.hintSubtext}>
+              Class students ({allRosterNames.length}) automatically divided evenly across {numGroups} groups.
+            </p>
+          </div>
+        )}
+
+        {/* Custom Builder Unassigned Banner */}
+        {mode === 'custom_builder' && (
+          <div style={styles.unassignedBanner}>
+            <div style={styles.unassignedHeader}>
+              <span>
+                {unassignedStudents.length > 0
+                  ? t('teacherDashboard.unassignedStudents', 'Unassigned Students ({{count}} remaining)', { count: unassignedStudents.length })
+                  : t('teacherDashboard.allStudentsAssigned', '✓ All class students assigned to groups!')}
+              </span>
+              {unassignedStudents.length > 0 && (
+                <button onClick={handleAutoAssignRemaining} style={styles.quickAutoAssignBtn}>
+                  {t('teacherDashboard.autoAssignRemaining', '⚡ Auto-Assign Remaining Students')}
+                </button>
+              )}
+            </div>
+
+            {unassignedStudents.length > 0 && (
+              <div style={styles.studentPillsContainer}>
+                {unassignedStudents.map((st) => (
+                  <span key={st} style={styles.unassignedPill}>
+                    {st}
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAssignStudentToGroup(st, e.target.value);
+                        }
+                      }}
+                      style={styles.pillSelect}
+                    >
+                      <option value="">+ Assign...</option>
+                      {groups.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Groups Sections List */}
+        <div style={styles.groupSectionsScroll}>
+          {groups.map((g, idx) => (
+            <div key={g.id} style={styles.groupCard}>
+              <div style={styles.groupCardHeader}>
+                <input
+                  type="text"
+                  value={g.name}
+                  onChange={(e) => handleRenameGroup(g.id, e.target.value)}
+                  style={styles.groupNameInput}
+                  placeholder={`Group ${idx + 1} Name...`}
+                />
+                <span style={styles.studentCountBadge}>
+                  {g.studentNames.length} {g.studentNames.length === 1 ? 'Student' : 'Students'}
+                </span>
+                {mode === 'custom_builder' && groups.length > 1 && (
+                  <button onClick={() => handleRemoveGroupSection(g.id)} style={styles.removeGroupBtn}>
+                    🗑️
+                  </button>
+                )}
+              </div>
+
+              {/* Group Roster Pills */}
+              <div style={styles.groupRosterBox}>
+                {g.studentNames.length === 0 ? (
+                  <span style={styles.emptyGroupNotice}>No students in this group section yet.</span>
+                ) : (
+                  g.studentNames.map((st) => (
+                    <span key={st} style={styles.assignedPill}>
+                      👤 {st}
+                      {mode === 'custom_builder' && (
+                        <button
+                          onClick={() => handleUnassignStudent(st)}
+                          style={styles.removeStudentX}
+                          title="Remove from group"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {mode === 'custom_builder' && (
+          <button onClick={handleAddGroupSection} style={styles.addGroupSectionBtn}>
+            {t('teacherDashboard.addGroupSection', '+ Add New Group Section')}
+          </button>
+        )}
 
         <div style={styles.divider} />
 
         {/* Footer Actions */}
         <div style={styles.footerRow}>
-          <button onClick={onClose} style={styles.cancelBtn}>{t('common.cancel', 'Cancel')}</button>
+          <button onClick={onClose} style={styles.cancelBtn}>
+            {t('common.cancel', 'Cancel')}
+          </button>
           <button
-            disabled={!groupName.trim() || selectedStudents.length === 0}
+            disabled={unassignedStudents.length > 0 && mode === 'custom_builder'}
             onClick={handleConfirm}
             style={{
               ...styles.confirmBtn,
-              ...(!groupName.trim() || selectedStudents.length === 0 ? styles.confirmBtnDisabled : {}),
+              ...(unassignedStudents.length > 0 && mode === 'custom_builder' ? styles.confirmBtnDisabled : {}),
             }}
           >
-            {t('teacherDashboard.confirmGroup', 'Confirm Group Selection')}
+            {t('teacherDashboard.confirmGroupsBtn', 'Confirm Classroom Groups')}
           </button>
         </div>
       </div>
@@ -135,7 +378,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     backdropFilter: 'blur(4px)',
     display: 'flex',
     justifyContent: 'center',
@@ -147,14 +390,15 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#ffffff',
     borderRadius: '16px',
     width: '100%',
-    maxWidth: '460px',
-    boxShadow: '0 20px 35px -5px rgba(0,0,0,0.2), 0 10px 15px -5px rgba(0,0,0,0.1)',
-    border: '1px solid #e2e8f0',
+    maxWidth: '580px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 35px -5px rgba(0,0,0,0.25)',
+    border: '1px solid #cbd5e1',
     padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.2rem',
-    animation: 'modalSlideIn 0.2s ease-out',
+    gap: '1rem',
   },
   headerRow: {
     display: 'flex',
@@ -162,16 +406,15 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: '0.95rem',
-    fontWeight: '800',
+    fontSize: '1rem',
+    fontWeight: '900',
     color: '#0f3b60',
-    letterSpacing: '0.04em',
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
   },
   headerIcon: {
-    fontSize: '1.1rem',
+    fontSize: '1.2rem',
   },
   closeBtn: {
     background: 'none',
@@ -180,97 +423,219 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '700',
     fontSize: '0.85rem',
     cursor: 'pointer',
-    padding: '0.2rem 0.5rem',
-    borderRadius: '6px',
   },
   divider: {
     height: '1px',
     backgroundColor: '#e2e8f0',
     width: '100%',
   },
-  bodyContent: {
+  modeTabsRow: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
+    backgroundColor: '#f1f5f9',
+    borderRadius: '10px',
+    padding: '0.3rem',
+    gap: '0.3rem',
   },
-  fieldGroup: {
+  modeTabBtn: {
+    flex: 1,
+    padding: '0.5rem 0.75rem',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '0.82rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  modeTabActive: {
+    backgroundColor: '#ffffff',
+    color: '#0284c7',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+  },
+  modeTabInactive: {
+    backgroundColor: 'transparent',
+    color: '#64748b',
+  },
+  autoSplitBox: {
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    padding: '1rem',
+    border: '1px solid #e2e8f0',
+  },
+  numGroupsRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  fieldLabel: {
+    fontSize: '0.78rem',
+    fontWeight: '800',
+    color: '#334155',
+  },
+  stepperContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  stepperBtn: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    width: '32px',
+    height: '32px',
+    fontWeight: '900',
+    fontSize: '1.1rem',
+    color: '#0f172a',
+    cursor: 'pointer',
+  },
+  numDisplay: {
+    fontSize: '0.95rem',
+    fontWeight: '800',
+    color: '#0369a1',
+  },
+  hintSubtext: {
+    fontSize: '0.78rem',
+    color: '#64748b',
+    margin: '0.5rem 0 0 0',
+  },
+  unassignedBanner: {
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: '12px',
+    padding: '0.85rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
   },
-  fieldLabel: {
-    fontSize: '0.72rem',
+  unassignedHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '0.82rem',
     fontWeight: '800',
-    color: '#334155',
-    letterSpacing: '0.05em',
+    color: '#b45309',
   },
-  textInput: {
-    width: '100%',
-    padding: '0.75rem 0.9rem',
+  quickAutoAssignBtn: {
+    backgroundColor: '#fef3c7',
+    border: '1px solid #fcd34d',
+    color: '#92400e',
+    borderRadius: '6px',
+    padding: '0.25rem 0.6rem',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    cursor: 'pointer',
+  },
+  studentPillsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.4rem',
+  },
+  unassignedPill: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #fcd34d',
+    borderRadius: '16px',
+    padding: '0.25rem 0.6rem',
+    fontSize: '0.78rem',
+    fontWeight: '700',
+    color: '#78350f',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.35rem',
+  },
+  pillSelect: {
+    fontSize: '0.7rem',
+    fontWeight: '700',
+    border: '1px solid #cbd5e1',
     borderRadius: '8px',
-    border: '1.5px solid #cbd5e1',
     backgroundColor: '#f8fafc',
-    fontSize: '0.92rem',
-    color: '#0f172a',
-    fontWeight: '600',
-    outline: 'none',
-    boxSizing: 'border-box',
+    color: '#0369a1',
+    cursor: 'pointer',
   },
-  rosterCard: {
+  groupSectionsScroll: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+    maxHeight: '260px',
+    overflowY: 'auto',
+  },
+  groupCard: {
     backgroundColor: '#f8fafc',
     border: '1.5px solid #cbd5e1',
     borderRadius: '12px',
     padding: '0.85rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.55rem',
-    maxHeight: '220px',
-    overflowY: 'auto',
+    gap: '0.65rem',
   },
-  studentRow: {
+  groupCardHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
-    padding: '0.45rem 0.65rem',
-    borderRadius: '8px',
+    gap: '0.5rem',
+  },
+  groupNameInput: {
+    flex: 1,
+    padding: '0.4rem 0.6rem',
+    borderRadius: '6px',
+    border: '1px solid #cbd5e1',
+    fontWeight: '800',
+    fontSize: '0.88rem',
+    color: '#0f172a',
+  },
+  studentCountBadge: {
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    backgroundColor: '#e0f2fe',
+    color: '#0369a1',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '12px',
+  },
+  removeGroupBtn: {
+    background: 'none',
+    border: 'none',
     cursor: 'pointer',
-    userSelect: 'none',
-    transition: 'background-color 0.15s ease',
-  },
-  studentRowSelected: {
-    backgroundColor: '#ffffff',
-  },
-  customCheckbox: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '5px',
-    border: '2px solid #94a3b8',
-    backgroundColor: '#ffffff',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    transition: 'all 0.15s ease',
-  },
-  customCheckboxChecked: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
-  },
-  checkmark: {
-    color: '#ffffff',
-    fontSize: '0.8rem',
-    fontWeight: '900',
-    lineHeight: '1',
-  },
-  studentName: {
     fontSize: '0.9rem',
   },
-  studentNameSelected: {
-    color: '#0f172a',
-    fontWeight: '700',
+  groupRosterBox: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.4rem',
+    minHeight: '32px',
+    alignItems: 'center',
   },
-  studentNameUnselected: {
+  emptyGroupNotice: {
+    fontSize: '0.78rem',
     color: '#94a3b8',
-    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+  assignedPill: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    borderRadius: '16px',
+    padding: '0.25rem 0.6rem',
+    fontSize: '0.78rem',
+    fontWeight: '700',
+    color: '#334155',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.35rem',
+  },
+  removeStudentX: {
+    background: 'none',
+    border: 'none',
+    color: '#ef4444',
+    fontWeight: '900',
+    cursor: 'pointer',
+    padding: '0 0.1rem',
+    fontSize: '0.75rem',
+  },
+  addGroupSectionBtn: {
+    backgroundColor: '#f0f9ff',
+    border: '1px dashed #0284c7',
+    color: '#0284c7',
+    borderRadius: '8px',
+    padding: '0.6rem',
+    fontWeight: '800',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
   },
   footerRow: {
     display: 'flex',
@@ -305,4 +670,3 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: 'none',
   },
 };
-

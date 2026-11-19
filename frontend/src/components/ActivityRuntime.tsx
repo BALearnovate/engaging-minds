@@ -54,11 +54,13 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
   const [assignmentBanner, setAssignmentBanner] = useState<string | null>(null);
 
-  const handleConfirmAssignment = (groupName: string, selectedStudents: string[]) => {
-    const bannerMsg = `🎉 Activity successfully assigned to "${groupName}" (${selectedStudents.length} student${selectedStudents.length === 1 ? '' : 's'}: ${selectedStudents.join(', ')})!`;
+  const handleConfirmAssignment = (groupName: any, selectedStudents?: string[]) => {
+    const stList = selectedStudents || [];
+    const nameStr = typeof groupName === 'string' ? groupName : 'Classroom Groups';
+    const bannerMsg = `🎉 Activity successfully assigned to "${nameStr}" (${stList.length} student${stList.length === 1 ? '' : 's'}: ${stList.join(', ')})!`;
     setAssignmentBanner(bannerMsg);
     if (onCompleted) {
-      onCompleted(groupName, selectedStudents);
+      onCompleted(nameStr, stList);
     }
   };
 

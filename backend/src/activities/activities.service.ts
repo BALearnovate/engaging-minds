@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivitiesGateway } from './activities.gateway';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { SubmitActivityDto } from './dto/submit-activity.dto';
 import { ActivityDefinition, ActivityBlock } from './types/activityDsl';
 import { ActivityValidator } from './validation/activityValidator';
+import { SEED_ACTIVITIES } from '../../prisma/seedActivitiesData';
 
 export interface ActivityFilterOptions {
   subject?: string;
@@ -15,13 +16,73 @@ export interface ActivityFilterOptions {
 }
 
 @Injectable()
-export class ActivitiesService {
+export class ActivitiesService implements OnModuleInit {
   private readonly logger = new Logger(ActivitiesService.name);
 
   constructor(
     private prisma: PrismaService,
     private activitiesGateway: ActivitiesGateway,
   ) {}
+
+  async onModuleInit() {
+    try {
+      this.logger.log('Checking database activities for auto-seeding on server startup...');
+      const teacher = await this.prisma.user.findFirst({
+        where: { role: 'TEACHER' },
+      });
+      if (!teacher) {
+        this.logger.warn('No teacher user found in database. Skipping activities auto-seeding.');
+        return;
+      }
+
+      for (const activityDef of SEED_ACTIVITIES) {
+        const existingActivity = await this.prisma.activity.findFirst({
+          where: { title: activityDef.title },
+        });
+
+        let act;
+        if (existingActivity) {
+          act = await this.prisma.activity.update({
+            where: { id: existingActivity.id },
+            data: {
+              description: activityDef.description || '',
+              type: 'STRUCTURED_DSL',
+              content: activityDef as any,
+            },
+          });
+        } else {
+          act = await this.prisma.activity.create({
+            data: {
+              title: activityDef.title,
+              description: activityDef.description || '',
+              type: 'STRUCTURED_DSL',
+              teacherId: teacher.id,
+              content: activityDef as any,
+            },
+          });
+        }
+
+        const draftVersion = await this.prisma.activityVersion.findFirst({
+          where: { activityId: act.id },
+        });
+
+        if (!draftVersion) {
+          await this.prisma.activityVersion.create({
+            data: {
+              activityId: act.id,
+              version: 1,
+              definition: activityDef as any,
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+            },
+          });
+        }
+      }
+      this.logger.log(`Auto-seeded ${SEED_ACTIVITIES.length} activities successfully on server startup.`);
+    } catch (err: any) {
+      this.logger.error(`Failed during activities auto-seeding on module init: ${err?.message}`, err?.stack);
+    }
+  }
 
   // ==========================================
   // STRUCTURED DSL & VERSIONING API METHODS
@@ -373,6 +434,8 @@ export class ActivitiesService {
         timerMode: timerMode || 'Untimed Practice Session',
         rewardMode: rewardMode || 'Engagement Points + Stickers',
         targetScope: targetScope || 'Full Classroom Scope',
+        targetGroupStudents,
+        groups: targetGroupStudents,
       });
     }
 
@@ -606,6 +669,8 @@ export class ActivitiesService {
       timerMode: latestAssignment?.timerMode || 'Untimed Practice Session',
       rewardMode: latestAssignment?.rewardMode || 'Engagement Points + Stickers',
       targetScope: latestAssignment?.targetScope || 'Full Classroom Scope',
+      targetGroupStudents: latestAssignment?.targetGroupStudents || null,
+      groups: latestAssignment?.targetGroupStudents || null,
     };
   }
 
@@ -1208,8 +1273,43 @@ export class ActivitiesService {
       };
     });
 
+    const assignments = session.activityVersion?.activity?.assignments || [];
+    const latestAssignment = assignments.slice().sort(
+      (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+    )[0];
+
+    const def = (session.activityVersion?.definition as any) || {};
+
+    const targetScope =
+      latestAssignment?.targetScope ||
+      def.targetScope ||
+      'Full Classroom Scope';
+
+    let rawTargetGroupStudents =
+      latestAssignment?.targetGroupStudents ||
+      def.targetGroupStudents ||
+      def.groups ||
+      null;
+
+    let targetGroupStudents = rawTargetGroupStudents;
+    if (typeof rawTargetGroupStudents === 'string') {
+      try {
+        targetGroupStudents = JSON.parse(rawTargetGroupStudents);
+      } catch (e) {
+        // Keep original if unparseable
+      }
+    }
+
     return {
-      session,
+      session: {
+        ...session,
+        targetScope,
+        targetGroupStudents,
+        groups: targetGroupStudents,
+      },
+      targetScope,
+      targetGroupStudents,
+      groups: targetGroupStudents,
       activityTitle,
       status: session.status,
       students: mappedStudentSessions,

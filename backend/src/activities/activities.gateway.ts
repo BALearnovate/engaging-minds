@@ -628,6 +628,8 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
     timerMode?: string;
     rewardMode?: string;
     targetScope?: string;
+    targetGroupStudents?: any;
+    groups?: any;
   }) {
     if (this.server) {
       this.server.emit('activity_published', data);

@@ -131,10 +131,25 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
     }
   }, [targetScope, selectedClassId, classrooms]);
 
-  const handleConfirmGroupSelection = (groupName: string, students: string[]) => {
-    setConfiguredGroupName(groupName);
-    setConfiguredStudents(students);
-    setGroupAssignmentNotice(`👥 Target Group Configured: ${groupName} (${students.length} student${students.length === 1 ? '' : 's'}: ${students.join(', ')})`);
+  const [configuredGroups, setConfiguredGroups] = useState<any[]>([]);
+
+  const selectedClassStudents = useMemo(() => {
+    const selectedClass = classrooms.find((c) => c.id === selectedClassId);
+    return selectedClass?.students || [];
+  }, [classrooms, selectedClassId]);
+
+  const handleConfirmGroupSelection = (groupsOrName: any, students?: string[]) => {
+    if (Array.isArray(groupsOrName)) {
+      const groups = groupsOrName;
+      setConfiguredGroups(groups);
+      const totalStudents = groups.reduce((acc: number, g: any) => acc + (g.studentNames?.length || 0), 0);
+      const summaryStr = groups.map((g: any) => `${g.groupName} (${g.studentNames?.length || 0})`).join(', ');
+      setGroupAssignmentNotice(`👥 ${groups.length} Classroom Groups Configured: ${summaryStr} [Total: ${totalStudents} students]`);
+    } else {
+      setConfiguredGroupName(groupsOrName);
+      if (students) setConfiguredStudents(students);
+      setGroupAssignmentNotice(`👥 Target Group Configured: ${groupsOrName} (${students?.length || 0} students)`);
+    }
   };
 
   const handleOpenPublishConfirm = () => {
@@ -189,7 +204,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
             rewardMode,
             targetScope,
             targetGroupStudents:
-              targetScope === 'Full Classroom Scope'
+              targetScope === 'Group Scope' && configuredGroups.length > 0
+                ? configuredGroups
+                : targetScope === 'Full Classroom Scope'
                 ? classrooms.find((c) => c.id === selectedClassId)?.students?.map((s) => `${s.firstName} ${s.lastName}`.trim()) || configuredStudents
                 : configuredStudents,
           },
@@ -273,7 +290,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           rewardMode,
           targetScope,
           targetGroupStudents:
-            targetScope === 'Full Classroom Scope'
+            targetScope === 'Group Scope' && configuredGroups.length > 0
+              ? configuredGroups
+              : targetScope === 'Full Classroom Scope'
               ? classrooms.find((c) => c.id === selectedClassId)?.students?.map((s) => `${s.firstName} ${s.lastName}`.trim()) || configuredStudents
               : configuredStudents,
           forceRepublish: true,
@@ -846,25 +865,39 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               onChange={(e) => {
                 const val = e.target.value;
                 setTargetScope(val);
-                if (val === 'Individual Students' || val === 'Small Focus Groups') {
+                if (val === 'Group Scope' || val === 'Small Focus Groups' || val === 'Individual Students') {
                   setIsGroupModalOpen(true);
                 }
               }}
               style={styles.paramSelect}
             >
               <option value="Full Classroom Scope">{t('activityCreation.fullClassroomScope', 'Full Classroom Scope')}</option>
-              {/* Remove individual students and small focus groups now */}
-              {/* <option value="Individual Students">Individual Students</option>
-              <option value="Small Focus Groups">Small Focus Groups</option> */}
+              <option value="Group Scope">{t('activityCreation.groupScope', 'Group Scope (Classroom Teams)')}</option>
             </select>
 
-            {/* Hide this specific group button for now */}
-            {/* <button
-              onClick={() => setIsGroupModalOpen(true)}
-              style={styles.configureGroupBtn}
-            >
-              👥 Configure Specific Group
-            </button> */}
+            {targetScope === 'Group Scope' && (
+              <button
+                onClick={() => setIsGroupModalOpen(true)}
+                style={{
+                  marginTop: '0.5rem',
+                  width: '100%',
+                  padding: '0.55rem',
+                  backgroundColor: '#f0f9ff',
+                  color: '#0284c7',
+                  border: '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                ✏️ Configure / Edit Classroom Groups
+              </button>
+            )}
 
             {groupAssignmentNotice && (
               <div style={styles.groupNoticeBox}>
@@ -900,8 +933,10 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
         isOpen={isGroupModalOpen}
         onClose={() => setIsGroupModalOpen(false)}
         onConfirm={handleConfirmGroupSelection}
+        classStudents={selectedClassStudents}
         initialGroupName={configuredGroupName}
         initialStudents={configuredStudents}
+        initialGroups={configuredGroups}
       />
 
       {/* PUBLISH CONFIRMATION DIALOG */}

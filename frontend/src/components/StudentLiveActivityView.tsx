@@ -15,6 +15,7 @@ interface StudentLiveActivityViewProps {
   timerMode?: string;
   rewardMode?: string;
   targetScope?: string;
+  groups?: any[];
   activityContent?: ActivityDefinition;
   onExit: () => void;
 }
@@ -23,22 +24,52 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   ...props
 }) => {
   const { t } = useTranslation();
-  const { activityTitle, shareCode, teacherName = 'Your Teacher', activityId, timerMode, rewardMode: _rewardMode, targetScope: _targetScope, activityContent: initialContent, onExit } = props;
+  const { activityTitle, shareCode, teacherName = 'Your Teacher', activityId, timerMode, rewardMode: _rewardMode, targetScope: _targetScope, groups, activityContent: initialContent, onExit } = props;
 
-  let contextToken = '';
+  let activeToken = '';
   let currentUser: any = null;
   try {
     const auth = useAuth();
-    contextToken = auth.token || '';
+    activeToken = auth.token || '';
     currentUser = auth.user;
   } catch (e) {
     // Optional fallback if rendered outside AuthProvider
   }
-  const activeToken =
-    contextToken ||
-    localStorage.getItem('access_token') ||
-    localStorage.getItem('token') ||
-    '';
+  const currentStudentName = currentUser
+    ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+    : 'Student';
+
+  const [fetchedGroups, setFetchedGroups] = useState<any[]>([]);
+
+  const activeGroups = React.useMemo(() => {
+    if (Array.isArray(groups) && groups.length > 0) return groups;
+    return fetchedGroups;
+  }, [groups, fetchedGroups]);
+
+  // Identify current student's group
+  const assignedGroup = React.useMemo(() => {
+    if (!activeGroups || !Array.isArray(activeGroups) || activeGroups.length === 0) return null;
+
+    const studentIdClean = (currentUser?.id || '').trim().toLowerCase();
+    const loginCodeClean = ((currentUser as any)?.loginCode || '').trim().toLowerCase();
+    const firstNameClean = (currentUser?.firstName || '').trim().toLowerCase();
+    const lastNameClean = (currentUser?.lastName || '').trim().toLowerCase();
+    const fullNameClean = `${firstNameClean} ${lastNameClean}`.trim();
+    const emailClean = (currentUser?.email || '').trim().toLowerCase();
+
+    return activeGroups.find((g: any) => {
+      const names = (g.studentNames || g.students || []).map((s: string) => String(s || '').trim().toLowerCase());
+      const ids = (g.studentIds || []).map((i: string) => String(i || '').trim().toLowerCase());
+
+      return (
+        (studentIdClean && ids.includes(studentIdClean)) ||
+        (fullNameClean && names.some((n: string) => n && (n.includes(fullNameClean) || fullNameClean.includes(n)))) ||
+        (firstNameClean && firstNameClean.length > 1 && names.some((n: string) => n && n.includes(firstNameClean))) ||
+        (loginCodeClean && names.some((n: string) => n && (n.includes(loginCodeClean) || loginCodeClean.includes(n)))) ||
+        (emailClean && names.some((n: string) => n && (n.includes(emailClean) || emailClean.includes(n))))
+      );
+    });
+  }, [activeGroups, currentUser]);
 
   // Session Timer State (Starts at 00:00)
   const [sessionStartTimeMs] = useState<number>(() => Date.now());
@@ -69,6 +100,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   } | null>(null);
 
   const [showExitConfirmModal, setShowExitConfirmModal] = useState<boolean>(false);
+  const [liveGroupMembersProgress, setLiveGroupMembersProgress] = useState<Record<string, { progress: number; activityStatus?: string }>>({});
   const [sessionSummaryModal, setSessionSummaryModal] = useState<{
     isOpen: boolean;
     isCompletion: boolean;
@@ -98,6 +130,20 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       setIsLoading(false);
       const blocksCount = Array.isArray(initialContent.blocks) ? initialContent.blocks.length : 1;
       setTotalSteps(blocksCount || 1);
+      if ((!groups || groups.length === 0) && shareCode) {
+        activitiesApi.getPublishedSessionByCode(shareCode, activeToken).then((sessionData: any) => {
+          if (sessionData) {
+            const parsedGroups = Array.isArray(sessionData.groups)
+              ? sessionData.groups
+              : Array.isArray(sessionData.targetGroupStudents)
+              ? sessionData.targetGroupStudents
+              : undefined;
+            if (parsedGroups && parsedGroups.length > 0) {
+              setFetchedGroups(parsedGroups);
+            }
+          }
+        }).catch(() => {});
+      }
       return;
     }
 
@@ -106,15 +152,26 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       try {
         if (shareCode) {
           const sessionData: any = await activitiesApi.getPublishedSessionByCode(shareCode, activeToken);
-          if (sessionData && sessionData.activityVersion?.definition) {
-            if (sessionData.timerMode) {
-              setActiveTimerMode(sessionData.timerMode);
+          if (sessionData) {
+            const parsedGroups = Array.isArray(sessionData.groups)
+              ? sessionData.groups
+              : Array.isArray(sessionData.targetGroupStudents)
+              ? sessionData.targetGroupStudents
+              : undefined;
+            if (parsedGroups && parsedGroups.length > 0) {
+              setFetchedGroups(parsedGroups);
             }
-            setLoadedContent(sessionData.activityVersion.definition);
-            const blocks = sessionData.activityVersion.definition.blocks || [];
-            setTotalSteps(blocks.length || 1);
-            setIsLoading(false);
-            return;
+
+            if (sessionData.activityVersion?.definition) {
+              if (sessionData.timerMode) {
+                setActiveTimerMode(sessionData.timerMode);
+              }
+              setLoadedContent(sessionData.activityVersion.definition);
+              const blocks = sessionData.activityVersion.definition.blocks || [];
+              setTotalSteps(blocks.length || 1);
+              setIsLoading(false);
+              return;
+            }
           }
         }
 
@@ -307,6 +364,49 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
     };
   }, [currentUser]);
 
+  // Listen for real-time live group members progress updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleLiveStudentUpdate = (data: any) => {
+      if (!data) return;
+      const key = (data.studentName || data.studentId || '').trim().toLowerCase();
+      if (key) {
+        setLiveGroupMembersProgress((prev) => ({
+          ...prev,
+          [key]: {
+            progress: typeof data.progress === 'number' ? data.progress : prev[key]?.progress || 0,
+            activityStatus: data.activityStatus || prev[key]?.activityStatus || 'Active',
+          },
+        }));
+      }
+    };
+
+    const handleRoomState = (data: any) => {
+      if (data && Array.isArray(data.students)) {
+        const initialMap: Record<string, { progress: number; activityStatus?: string }> = {};
+        data.students.forEach((st: any) => {
+          const key = (st.studentName || st.name || st.id || '').trim().toLowerCase();
+          if (key) {
+            initialMap[key] = {
+              progress: typeof st.progress === 'number' ? st.progress : 0,
+              activityStatus: st.activityStatus || 'Active',
+            };
+          }
+        });
+        setLiveGroupMembersProgress((prev) => ({ ...prev, ...initialMap }));
+      }
+    };
+
+    socket.on('live_student_update', handleLiveStudentUpdate);
+    socket.on('room_state', handleRoomState);
+
+    return () => {
+      socket.off('live_student_update', handleLiveStudentUpdate);
+      socket.off('room_state', handleRoomState);
+    };
+  }, []);
+
   // Listen for real-time teacher interventions (Desk check-in & Discreet reminder)
   useEffect(() => {
     const socket = getSocket();
@@ -388,6 +488,49 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       socket.off('help_resolved', handleHelpResolved);
     };
   }, [currentUser]);
+
+  // Listen for real-time live group members progress updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleLiveStudentUpdate = (data: any) => {
+      if (!data) return;
+      const key = (data.studentName || data.studentId || '').trim().toLowerCase();
+      if (key) {
+        setLiveGroupMembersProgress((prev) => ({
+          ...prev,
+          [key]: {
+            progress: typeof data.progress === 'number' ? data.progress : prev[key]?.progress || 0,
+            activityStatus: data.activityStatus || prev[key]?.activityStatus || 'Active',
+          },
+        }));
+      }
+    };
+
+    const handleRoomState = (data: any) => {
+      if (data && Array.isArray(data.students)) {
+        const initialMap: Record<string, { progress: number; activityStatus?: string }> = {};
+        data.students.forEach((st: any) => {
+          const key = (st.studentName || st.name || st.id || '').trim().toLowerCase();
+          if (key) {
+            initialMap[key] = {
+              progress: typeof st.progress === 'number' ? st.progress : 0,
+              activityStatus: st.activityStatus || 'Active',
+            };
+          }
+        });
+        setLiveGroupMembersProgress((prev) => ({ ...prev, ...initialMap }));
+      }
+    };
+
+    socket.on('live_student_update', handleLiveStudentUpdate);
+    socket.on('room_state', handleRoomState);
+
+    return () => {
+      socket.off('live_student_update', handleLiveStudentUpdate);
+      socket.off('room_state', handleRoomState);
+    };
+  }, []);
 
   const handleAskTeacher = () => {
     setHelpRequested(true);
@@ -582,6 +725,57 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
             </button>
           </div>
         </div>
+
+        {/* Active Group Banner when activity scope is Group Scope and student is assigned to a group */}
+        {assignedGroup && Array.isArray(assignedGroup.studentNames || assignedGroup.students) && (assignedGroup.studentNames || assignedGroup.students).length > 0 && (
+          <div style={styles.groupBannerBox}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ fontSize: '1.3rem' }}>👥</span>
+              <div>
+                <div style={{ fontWeight: 900, color: '#0369a1', fontSize: '0.95rem' }}>
+                  GROUP ACTIVITY: {assignedGroup?.groupName || 'Classroom Team'}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                  Collaborating live with your group members
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {(assignedGroup.studentNames || assignedGroup.students).map((teammate: string, idx: number) => {
+                const cleanTeammate = (teammate || '').trim();
+                if (!cleanTeammate) return null;
+                const isSelf = Boolean(currentStudentName && (cleanTeammate.toLowerCase().includes(currentStudentName.toLowerCase()) || currentStudentName.toLowerCase().includes(cleanTeammate.toLowerCase())));
+                const key = cleanTeammate.toLowerCase();
+                const liveData = liveGroupMembersProgress[key] || {};
+                const stProgress = isSelf ? progressPct : (typeof liveData.progress === 'number' ? liveData.progress : 0);
+                const isInactive = liveData.activityStatus === 'Inactive' || liveData.activityStatus === 'Left';
+
+                return (
+                  <span
+                    key={idx}
+                    style={{
+                      backgroundColor: isSelf ? '#dcfce7' : isInactive ? '#fef3c7' : '#f0f9ff',
+                      color: isSelf ? '#15803d' : isInactive ? '#b45309' : '#0369a1',
+                      border: `1px solid ${isSelf ? '#86efac' : isInactive ? '#fcd34d' : '#bae6fd'}`,
+                      borderRadius: '16px',
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <span>{isInactive ? '🟡' : '🟢'}</span>
+                    <span>{isSelf ? `${cleanTeammate} (You)` : cleanTeammate}</span>
+                    <span style={{ opacity: 0.85, fontWeight: 700 }}>— {stProgress}% Progress</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         
 
@@ -1413,5 +1607,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '1.4rem',
     fontWeight: '900',
     color: '#ffffff',
+  },
+  groupBannerBox: {
+    backgroundColor: '#f0f9ff',
+    border: '1.5px solid #bae6fd',
+    borderRadius: '12px',
+    padding: '0.85rem 1.1rem',
+    marginBottom: '1.25rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
   },
 };

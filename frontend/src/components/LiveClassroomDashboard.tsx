@@ -118,6 +118,50 @@ export const getStudentIndicatorState = (
   };
 };
 
+export const getGroupIndicatorState = (
+  groupStudents: StudentStatus[],
+  avgProgress: number,
+  t?: (key: string, fallback: string) => string
+) => {
+  const translate = t || ((_: string, fb: string) => fb);
+  const helpCount = groupStudents.filter((s) => s.helpRequested).length;
+  const inactiveOrLeftCount = groupStudents.filter(
+    (s) => s.activityStatus === 'Inactive' || s.activityStatus === 'Left' || s.activityStatus === 'Not Started'
+  ).length;
+  const totalStudents = groupStudents.length || 1;
+
+  // 1. Red signal: High help requests (>=2) OR avgProgress < 25% OR majority students inactive/left
+  if (helpCount >= 2 || avgProgress < 25 || inactiveOrLeftCount >= Math.ceil(totalStudents / 2)) {
+    return {
+      color: 'red' as const,
+      dotColor: '#ef4444',
+      bgColor: '#fee2e2',
+      textColor: '#b91c1c',
+      statusLabel: translate('liveDashboard.groupStatusNeedsHelp', 'Needs Intervention'),
+    };
+  }
+
+  // 2. Orange signal: 1 student requested help OR avgProgress between 25% and 59% OR at least 1 student inactive/left
+  if (helpCount === 1 || (avgProgress >= 25 && avgProgress < 60) || inactiveOrLeftCount > 0) {
+    return {
+      color: 'orange' as const,
+      dotColor: '#f59e0b',
+      bgColor: '#fef3c7',
+      textColor: '#b45309',
+      statusLabel: translate('liveDashboard.groupStatusInProgress', 'In Progress / Attention'),
+    };
+  }
+
+  // 3. Green signal: Avg Progress >= 60%, 0 help requests, active team members
+  return {
+    color: 'green' as const,
+    dotColor: '#22c55e',
+    bgColor: '#dcfce7',
+    textColor: '#15803d',
+    statusLabel: translate('liveDashboard.groupStatusOnTrack', 'On Track & Optimal'),
+  };
+};
+
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
   const { t } = useTranslation();
   const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
@@ -138,6 +182,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
   // Interactive UI state with sample data
   const [activeScope, setActiveScope] = useState<string>('Class Level');
+  const [targetScope, setTargetScope] = useState<string>('Full Classroom Scope');
+  const [sessionGroups, setSessionGroups] = useState<any[]>([]);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null); // Default null
   const [selectedIntervention, setSelectedIntervention] = useState<string>('desk_checkin');
   const [awardCategory, setAwardCategory] = useState<'Academic Effort' | 'Behavioral'>('Academic Effort');
@@ -242,6 +288,23 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     try {
       const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
       const data = await activitiesApi.getSessionDashboard(shareCode, activeToken);
+      const foundScope = data.targetScope || data.session?.targetScope || 'Full Classroom Scope';
+      setTargetScope(foundScope);
+
+      let rawGroups = data.groups || data.targetGroupStudents || data.session?.groups || data.session?.targetGroupStudents || null;
+      if (typeof rawGroups === 'string') {
+        try { rawGroups = JSON.parse(rawGroups); } catch (e) {}
+      }
+      if (Array.isArray(rawGroups)) {
+        setSessionGroups(rawGroups);
+      } else {
+        setSessionGroups([]);
+      }
+
+      // If activity is group-based, automatically switch active scope tab to Group Level
+      if (foundScope.toLowerCase().includes('group') || (Array.isArray(rawGroups) && rawGroups.length > 0)) {
+        setActiveScope('Group Level');
+      }
       if (data.activityTitle) {
         setActivityTitle(data.activityTitle);
       }
@@ -468,6 +531,33 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     } catch (err: any) {
       console.error('Failed to issue award:', err);
       alert(`⚠️ Could not issue award: ${err?.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleIssueGroupAward = async (groupName: string, groupStudents: StudentStatus[], reward: string = '+ 50 Pts') => {
+    if (!groupStudents || groupStudents.length === 0) return;
+    try {
+      const activeToken = localStorage.getItem('access_token') || localStorage.getItem('token') || '';
+      const category = 'Academic Effort';
+      for (const st of groupStudents) {
+        try {
+          await activitiesApi.issueAward(st.id, category, reward, 'Instant Pop-Up', activeToken);
+        } catch (e) {
+          console.error(`Failed to issue award to ${st.name}:`, e);
+        }
+      }
+      setAwardOverlay({
+        studentName: groupName,
+        category: category,
+        reward: reward,
+      });
+      setFeedbackMessage(`🎉 Group Award "${reward}" issued to all members of ${groupName}!`);
+      setTimeout(() => setFeedbackMessage(null), 4000);
+      setTimeout(() => setAwardOverlay(null), 2500);
+      fetchDashboardState();
+    } catch (err: any) {
+      console.error('Failed to issue group award:', err);
+      alert(`⚠️ Could not issue group award: ${err?.message || 'Unknown error'}`);
     }
   };
 
@@ -839,7 +929,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                   {t('liveDashboard.metricsScope', 'METRICS SCOPE SELECTOR')}
                 </h3>
                 <div style={styles.scopeButtonsRowLeft}>
-                  {['Class Level', 'Individual Student'].map((scope) => {
+                  {['Class Level', 'Group Level', 'Individual Student'].map((scope) => {
                     const isActive = activeScope === scope;
                     return (
                       <button
@@ -879,7 +969,41 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
           {activeScope === 'Class Level' ? (
             /* CLASS STATUS MONITOR */
-            <div style={styles.cardStatusMonitor}>
+            (() => {
+              const isGroupActivity = targetScope?.toLowerCase().includes('group') || sessionGroups.length > 0;
+              if (isGroupActivity) {
+                return (
+                  <div style={styles.cardStatusMonitor}>
+                    <div style={styles.cardHeaderRow}>
+                      <h3 style={styles.sectionHeaderTitle}>
+                        {t('liveDashboard.classStatusMonitor', 'CLASS STATUS MONITOR')}
+                      </h3>
+                      <span style={styles.classStatusSubBadge}>
+                        👥 {sessionGroups.length} {t('common.groups', 'Groups')}
+                      </span>
+                    </div>
+                    <hr style={styles.fullHrLineTop} />
+                    <div style={styles.nonGroupPlaceholderBox}>
+                      <div style={styles.nonGroupIcon}>👥</div>
+                      <h3 style={styles.nonGroupTitle}>
+                        {t('liveDashboard.groupScopedClassTitle', 'Group-Based Activity Running')}
+                      </h3>
+                      <p style={styles.nonGroupDesc}>
+                        {t('liveDashboard.groupScopedClassDesc', 'This activity was published with Group Scope. Students are working in assigned collaborative teams. Switch to the Group Level tab to monitor live team progress, signals, and issue group awards.')}
+                      </p>
+                      <button
+                        onClick={() => setActiveScope('Group Level')}
+                        style={styles.switchScopeBtn}
+                      >
+                        {t('liveDashboard.switchToGroupLevel', 'Switch to Group Level')}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={styles.cardStatusMonitor}>
               <div style={styles.cardHeaderRow}>
                 <h3 style={styles.sectionHeaderTitle}>
                   {t('liveDashboard.classStatusMonitor', 'CLASS STATUS MONITOR')}
@@ -1049,9 +1173,245 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               {/* 3. Title: Progress Over time */}
               
             </div>
+              );
+            })()
+          ) : activeScope === 'Group Level' ? (
+            /* GROUP STATUS MONITOR */
+            (() => {
+              const isGroupActivity = targetScope?.toLowerCase().includes('group') || sessionGroups.length > 0;
+              if (!isGroupActivity) {
+                return (
+                  <div style={styles.cardStatusMonitor}>
+                    <div style={styles.cardHeaderRow}>
+                      <h3 style={styles.sectionHeaderTitle}>
+                        {t('liveDashboard.groupStatusMonitor', 'GROUP STATUS MONITOR')}
+                      </h3>
+                    </div>
+                    <hr style={styles.fullHrLineTop} />
+                    <div style={styles.nonGroupPlaceholderBox}>
+                      <div style={styles.nonGroupIcon}>👥</div>
+                      <h3 style={styles.nonGroupTitle}>
+                        {t('liveDashboard.notGroupActivityTitle', 'Not a Group-Based Activity')}
+                      </h3>
+                      <p style={styles.nonGroupDesc}>
+                        {t('liveDashboard.notGroupActivityDesc', 'This active activity was published for the full classroom. Group-level signals and team monitoring are available when an activity is published with Group Scope.')}
+                      </p>
+                      <button
+                        onClick={() => setActiveScope('Class Level')}
+                        style={styles.switchScopeBtn}
+                      >
+                        {t('liveDashboard.switchToClassLevel', 'Switch to Class Level')}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={styles.cardStatusMonitor}>
+                  <div style={styles.cardHeaderRow}>
+                    <h3 style={styles.sectionHeaderTitle}>
+                      {t('liveDashboard.groupStatusMonitor', 'GROUP STATUS MONITOR')}
+                    </h3>
+                    <span style={styles.classStatusSubBadge}>
+                      👥 {sessionGroups.length} {t('common.groups', 'Groups')}
+                    </span>
+                  </div>
+
+                  <hr style={styles.fullHrLineTop} />
+
+                  {isLoadingStudents ? (
+                    <div style={styles.emptyStudentsBox}>
+                      {t('liveDashboard.loadingStudents', 'Loading class students...')}
+                    </div>
+                  ) : sessionGroups.length === 0 ? (
+                    <div style={styles.emptyStudentsBox}>
+                      {t('liveDashboard.noStudents', 'No groups configured.')}
+                    </div>
+                  ) : (
+                    <div style={styles.groupsContainerList}>
+                      {sessionGroups.map((group: any, idx: number) => {
+                        const groupName = group.groupName || group.name || `Group ${idx + 1}`;
+                        const names: string[] = group.studentNames || group.students || [];
+                        const ids: string[] = group.studentIds || [];
+
+                        const groupStudents = students.filter((st) => {
+                          const stName = st.name.toLowerCase();
+                          return (
+                            names.some((n) => n && (n.toLowerCase().includes(stName) || stName.includes(n.toLowerCase()))) ||
+                            ids.some((id) => id === st.id)
+                          );
+                        });
+
+                        const groupStudentCount = groupStudents.length || names.length || 1;
+                        const avgProgress = groupStudents.length > 0
+                          ? Math.round(groupStudents.reduce((sum, s) => sum + s.progress, 0) / groupStudents.length)
+                          : 0;
+                        const activeCount = groupStudents.filter((s) => s.activityStatus === 'Active').length;
+                        const helpCount = groupStudents.filter((s) => s.helpRequested).length;
+                        const totalGroupPoints = groupStudents.reduce((sum, s) => sum + s.totalPoints, 0);
+                        const totalGroupStars = groupStudents.reduce((sum, s) => sum + s.totalStars, 0);
+
+                        const groupIndicator = getGroupIndicatorState(groupStudents, avgProgress, t);
+
+                        return (
+                          <div key={group.groupId || idx} style={styles.groupCardWrapper}>
+                            {/* Group Card Header */}
+                            <div style={styles.groupCardHeaderRow}>
+                              <div style={styles.groupTitleInfo}>
+                                <span style={styles.groupHeaderBadgeIcon}>👥</span>
+                                <div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <h4 style={styles.groupTitleHeading}>{groupName}</h4>
+                                    <span
+                                      style={{
+                                        padding: '2px 8px',
+                                        borderRadius: '12px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        backgroundColor: groupIndicator.bgColor,
+                                        color: groupIndicator.textColor,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                      }}
+                                    >
+                                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupIndicator.dotColor }} />
+                                      {groupIndicator.statusLabel}
+                                    </span>
+                                  </div>
+                                  <span style={styles.groupSubInfoText}>
+                                    {groupStudentCount} {t('liveDashboard.studentsCount', 'Students')} &nbsp;•&nbsp; 🟢 {activeCount}/{groupStudentCount} {t('common.active', 'Active')}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Quick Award Actions for Group */}
+                              <div style={styles.groupAwardButtonsRow}>
+                                <button
+                                  onClick={() => handleIssueGroupAward(groupName, groupStudents, '+ 50 Pts')}
+                                  style={styles.groupAwardPrimaryBtn}
+                                  title={t('liveDashboard.awardGroup', 'Award Group (+50 Pts)')}
+                                >
+                                  🎁 {t('liveDashboard.awardGroup', 'Award Group (+50 Pts)')}
+                                </button>
+                                <button
+                                  onClick={() => handleIssueGroupAward(groupName, groupStudents, '🌟 Star')}
+                                  style={styles.groupAwardStarBtn}
+                                  title={t('liveDashboard.awardGroupStar', 'Award Group (🌟 Star)')}
+                                >
+                                  ⭐
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Group Progress & Signals Bar */}
+                            <div style={styles.groupSignalBox}>
+                              <div style={styles.groupSignalItem}>
+                                <span style={styles.groupSignalLabel}>{t('liveDashboard.groupAverageProgress', 'Group Average Progress')}:</span>
+                                <span style={styles.groupSignalValue}>{avgProgress}%</span>
+                                <div style={styles.groupProgressTrack}>
+                                  <div style={{ ...styles.groupProgressFill, width: `${Math.min(100, Math.max(0, avgProgress))}%` }} />
+                                </div>
+                              </div>
+
+                              <div style={styles.groupSignalItem}>
+                                <span style={styles.groupSignalLabel}>{t('common.teamPoints', 'Team Points')}:</span>
+                                <span style={styles.groupSignalValue}>🏆 {totalGroupPoints} Pts &nbsp;•&nbsp; ⭐ {totalGroupStars} Stars</span>
+                              </div>
+
+                              {helpCount > 0 && (
+                                <div style={styles.groupHelpAlertBadge}>
+                                  ✋ {helpCount} {t('liveDashboard.studentsNeedHelp', 'Help Requested')}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Member Cards Grid */}
+                            <div style={styles.groupMemberRosterGrid}>
+                              {groupStudents.map((st) => {
+                                const ind = getStudentIndicatorState(st, nowTimestamp, t);
+                                const isSelected = selectedStudentId === st.id;
+                                return (
+                                  <div
+                                    key={st.id}
+                                    onClick={() => handleToggleSelectStudent(st.id)}
+                                    style={{
+                                      ...styles.groupStudentMemberCard,
+                                      borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                                      backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                                    }}
+                                  >
+                                    <div style={styles.memberCardTop}>
+                                      <div style={styles.memberCardNameGroup}>
+                                        <span style={{ ...styles.memberDotIndicator, backgroundColor: ind.dotColor }} />
+                                        <span style={styles.memberStudentName}>{st.name}</span>
+                                      </div>
+                                      <span style={styles.memberProgressPct}>{st.progress}%</span>
+                                    </div>
+                                    <div style={styles.memberCardBottom}>
+                                      <span style={{ ...styles.memberStatusBadge, backgroundColor: ind.bgColor, color: ind.textColor }}>
+                                        {ind.statusLabel}
+                                      </span>
+                                      {st.helpRequested && (
+                                        <span
+                                          style={styles.memberHelpHandIcon}
+                                          title={t('liveDashboard.dismissHelpTip', 'Student requested help. Click to resolve.')}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDismissHelpRequest(st.id);
+                                          }}
+                                        >
+                                          ✋
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             /* INDIVIDUAL STATUS MONITOR */
-            <div style={styles.cardStatusMonitor}>
+            (() => {
+              const isGroupActivity = targetScope?.toLowerCase().includes('group') || sessionGroups.length > 0;
+              if (isGroupActivity) {
+                return (
+                  <div style={styles.cardStatusMonitor}>
+                    <div style={styles.cardHeaderRow}>
+                      <h3 style={styles.sectionHeaderTitle}>
+                        {t('liveDashboard.individualStatusMonitor', 'INDIVIDUAL STATUS MONITOR')}
+                      </h3>
+                    </div>
+                    <hr style={styles.fullHrLineTop} />
+                    <div style={styles.nonGroupPlaceholderBox}>
+                      <div style={styles.nonGroupIcon}>👥</div>
+                      <h3 style={styles.nonGroupTitle}>
+                        {t('liveDashboard.groupScopedIndividualTitle', 'Individual View Limited for Group Scope')}
+                      </h3>
+                      <p style={styles.nonGroupDesc}>
+                        {t('liveDashboard.groupScopedIndividualDesc', 'Students are currently working in assigned collaborative teams. Individual student progress and team status signals are best monitored in the Group Level tab.')}
+                      </p>
+                      <button
+                        onClick={() => setActiveScope('Group Level')}
+                        style={styles.switchScopeBtn}
+                      >
+                        {t('liveDashboard.switchToGroupLevel', 'Switch to Group Level')}
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={styles.cardStatusMonitor}>
               <div style={styles.cardHeaderRow}>
                 <h3 style={styles.sectionHeaderTitle}>
                   {t('liveDashboard.individualStatusMonitor', 'INDIVIDUAL STATUS MONITOR')}
@@ -1159,6 +1519,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               </div>
             )}
           </div>
+              );
+            })()
         )}
         </div>
 
@@ -1396,6 +1758,8 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               <p style={styles.placeholderTextLong}>
                 {activeScope === 'Class Level'
                   ? t('liveDashboard.classLevelPlaceholder', 'Switch to Individual Student scope to view progress, support and award.')
+                  : activeScope === 'Group Level'
+                  ? t('liveDashboard.groupLevelPlaceholder', 'Select a student inside a group to view progress, support and award, or use Award Group to award all members.')
                   : t('liveDashboard.selectStudentPlaceholder', 'Select a student to view progress, support and award.')}
               </p>
             </div>
@@ -2064,6 +2428,225 @@ const styles: Record<string, React.CSSProperties> = {
     height: 'auto',
     maxHeight: '220px',
     display: 'block',
+  },
+  nonGroupPlaceholderBox: {
+    padding: '3rem 1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: '16px',
+    border: '2px dashed #cbd5e1',
+  },
+  nonGroupIcon: {
+    fontSize: '3rem',
+    marginBottom: '0.75rem',
+  },
+  nonGroupTitle: {
+    fontSize: '1.2rem',
+    fontWeight: '800',
+    color: '#1e293b',
+    margin: '0 0 0.5rem 0',
+  },
+  nonGroupDesc: {
+    fontSize: '0.92rem',
+    color: '#64748b',
+    maxWidth: '480px',
+    margin: '0 0 1.25rem 0',
+    lineHeight: '1.5',
+  },
+  switchScopeBtn: {
+    backgroundColor: '#78be20',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.65rem 1.25rem',
+    borderRadius: '10px',
+    fontWeight: '800',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(120, 190, 32, 0.3)',
+  },
+  groupsContainerList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  groupCardWrapper: {
+    backgroundColor: '#ffffff',
+    borderRadius: '14px',
+    border: '1.5px solid #cbd5e1',
+    padding: '1.25rem',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  groupCardHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
+  },
+  groupTitleInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  groupHeaderBadgeIcon: {
+    fontSize: '1.75rem',
+    backgroundColor: '#f0f9ff',
+    padding: '0.4rem',
+    borderRadius: '10px',
+    border: '1px solid #bae6fd',
+  },
+  groupTitleHeading: {
+    fontSize: '1.05rem',
+    fontWeight: '900',
+    color: '#0f172a',
+    margin: 0,
+  },
+  groupSubInfoText: {
+    fontSize: '0.8rem',
+    color: '#64748b',
+    fontWeight: '700',
+  },
+  groupAwardButtonsRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  groupAwardPrimaryBtn: {
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.45rem 0.9rem',
+    borderRadius: '8px',
+    fontWeight: '800',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+  },
+  groupAwardStarBtn: {
+    backgroundColor: '#f59e0b',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.45rem 0.75rem',
+    borderRadius: '8px',
+    fontWeight: '800',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(245, 158, 11, 0.25)',
+  },
+  groupSignalBox: {
+    backgroundColor: '#f8fafc',
+    borderRadius: '10px',
+    padding: '0.85rem 1rem',
+    border: '1px solid #e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
+  groupSignalItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  groupSignalLabel: {
+    fontSize: '0.82rem',
+    fontWeight: '700',
+    color: '#475569',
+  },
+  groupSignalValue: {
+    fontSize: '0.9rem',
+    fontWeight: '900',
+    color: '#0f172a',
+  },
+  groupProgressTrack: {
+    width: '80px',
+    height: '8px',
+    backgroundColor: '#e2e8f0',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    marginLeft: '0.3rem',
+  },
+  groupProgressFill: {
+    height: '100%',
+    backgroundColor: '#22c55e',
+    borderRadius: '4px',
+    transition: 'width 0.3s ease',
+  },
+  groupHelpAlertBadge: {
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
+    fontSize: '0.78rem',
+    fontWeight: '800',
+    padding: '0.3rem 0.65rem',
+    borderRadius: '6px',
+    border: '1px solid #fca5a5',
+  },
+  groupMemberRosterGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gap: '0.75rem',
+  },
+  groupStudentMemberCard: {
+    borderRadius: '10px',
+    padding: '0.75rem',
+    border: '1.5px solid #cbd5e1',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+  },
+  memberCardTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  memberCardNameGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    overflow: 'hidden',
+  },
+  memberDotIndicator: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  memberStudentName: {
+    fontSize: '0.85rem',
+    fontWeight: '800',
+    color: '#1e293b',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  memberProgressPct: {
+    fontSize: '0.82rem',
+    fontWeight: '900',
+    color: '#334155',
+  },
+  memberCardBottom: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  memberStatusBadge: {
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    padding: '0.2rem 0.5rem',
+    borderRadius: '4px',
+  },
+  memberHelpHandIcon: {
+    fontSize: '1.1rem',
+    cursor: 'pointer',
   },
 };
 
