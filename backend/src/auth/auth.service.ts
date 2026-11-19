@@ -539,6 +539,65 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
+  async resetStudentPin(dto: { studentCode: string; newPin: string }) {
+    const code = (dto.studentCode || '').trim();
+    const newPin = (dto.newPin || '').trim();
+
+    if (!code || !newPin) {
+      throw new BadRequestException('Student ID/Code and new 4-digit PIN are required.');
+    }
+
+    if (!/^\d{4}$/.test(newPin)) {
+      throw new BadRequestException('PIN must be exactly 4 numeric digits.');
+    }
+
+    // 1. Search in Student table by loginCode, email, or id
+    const student = await this.prisma.student.findFirst({
+      where: {
+        OR: [
+          { loginCode: { equals: code, mode: 'insensitive' } },
+          { email: { equals: code.toLowerCase(), mode: 'insensitive' } },
+          { id: code },
+        ],
+      },
+    });
+
+    // 2. Search in User table if student has a User record with ROLE = STUDENT
+    const user = await this.prisma.user.findFirst({
+      where: {
+        role: Role.STUDENT,
+        OR: [
+          { email: code.toLowerCase() },
+          { id: code },
+        ],
+      },
+    });
+
+    if (!student && !user) {
+      throw new NotFoundException('Student ID or Code not found. Please verify your Student ID and try again.');
+    }
+
+    const hashedPin = await bcrypt.hash(newPin, 10);
+
+    if (student) {
+      await this.prisma.student.update({
+        where: { id: student.id },
+        data: { pin: hashedPin },
+      });
+    }
+
+    if (user) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPin },
+      });
+    }
+
+    return {
+      message: 'PIN updated successfully! You can now sign in with your new 4-digit PIN.',
+    };
+  }
+
   private generateToken(userId: string, email: string, role: string): string {
     const payload = { sub: userId, email, role };
     return this.jwtService.sign(payload);

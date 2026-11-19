@@ -142,9 +142,72 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
   const [pin, setPin] = useState('');
   const [isPinMasked, setIsPinMasked] = useState(true);
   const [studentError, setStudentError] = useState<string | null>(null);
+  const [studentSuccess, setStudentSuccess] = useState<string | null>(null);
   const [isStudentSubmitting, setIsStudentSubmitting] = useState(false);
   const [keepMeSignedIn, setKeepMeSignedIn] = useState(true);
   const [showStudentForgotPinModal, setShowStudentForgotPinModal] = useState<boolean>(false);
+
+  // Student Forgot PIN Modal State
+  const [forgotPinStudentId, setForgotPinStudentId] = useState('');
+  const [forgotNewPin, setForgotNewPin] = useState('');
+  const [forgotConfirmPin, setForgotConfirmPin] = useState('');
+  const [forgotPinError, setForgotPinError] = useState<string | null>(null);
+  const [isForgotPinSubmitting, setIsForgotPinSubmitting] = useState(false);
+
+  const handleOpenStudentForgotPinModal = () => {
+    setForgotPinStudentId(studentCode.trim());
+    setForgotNewPin('');
+    setForgotConfirmPin('');
+    setForgotPinError(null);
+    setShowStudentForgotPinModal(true);
+  };
+
+  const handleResetStudentPinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotPinError(null);
+
+    const cleanId = forgotPinStudentId.trim();
+    const cleanNewPin = forgotNewPin.trim();
+    const cleanConfirmPin = forgotConfirmPin.trim();
+
+    if (!cleanId) {
+      setForgotPinError(t('login.studentIdRequired', 'Please enter your Student ID or Code'));
+      return;
+    }
+
+    if (!cleanNewPin || !/^\d{4}$/.test(cleanNewPin)) {
+      setForgotPinError(t('login.pin4DigitsRequired', 'PIN must be exactly 4 numeric digits'));
+      return;
+    }
+
+    if (cleanNewPin !== cleanConfirmPin) {
+      setForgotPinError(t('login.pinsDoNotMatch', 'PINs do not match'));
+      return;
+    }
+
+    setIsForgotPinSubmitting(true);
+    try {
+      await authApi.resetStudentPin({
+        studentCode: cleanId,
+        newPin: cleanNewPin,
+      });
+
+      setStudentCode(cleanId);
+      setPin('');
+      setStudentSuccess(
+        t(
+          'login.pinResetSuccess',
+          '🎉 PIN reset successfully! Please sign in with your new 4-digit PIN.'
+        )
+      );
+      setStudentError(null);
+      setShowStudentForgotPinModal(false);
+    } catch (err: any) {
+      setForgotPinError(err.message || 'Failed to reset PIN. Please verify your Student ID.');
+    } finally {
+      setIsForgotPinSubmitting(false);
+    }
+  };
 
   // Teacher Form Submit
   const handleTeacherSubmit = async (e: React.FormEvent) => {
@@ -322,6 +385,10 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
               <div style={styles.studentErrorBanner}>{studentError}</div>
             )}
 
+            {studentSuccess && (
+              <div style={styles.studentSuccessBanner}>{studentSuccess}</div>
+            )}
+
             <form onSubmit={handleStudentSubmit} style={styles.studentForm}>
               {/* Field 1: Student Code */}
               <div style={styles.fieldWrapper}>
@@ -408,7 +475,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
                 <button
                   type="button"
-                  onClick={() => setShowStudentForgotPinModal(true)}
+                  onClick={handleOpenStudentForgotPinModal}
                   style={styles.forgotPinLink}
                 >
                   {t('login.forgotPin', 'Forgot PIN?')}
@@ -445,39 +512,197 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
         {/* STUDENT FORGOT PIN MODAL DIALOG */}
         {showStudentForgotPinModal && (
           <div style={styles.confirmModalOverlay}>
-            <div style={styles.warningModalCard}>
+            <div
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '2px solid #38bdf8',
+                boxShadow: '0 20px 40px rgba(2, 132, 199, 0.22), 0 0 0 1px rgba(56, 189, 248, 0.1)',
+                padding: '2rem 2.25rem',
+                maxWidth: '460px',
+                width: '100%',
+                boxSizing: 'border-box',
+                textAlign: 'left',
+              }}
+            >
               {/* Top Icon Badge */}
               <div style={styles.confirmBadgeRow}>
-                <div style={styles.warningIconCircle}>
-                  ⚠️
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '50%',
+                    backgroundColor: '#e0f2fe',
+                    border: '2px solid #38bdf8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.25rem',
+                  }}
+                >
+                  🔑
                 </div>
-                <div style={styles.warningPillBadge}>
+                <div
+                  style={{
+                    backgroundColor: '#e0f2fe',
+                    color: '#0369a1',
+                    border: '1px solid #bae6fd',
+                    fontSize: '0.78rem',
+                    fontWeight: '800',
+                    padding: '0.3rem 0.85rem',
+                    borderRadius: '9999px',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   {t('login.forgotPinTag', 'FORGOT STUDENT PIN')}
                 </div>
               </div>
 
-              {/* Title */}
-              <div style={styles.confirmTitleSection}>
-                <h2 style={styles.confirmActivityTitle}>
-                  {t('login.forgotPinTitle', 'Forgot Your 4-Digit PIN?')}
+              {/* Title & Subtitle */}
+              <div style={{ textAlign: 'center', margin: '1rem 0 1.5rem 0' }}>
+                <h2 style={{ margin: '0 0 0.4rem 0', fontSize: '1.45rem', fontWeight: '800', color: '#0369a1', letterSpacing: '-0.01em' }}>
+                  {t('login.resetStudentPinTitle', 'Reset Your 4-Digit PIN')}
                 </h2>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: '#475569', lineHeight: '1.5', fontWeight: '500' }}>
+                  {t('login.resetStudentPinSub', 'Enter your Student ID and choose a new 4-digit PIN to update your account.')}
+                </p>
               </div>
 
-              {/* Subtitle / Notice */}
-              <p style={styles.confirmSubTitle}>
-                {t('login.forgotPinNotice', 'Please ask your teacher to give you the 4-digit PIN!')}
-              </p>
+              {forgotPinError && (
+                <div style={{ ...styles.studentErrorBanner, marginBottom: '1.25rem' }}>
+                  {forgotPinError}
+                </div>
+              )}
 
-              {/* Action Buttons */}
-              <div style={styles.confirmActionsRow}>
-                <button
-                  type="button"
-                  onClick={() => setShowStudentForgotPinModal(false)}
-                  style={styles.warningActionBtn}
-                >
-                  {t('common.close', 'Close')}
-                </button>
-              </div>
+              <form onSubmit={handleResetStudentPinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                {/* Field 1: Student ID */}
+                <div style={styles.fieldWrapper}>
+                  <label style={{ ...styles.fieldLabel, color: '#0369a1', fontWeight: '800' }}>
+                    {t('login.studentIdModalLabel', 'STUDENT ID / LOGIN CODE')}
+                  </label>
+                  <input
+                    type="text"
+                    value={forgotPinStudentId}
+                    onChange={(e) => setForgotPinStudentId(e.target.value)}
+                    placeholder={t('login.studentIdModalPlaceholder', 'e.g. STU123 or STU-ILSE')}
+                    style={{
+                      padding: '0.72rem 1rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '0.95rem',
+                      color: '#0f172a',
+                      backgroundColor: '#f8fafc',
+                      outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      fontWeight: '600',
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* Field 2: New 4-Digit PIN */}
+                <div style={styles.fieldWrapper}>
+                  <label style={{ ...styles.fieldLabel, color: '#0369a1', fontWeight: '800' }}>
+                    {t('login.newPinModalLabel', 'NEW 4-DIGIT PIN')}
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    value={forgotNewPin}
+                    onChange={(e) => setForgotNewPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder={t('login.newPinModalPlaceholder', 'Enter new 4-digit PIN')}
+                    style={{
+                      padding: '0.72rem 1rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '1.15rem',
+                      color: '#0f172a',
+                      backgroundColor: '#f8fafc',
+                      outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      letterSpacing: '0.25em',
+                      fontWeight: '700',
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* Field 3: Confirm 4-Digit PIN */}
+                <div style={styles.fieldWrapper}>
+                  <label style={{ ...styles.fieldLabel, color: '#0369a1', fontWeight: '800' }}>
+                    {t('login.confirmPinModalLabel', 'CONFIRM NEW 4-DIGIT PIN')}
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={4}
+                    value={forgotConfirmPin}
+                    onChange={(e) => setForgotConfirmPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder={t('login.confirmPinModalPlaceholder', 'Re-enter new 4-digit PIN')}
+                    style={{
+                      padding: '0.72rem 1rem',
+                      borderRadius: '8px',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '1.15rem',
+                      color: '#0f172a',
+                      backgroundColor: '#f8fafc',
+                      outline: 'none',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      letterSpacing: '0.25em',
+                      fontWeight: '700',
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* Actions Row (Equal 50/50 Buttons) */}
+                <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.75rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowStudentForgotPinModal(false)}
+                    style={{
+                      flex: 1,
+                      padding: '0.8rem 1rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
+                      backgroundColor: '#f1f5f9',
+                      color: '#334155',
+                      fontWeight: '700',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isForgotPinSubmitting}
+                    style={{
+                      flex: 1,
+                      padding: '0.8rem 1rem',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: '#0284c7',
+                      color: '#ffffff',
+                      fontWeight: '800',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+                      transition: 'all 0.2s ease',
+                      opacity: isForgotPinSubmitting ? 0.8 : 1,
+                    }}
+                  >
+                    {isForgotPinSubmitting
+                      ? t('login.resettingPinBtn', 'RESETTING PIN...')
+                      : t('login.resetPinBtn', 'RESET PIN →')}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -953,6 +1178,19 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#fef2f2',
     color: '#991b1b',
     border: '1px solid #fecaca',
+    borderRadius: '10px',
+    padding: '0.75rem 1rem',
+    marginBottom: '1rem',
+    fontSize: '0.84rem',
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  studentSuccessBanner: {
+    backgroundColor: '#dcfce7',
+    color: '#15803d',
+    border: '1px solid #86efac',
     borderRadius: '10px',
     padding: '0.75rem 1rem',
     marginBottom: '1rem',

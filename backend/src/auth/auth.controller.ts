@@ -51,6 +51,12 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Post('reset-student-pin')
+  async resetStudentPin(@Body() dto: { studentCode: string; newPin: string }) {
+    return this.authService.resetStudentPin(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('verify-join-code')
   async verifyJoinCode(@Body('code') code: string) {
     return this.authService.verifyJoinCode(code);
