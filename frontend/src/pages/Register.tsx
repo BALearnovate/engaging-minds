@@ -511,7 +511,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                       </div>
 
                       <div style={styles.fieldGroup}>
-                        <label style={styles.label}>{t('register.schoolLabel', 'School / Organization *')}</label>
+                        <label style={styles.label}>{t('register.schoolLabel', 'School / Organization *')} *</label>
                         <input
                           type="text"
                           required
