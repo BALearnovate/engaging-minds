@@ -11,10 +11,12 @@ import type {
 } from '../../types/activityDsl';
 
 import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const FlashcardsStudent: React.FC<
   StudentBlockProps<FlashcardsConfig, number>
 > = ({ block, config, studentState, studentSessionId, studentName, onAnswerSubmit, onHelpRequest }) => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewedCards, setReviewedCards] = useState<Set<number>>(new Set());
@@ -64,31 +66,43 @@ export const FlashcardsStudent: React.FC<
       {block.instructions && <p style={styles.instructions}>{block.instructions}</p>}
 
       <div style={styles.cardProgressHeader}>
-        Card {currentIndex + 1} of {config.cards.length} ({reviewedCards.size} Reviewed)
+        {t('flashcards.progress', 'Card {{current}} of {{total}} ({{reviewed}} Reviewed)', {
+          current: currentIndex + 1,
+          total: config.cards.length,
+          reviewed: reviewedCards.size,
+        })}
       </div>
 
       <div onClick={handleFlip} style={styles.flashcardBox}>
-        <div style={styles.cardLabel}>{isFlipped ? 'ANSWER' : 'QUESTION / CONCEPT'}</div>
+        <div style={styles.cardLabel}>
+          {isFlipped
+            ? t('flashcards.answer', 'ANSWER')
+            : t('flashcards.questionConcept', 'QUESTION / CONCEPT')}
+        </div>
         <div style={styles.cardContent}>
           {isFlipped ? currentCard?.answer : currentCard?.prompt}
         </div>
-        <div style={styles.flipTip}>🖱️ Click card to {isFlipped ? 'show prompt' : 'flip answer'}</div>
+        <div style={styles.flipTip}>
+          {isFlipped
+            ? t('flashcards.flipTipShowPrompt', '🖱️ Click card to show prompt')
+            : t('flashcards.flipTipFlipAnswer', '🖱️ Click card to flip answer')}
+        </div>
       </div>
 
       <div style={styles.navRow}>
         <button disabled={currentIndex === 0} onClick={handlePrev} style={styles.navBtn}>
-          ← Previous
+          {t('flashcards.previous', '← Previous')}
         </button>
         <button
           disabled={currentIndex === config.cards.length - 1}
           onClick={handleNext}
           style={styles.navBtn}
         >
-          Next →
+          {t('flashcards.next', 'Next →')}
         </button>
         {onHelpRequest && (
           <button onClick={() => onHelpRequest('I need help understanding these flashcards')} style={styles.helpBtn}>
-            🙋 Request Help
+            {t('flashcards.requestHelp', '🙋 Request Help')}
           </button>
         )}
       </div>

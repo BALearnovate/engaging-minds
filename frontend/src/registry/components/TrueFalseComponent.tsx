@@ -10,10 +10,12 @@ import type {
   ValidationResult,
 } from '../../types/activityDsl';
 import { logXApiEvent, XAPI_VERBS } from '../../utils/xapiTelemetry';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const TrueFalseStudent: React.FC<
   StudentBlockProps<TrueFalseConfig, boolean>
 > = ({ block, config, studentState, onAnswerSubmit, onHelpRequest, isTeacherView }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<boolean | null>(
     typeof studentState.response === 'boolean' ? studentState.response : null,
   );
@@ -67,7 +69,9 @@ export const TrueFalseStudent: React.FC<
                 onClick={() => handleSelectOption(val)}
                 style={btnStyle}
               >
-                {val ? '👍 TRUE' : '👎 FALSE'}
+                {val
+                  ? t('trueFalse.trueOption', '👍 TRUE')
+                  : t('trueFalse.falseOption', '👎 FALSE')}
               </button>
             );
           })}
@@ -82,7 +86,9 @@ export const TrueFalseStudent: React.FC<
 
       {submitted && (
         <div style={selected === config.isTrue ? styles.correctBanner : styles.incorrectBanner}>
-          {selected === config.isTrue ? '✅ Correct!' : '❌ Incorrect.'}
+          {selected === config.isTrue
+            ? t('trueFalse.correct', '✅ Correct!')
+            : t('trueFalse.incorrect', '❌ Incorrect.')}
           {config.explanation && <p style={styles.explanation}>{config.explanation}</p>}
         </div>
       )}
@@ -91,17 +97,17 @@ export const TrueFalseStudent: React.FC<
         <div style={styles.actionRow}>
           {!isTeacherView && (!submitted ? (
             <button disabled={selected === null} onClick={handleSubmit} style={styles.primaryBtn}>
-              Submit Answer
+              {t('trueFalse.submitAnswer', 'Submit Answer')}
             </button>
           ) : (
             <button onClick={() => setSubmitted(false)} style={styles.secondaryBtn}>
-              Try Again
+              {t('trueFalse.tryAgain', 'Try Again')}
             </button>
           ))}
 
           {onHelpRequest && !submitted && (
             <button onClick={() => onHelpRequest('I need help evaluating this True/False statement')} style={styles.helpBtn}>
-              🙋 Request Help
+              {t('trueFalse.requestHelp', '🙋 Request Help')}
             </button>
           )}
         </div>

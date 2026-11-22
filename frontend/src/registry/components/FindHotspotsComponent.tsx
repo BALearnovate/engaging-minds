@@ -8,10 +8,12 @@ import type {
   FindHotspotsConfig,
   ValidationResult,
 } from '../../types/activityDsl';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export const FindHotspotsStudent: React.FC<
   StudentBlockProps<FindHotspotsConfig, string[]>
 > = ({ block, config, studentState, onAnswerSubmit, onHelpRequest }) => {
+  const { t } = useTranslation();
   const [foundHotspotIds, setFoundHotspotIds] = useState<string[]>(() => {
     return (studentState.response as string[]) || [];
   });
@@ -72,7 +74,7 @@ export const FindHotspotsStudent: React.FC<
   return (
     <div style={styles.container}>
       <div style={styles.headerBox}>
-        <div style={styles.badge}>🎯 FIND MULTIPLE HOTSPOTS</div>
+        <div style={styles.badge}>{t('findHotspots.badge', '🎯 FIND MULTIPLE HOTSPOTS')}</div>
         <h3 style={styles.title}>{block.title || 'Locate Hotspots in Diagram'}</h3>
         <p style={styles.instructions}>
           {config.instructions || 'Click on the image below to find all required target spots.'}
@@ -83,9 +85,14 @@ export const FindHotspotsStudent: React.FC<
       <div style={styles.progressCard}>
         <div style={styles.progressHeader}>
           <span style={styles.progressLabel}>
-            Discovered {foundHotspotIds.length} of {totalSpots} Hotspots
+            {t('findHotspots.discovered', 'Discovered {{count}} of {{total}} Hotspots', {
+              count: foundHotspotIds.length,
+              total: totalSpots,
+            })}
           </span>
-          <span style={styles.attemptBadge}>Attempts: {attempts}</span>
+          <span style={styles.attemptBadge}>
+            {t('findHotspots.attempts', 'Attempts: {{count}}', { count: attempts })}
+          </span>
         </div>
 
         <div style={styles.spotsChecklist}>
@@ -182,9 +189,15 @@ export const FindHotspotsStudent: React.FC<
         <div style={styles.completionCard}>
           <span style={styles.trophyIcon}>🎉</span>
           <div>
-            <h4 style={styles.completionTitle}>Hotspot Challenge Completed!</h4>
+            <h4 style={styles.completionTitle}>
+              {t('findHotspots.completedTitle', 'Hotspot Challenge Completed!')}
+            </h4>
             <p style={styles.completionText}>
-              Great job! You found all {totalSpots} correct targets in {attempts} attempt(s).
+              {t(
+                'findHotspots.completedText',
+                'Great job! You found all {{total}} correct targets in {{attempts}} attempt(s).',
+                { total: totalSpots, attempts },
+              )}
             </p>
           </div>
         </div>
@@ -196,7 +209,7 @@ export const FindHotspotsStudent: React.FC<
           onClick={() => onHelpRequest('I need help identifying hotspots on this diagram.')}
           style={styles.helpBtn}
         >
-          🙋 Request Teacher Help
+          {t('findHotspots.requestHelp', '🙋 Request Teacher Help')}
         </button>
       )}
     </div>

@@ -442,5 +442,38 @@
     "cofunded": "Euroopan unionin",
     "eu": "osarahoittama",
     "disclaimer": "Euroopan unionin rahoittama. Esitetyt näkemykset ja mielipiteet ovat kuitenkin ainoastaan tekijöiden omia eivätkä välttämättä vastaa Euroopan unionin tai Euroopan koulutuksen ja kulttuurin toimeenpanoviraston (EACEA) kantaa. Euroopan unioni tai EACEA ei ole vastuussa niistä."
+  },
+  "activityRuntime": {
+    "exerciseTracker": "Tehtävä {{current}} / {{total}}",
+    "previous": "← Edellinen",
+    "next": "Seuraava →",
+    "completeActivity": "Viimeistele tehtävä ✓"
+  },
+  "flashcards": {
+    "progress": "Kortti {{current}} / {{total}} ({{reviewed}} kerrattu)",
+    "answer": "VASTAUS",
+    "questionConcept": "KYSYMYS / KÄSITE",
+    "flipTipShowPrompt": "🖱️ Napsauta korttia näyttääksesi kysymyksen",
+    "flipTipFlipAnswer": "🖱️ Napsauta korttia kääntääksesi vastauksen",
+    "previous": "← Edellinen",
+    "next": "Seuraava →",
+    "requestHelp": "🙋 Pyydä apua"
+  },
+  "trueFalse": {
+    "trueOption": "👍 TOTTA",
+    "falseOption": "👎 VÄÄRIN",
+    "submitAnswer": "Lähetä vastaus",
+    "tryAgain": "Yritä uudelleen",
+    "requestHelp": "🙋 Pyydä apua",
+    "correct": "✅ Oikein!",
+    "incorrect": "❌ Väärin."
+  },
+  "findHotspots": {
+    "badge": "🎯 ETSI HOTSPOTIT",
+    "discovered": "Löydetty {{count}} / {{total}} hotspotia",
+    "attempts": "Yritykset: {{count}}",
+    "completedTitle": "Hotspot-haaste suoritettu!",
+    "completedText": "Hienoa työtä! Löysit kaikki {{total}} oikeaa kohdetta {{attempts}} yrityksellä.",
+    "requestHelp": "🙋 Pyydä opettajalta apua"
   }
 }

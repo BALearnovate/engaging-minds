@@ -471,5 +471,38 @@
     "cofunded": "Co-funded by",
     "eu": "the European Union",
     "disclaimer": "Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not necessarily reflect those of the European Union or the European Education and Culture Executive Agency (EACEA). Neither the European Union nor EACEA can be held responsible for them."
+  },
+  "activityRuntime": {
+    "exerciseTracker": "Exercise {{current}} of {{total}}",
+    "previous": "← Previous",
+    "next": "Next →",
+    "completeActivity": "Complete Activity ✓"
+  },
+  "flashcards": {
+    "progress": "Card {{current}} of {{total}} ({{reviewed}} Reviewed)",
+    "answer": "ANSWER",
+    "questionConcept": "QUESTION / CONCEPT",
+    "flipTipShowPrompt": "🖱️ Click card to show prompt",
+    "flipTipFlipAnswer": "🖱️ Click card to flip answer",
+    "previous": "← Previous",
+    "next": "Next →",
+    "requestHelp": "🙋 Request Help"
+  },
+  "trueFalse": {
+    "trueOption": "👍 TRUE",
+    "falseOption": "👎 FALSE",
+    "submitAnswer": "Submit Answer",
+    "tryAgain": "Try Again",
+    "requestHelp": "🙋 Request Help",
+    "correct": "✅ Correct!",
+    "incorrect": "❌ Incorrect."
+  },
+  "findHotspots": {
+    "badge": "🎯 FIND MULTIPLE HOTSPOTS",
+    "discovered": "Discovered {{count}} of {{total}} Hotspots",
+    "attempts": "Attempts: {{count}}",
+    "completedTitle": "Hotspot Challenge Completed!",
+    "completedText": "Great job! You found all {{total}} correct targets in {{attempts}} attempt(s).",
+    "requestHelp": "🙋 Request Teacher Help"
   }
 }

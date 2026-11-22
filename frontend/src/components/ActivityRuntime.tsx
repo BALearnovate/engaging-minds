@@ -10,6 +10,7 @@ import { ComponentRegistry } from '../registry';
 import { ConfigureGroupModal } from './ConfigureGroupModal';
 import { logXApiEvent, XAPI_VERBS } from '../utils/xapiTelemetry';
 import { activitiesApi, API_BASE_URL } from '../api';
+import { useTranslation } from '../i18n/useTranslation';
 
 interface ActivityRuntimeProps {
   definition: ActivityDefinition;
@@ -38,6 +39,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   onProgressUpdate,
   onCompleted,
 }) => {
+  const { t } = useTranslation();
   const [currentBlockIndex, setCurrentIndex] = useState(0);
   const [blockStates, setBlockStates] = useState<Record<string, StudentBlockState>>(() => {
     const map: Record<string, StudentBlockState> = {};
@@ -282,7 +284,10 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
         <div style={styles.titleInfo}>
           {!hideTitle && <h2 style={styles.actTitle}>{definition.title}</h2>}
           <span style={styles.blockTracker}>
-            Exercise {currentBlockIndex + 1} of {definition.blocks.length}
+            {t('activityRuntime.exerciseTracker', 'Exercise {{current}} of {{total}}', {
+              current: currentBlockIndex + 1,
+              total: definition.blocks.length,
+            })}
           </span>
         </div>
       </div>
@@ -332,7 +337,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           onClick={() => setCurrentIndex(currentBlockIndex - 1)}
           style={styles.navBtn}
         >
-          ← Previous
+          {t('activityRuntime.previous', '← Previous')}
         </button>
 
         <div style={styles.dotNav}>
@@ -368,7 +373,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             }}
             style={styles.navBtnPrimary}
           >
-            Next →
+            {t('activityRuntime.next', 'Next →')}
           </button>
         ) : !isTeacherView ? (
           <button
@@ -387,7 +392,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
             }}
             style={styles.navBtnSuccess}
           >
-            Complete Activity ✓
+            {t('activityRuntime.completeActivity', 'Complete Activity ✓')}
           </button>
         ) : null}
       </div>

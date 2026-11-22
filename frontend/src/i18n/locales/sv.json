@@ -442,5 +442,38 @@
     "cofunded": "Samfinansierat av",
     "eu": "Europeiska unionen",
     "disclaimer": "Finansieras av Europeiska unionen. De synpunkter och åsikter som uttrycks är dock endast upphovsmannens/upphovsmännens och speglar inte nödvändigtvis Europeiska unionens eller Europeiska genomförandeorganet för utbildning och kulturs (EACEA) uppfattning. Varken Europeiska unionen eller EACEA kan hållas ansvariga för dem."
+  },
+  "activityRuntime": {
+    "exerciseTracker": "Övning {{current}} av {{total}}",
+    "previous": "← Föregående",
+    "next": "Nästa →",
+    "completeActivity": "Slutför aktivitet ✓"
+  },
+  "flashcards": {
+    "progress": "Kort {{current}} av {{total}} ({{reviewed}} granskade)",
+    "answer": "SVAR",
+    "questionConcept": "FRÅGA / BEGREPP",
+    "flipTipShowPrompt": "🖱️ Klicka på kortet för att visa frågan",
+    "flipTipFlipAnswer": "🖱️ Klicka på kortet för att visa svaret",
+    "previous": "← Föregående",
+    "next": "Nästa →",
+    "requestHelp": "🙋 Begär hjälp"
+  },
+  "trueFalse": {
+    "trueOption": "👍 SANT",
+    "falseOption": "👎 FALSKT",
+    "submitAnswer": "Skicka svar",
+    "tryAgain": "Försök igen",
+    "requestHelp": "🙋 Begär hjälp",
+    "correct": "✅ Rätt!",
+    "incorrect": "❌ Fel."
+  },
+  "findHotspots": {
+    "badge": "🎯 HITTA FLERA HOTSPOTS",
+    "discovered": "Upptäckte {{count}} av {{total}} hotspots",
+    "attempts": "Försök: {{count}}",
+    "completedTitle": "Hotspot-utmaning slutförd!",
+    "completedText": "Bra jobbat! Du hittade alla {{total}} rätta mål på {{attempts}} försök.",
+    "requestHelp": "🙋 Begär lärarhjälp"
   }
 }
