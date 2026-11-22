@@ -93,16 +93,25 @@ Supported interactive exercise block types:
 8. "clock_diagram": config { "prompt": "Fill in your 24-hour daily schedule...", "instructions": "Write what you do in each hour directly in front of the radial clock sectors...", "clockType": "24_hour", "hours": [{ "hour": 0, "label": "00:00", "expectedActivity": "..." }], "allowedOptions": ["Breakfast", "Class", "Lunch", "Homework", "Sleep"] }
 9. "open_response": config { "prompt": "Explain in your own words...", "placeholder": "Type your reflection or answer here...", "sampleAnswer": "Key points students should address..." }
 
+FLEXIBLE PROMPT INTERPRETATION RULES:
+Teachers will use natural language phrasing and informal teacher descriptions. You MUST map their intent to the corresponding block type even if exact technical terms are not used:
+- "fill in the blank", "fill in blanks", "fill-in-the-blanks", "missing words", "completion", "cloze" -> block type "fill_blank"
+- "open response", "free response", "reflection", "written response", "essay", "short answer", "reflection question", "discussion question" -> block type "open_response"
+- "multiple choice", "mcq", "quiz", "questionnaire", "options" -> block type "multiple_choice"
+- "flashcards", "flash cards", "study cards", "deck", "terms and definitions" -> block type "flashcards"
+- "true or false", "true false", "t/f", "right or wrong" -> block type "true_false"
+- "ordering", "sequence", "arrange", "timeline", "order steps" -> block type "ordering"
+- "drag and drop", "classification", "categorize", "grouping", "sorting" -> block type "drag_drop"
+- "hotspots", "find spots", "diagram click", "identify parts on image" -> block type "find_hotspots"
+- "clock diagram", "clock diagram", "24-hour clock", "radial clock", "schedule", "daily timeline" -> block type "clock_diagram"
+
 CRITICAL RULES:
-- Only include block types that are relevant to or requested in the prompt.
-- Every block MUST have a "title" string (e.g. "Step 1: Core Concepts"), "instructions" string, and a unique "id" string (e.g. "blk_1_fc", "blk_2_mc").
+- Include all exercise block types requested or implied by the prompt.
+- If the user explicitly asks for "open response" or "fill in the blank", you MUST generate a block of type "open_response" or "fill_blank" respectively.
+- Every block MUST have a "title" string, "instructions" string, and a unique "id" string (e.g. "blk_1_fc", "blk_2_or").
+- In "open_response", "prompt" MUST be a clear open-ended question or reflection prompt string inside "config".
 - In "multiple_choice", "correctAnswer" MUST exactly match one of the string options.
-- In "fill_blank", placeholders like [1] or [2] in "passage" MUST match the "id" of the corresponding blank object.
-- In "ordering", "correctOrder" array MUST contain all item IDs.
-- In "drag_drop", "correctItemIds" in "dropTargets" MUST reference existing "draggableItems" IDs.
-- In "find_hotspots", "x" and "y" MUST be percentages between 0 and 100 representing spot coordinates on the image.
-- In "clock_diagram", "hours" MUST be an array containing objects with "hour" (number 0-23 or 1-24).
-- In "open_response", "prompt" MUST be a clear open-ended question or reflection prompt.`;
+- In "fill_blank", placeholders like [1] or [2] in "passage" MUST match the "id" of the corresponding blank object.`;
 
     const userPromptText = `Subject: ${subject || 'General Secondary Education'}
 Grade Level: ${gradeLevel || 'Secondary School (Grade 6-8)'}
@@ -142,16 +151,63 @@ Generate a complete, engaging interactive activity containing appropriate exerci
 
     const parsedJson: ActivityDefinition = JSON.parse(candidateText);
 
-    // Sanitize & Normalize block titles/instructions if missing
+    // Sanitize & Normalize block types and config schema
     if (parsedJson && Array.isArray(parsedJson.blocks)) {
       parsedJson.blocks.forEach((block: any, idx: number) => {
         if (!block.id) block.id = `blk_${idx + 1}_${Date.now()}`;
+
+        // Normalize block.type if AI used a variant string name
+        if (block.type) {
+          const lowerType = String(block.type).toLowerCase().replace(/[- ]/g, '_');
+          if (lowerType.includes('fill') && lowerType.includes('blank')) block.type = 'fill_blank';
+          else if (lowerType.includes('open') || lowerType.includes('reflection') || lowerType.includes('free_text')) block.type = 'open_response';
+          else if (lowerType.includes('choice') || lowerType.includes('mcq') || lowerType.includes('quiz')) block.type = 'multiple_choice';
+          else if (lowerType.includes('flash') || lowerType.includes('card')) block.type = 'flashcards';
+          else if (lowerType.includes('true') || lowerType.includes('false')) block.type = 'true_false';
+          else if (lowerType.includes('order') || lowerType.includes('sequence')) block.type = 'ordering';
+          else if (lowerType.includes('drag') || lowerType.includes('drop') || lowerType.includes('category')) block.type = 'drag_drop';
+          else if (lowerType.includes('hotspot') || lowerType.includes('spot')) block.type = 'find_hotspots';
+          else if (lowerType.includes('clock') || lowerType.includes('schedule')) block.type = 'clock_diagram';
+        }
+
         if (!block.title) {
           const typeLabel = block.type ? block.type.replace('_', ' ').toUpperCase() : 'EXERCISE';
           block.title = `Step ${idx + 1}: ${typeLabel}`;
         }
         if (!block.instructions || block.instructions.trim().length < 3) {
           block.instructions = 'Complete the exercise below by selecting or typing your response.';
+        }
+
+        if (!block.config || typeof block.config !== 'object') {
+          block.config = {};
+        }
+
+        // Normalize open_response config
+        if (block.type === 'open_response') {
+          if (!block.config.prompt && (!Array.isArray(block.config.prompts) || block.config.prompts.length === 0)) {
+            block.config.prompt = block.config.question || block.config.text || block.instructions || 'Explain in your own words...';
+          }
+        }
+
+        // Normalize fill_blank config
+        if (block.type === 'fill_blank') {
+          if (!block.config.passage) {
+            block.config.passage = block.config.text || block.config.prompt || 'Fill in missing blank [1].';
+          }
+          if (!Array.isArray(block.config.blanks) || block.config.blanks.length === 0) {
+            block.config.blanks = [{ id: '1', answer: 'correct', hint: 'Fill in the term' }];
+          }
+        }
+
+        // Normalize multiple_choice config
+        if (block.type === 'multiple_choice') {
+          if (!block.config.question) block.config.question = block.instructions || 'Select the correct answer:';
+          if (!Array.isArray(block.config.options) || block.config.options.length < 2) {
+            block.config.options = ['Option A', 'Option B', 'Option C', 'Option D'];
+          }
+          if (!block.config.correctAnswer || !block.config.options.includes(block.config.correctAnswer)) {
+            block.config.correctAnswer = block.config.options[0];
+          }
         }
       });
     }
