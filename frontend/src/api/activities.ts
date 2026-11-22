@@ -115,6 +115,7 @@ export interface GenerateDslPayload {
   prompt: string;
   subject?: string;
   gradeLevel?: string;
+  language?: string;
 }
 
 export interface ImproveBlockPayload {

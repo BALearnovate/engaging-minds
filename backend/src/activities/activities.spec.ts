@@ -156,12 +156,23 @@ describe('ActivityValidator Unit Tests', () => {
 
 describe('AiActivityGeneratorService Unit Tests', () => {
   let generator: AiActivityGeneratorService;
+  const originalApiKey = process.env.GEMINI_API_KEY;
 
   beforeEach(() => {
     generator = new AiActivityGeneratorService();
   });
 
-  it('should generate a valid ActivityDefinition DSL containing clock_diagram block from natural language prompt', async () => {
+  afterEach(() => {
+    if (originalApiKey !== undefined) {
+      process.env.GEMINI_API_KEY = originalApiKey;
+    } else {
+      delete process.env.GEMINI_API_KEY;
+    }
+  });
+
+  it('should generate a valid ActivityDefinition DSL containing clock_diagram block from natural language prompt using deterministic generator when GEMINI_API_KEY is absent', async () => {
+    delete process.env.GEMINI_API_KEY;
+
     const prompt = 'Create an activity for 6 class on photosynthesis with clock schedule';
     const definition = await generator.generate(prompt, 'Science', 'Grade 6');
 
@@ -176,5 +187,52 @@ describe('AiActivityGeneratorService Unit Tests', () => {
     // 3-Tier Validation Check
     const validation = ActivityValidator.validate(definition);
     expect(validation.valid).toBe(true);
+  });
+
+  it('should call callGeminiApi when GEMINI_API_KEY is present and return AI-generated activity', async () => {
+    process.env.GEMINI_API_KEY = 'mock-api-key';
+
+    const mockDefinition: ActivityDefinition = {
+      schemaVersion: '1.0',
+      title: 'Fotosyntese',
+      description: 'Lær om fotosyntese',
+      estimatedDurationMinutes: 15,
+      blocks: [
+        {
+          id: 'b1',
+          type: 'open_response',
+          title: 'Åbent svar',
+          instructions: 'Svar på spørgsmålet',
+          config: {
+            prompt: 'Hvad er fotosyntese?',
+            sampleAnswer: 'Fotosyntese er den proces...',
+          },
+        },
+      ],
+    };
+
+    jest.spyOn(generator as any, 'callGeminiApi').mockResolvedValue(mockDefinition);
+
+    const definition = await generator.generate('Beskriv fotosyntese', 'Biologi', '6. klasse', 'da');
+
+    expect((generator as any).callGeminiApi).toHaveBeenCalledWith(
+      'mock-api-key',
+      'Beskriv fotosyntese',
+      'Biologi',
+      '6. klasse',
+      'da',
+    );
+    expect(definition.title).toBe('Fotosyntese');
+    expect(definition.blocks[0].type).toBe('open_response');
+  });
+
+  it('should throw BadRequestException when GEMINI_API_KEY is present and callGeminiApi fails without falling back', async () => {
+    process.env.GEMINI_API_KEY = 'mock-api-key';
+
+    jest.spyOn(generator as any, 'callGeminiApi').mockRejectedValue(new Error('API failure'));
+
+    await expect(
+      generator.generate('Create activity', 'Science', 'Grade 6', 'en'),
+    ).rejects.toThrow('Could not create activity, try again later.');
   });
 });

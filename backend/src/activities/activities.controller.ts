@@ -21,9 +21,9 @@ export class ActivitiesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
   async generateDsl(
-    @Body() body: { prompt: string; subject?: string; gradeLevel?: string },
+    @Body() body: { prompt: string; subject?: string; gradeLevel?: string; language?: string },
   ) {
-    return this.aiGeneratorService.generate(body.prompt, body.subject, body.gradeLevel);
+    return this.aiGeneratorService.generate(body.prompt, body.subject, body.gradeLevel, body.language);
   }
 
   // AI Block Improvement Endpoint

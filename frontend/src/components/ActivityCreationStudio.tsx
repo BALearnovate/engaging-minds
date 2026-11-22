@@ -27,7 +27,7 @@ interface ActivityCreationStudioProps {
 }
 
 export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ onNavigateToDashboard, initialPathway, initialActivityId }) => {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { token: authContextToken } = useAuth();
 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>(initialPathway || 'ai');
@@ -427,6 +427,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           prompt,
           subject,
           gradeLevel,
+          language,
         },
         activeToken,
       );

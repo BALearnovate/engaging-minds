@@ -24,16 +24,17 @@ export class AiActivityGeneratorService implements ActivityGenerator {
     prompt: string,
     subject?: string,
     gradeLevel?: string,
+    language?: string,
   ): Promise<ActivityDefinition> {
     const rawKey = process.env.GEMINI_API_KEY || '';
     const apiKey = rawKey.replace(/^['"]|['"]$/g, '').trim();
 
-    this.logger.log(`[Gemini API Config Check] Raw Key Present: ${!!rawKey} | Sanitized Length: ${apiKey.length}`);
+    this.logger.log(`[Gemini API Config Check] Raw Key Present: ${!!rawKey} | Sanitized Length: ${apiKey.length} | Language: ${language || 'en'}`);
 
     if (apiKey && apiKey.trim().length > 0) {
       try {
-        this.logger.log(`Calling Gemini API to generate activity for prompt: "${prompt}"`);
-        const geminiDefinition = await this.callGeminiApi(apiKey, prompt, subject, gradeLevel);
+        this.logger.log(`Calling Gemini API to generate activity for prompt: "${prompt}" [Lang: ${language || 'en'}]`);
+        const geminiDefinition = await this.callGeminiApi(apiKey, prompt, subject, gradeLevel, language);
 
         // Run 3-Tier Validation Pipeline
         const valResult = ActivityValidator.validate(geminiDefinition);
@@ -72,7 +73,16 @@ export class AiActivityGeneratorService implements ActivityGenerator {
     prompt: string,
     subject?: string,
     gradeLevel?: string,
+    language?: string,
   ): Promise<ActivityDefinition> {
+    const langMap: Record<string, string> = {
+      en: 'English',
+      da: 'Danish (Dansk)',
+      fi: 'Finnish (Suomi)',
+      sv: 'Swedish (Svenska)',
+    };
+    const targetLangName = langMap[language || ''] || language || 'English';
+
     const systemInstruction = `You are an expert secondary school educational curriculum designer.
 Generate an interactive learning activity DSL strictly in valid JSON format adhering to schemaVersion "1.0".
 The generated JSON MUST contain:
@@ -93,21 +103,30 @@ Supported interactive exercise block types:
 8. "clock_diagram": config { "prompt": "Fill in your 24-hour daily schedule...", "instructions": "Write what you do in each hour directly in front of the radial clock sectors...", "clockType": "24_hour", "hours": [{ "hour": 0, "label": "00:00", "expectedActivity": "..." }], "allowedOptions": ["Breakfast", "Class", "Lunch", "Homework", "Sleep"] }
 9. "open_response": config { "prompt": "Explain in your own words...", "placeholder": "Type your reflection or answer here...", "sampleAnswer": "Key points students should address..." }
 
+LANGUAGE REQUIREMENT (CRITICAL):
+The user's currently selected UI language is: "${targetLangName}".
+You MUST generate ALL human-readable text content inside the Activity DSL JSON (title, description, block titles, instructions, questions, options, flashcard prompts/answers, fill-in-blank passages/hints, true/false statements/explanations, ordering items, drag-drop targets/labels, hotspot labels/feedback, clock diagram prompts/options, and open_response prompts/placeholders/sampleAnswers) in the target language.
+
+LANGUAGE PRECEDENCE RULES:
+1. If the teacher prompt is written in or specifically requests a target language (Danish, Finnish, Swedish, or English), generate the activity DSL strictly in that target language.
+2. If the teacher prompt language is neutral or general, generate the activity DSL strictly in "${targetLangName}".
+3. Under NO circumstances output mixed language text (e.g. English titles with Danish questions). All titles, instructions, questions, options, and prompts MUST be in the resolved target language.
+
 FLEXIBLE PROMPT INTERPRETATION RULES:
-Teachers will use natural language phrasing and informal teacher descriptions. You MUST map their intent to the corresponding block type even if exact technical terms are not used:
-- "fill in the blank", "fill in blanks", "fill-in-the-blanks", "missing words", "completion", "cloze" -> block type "fill_blank"
-- "open response", "free response", "reflection", "written response", "essay", "short answer", "reflection question", "discussion question" -> block type "open_response"
-- "multiple choice", "mcq", "quiz", "questionnaire", "options" -> block type "multiple_choice"
-- "flashcards", "flash cards", "study cards", "deck", "terms and definitions" -> block type "flashcards"
-- "true or false", "true false", "t/f", "right or wrong" -> block type "true_false"
-- "ordering", "sequence", "arrange", "timeline", "order steps" -> block type "ordering"
-- "drag and drop", "classification", "categorize", "grouping", "sorting" -> block type "drag_drop"
-- "hotspots", "find spots", "diagram click", "identify parts on image" -> block type "find_hotspots"
-- "clock diagram", "clock diagram", "24-hour clock", "radial clock", "schedule", "daily timeline" -> block type "clock_diagram"
+Teachers will use natural language phrasing and informal teacher descriptions in their language. You MUST map their intent to the corresponding block type even if exact technical terms are not used:
+- "fill in the blank", "fill in blanks", "udfyld hullerne", "täytä aukot", "fyll i luckorna" -> block type "fill_blank"
+- "open response", "free response", "reflection", "åbent svar", "avoin vastaus", "öppet svar" -> block type "open_response"
+- "multiple choice", "mcq", "quiz", "flervalgstest", "monivalinta", "flervalsfråga" -> block type "multiple_choice"
+- "flashcards", "flash cards", "vokabelkort", "muistikortit", "flashkort" -> block type "flashcards"
+- "true or false", "sandt eller falsk", "oikein vai väärin", "sant eller falskt" -> block type "true_false"
+- "ordering", "sequence", "rækkefølge", "järjestys", "ordning" -> block type "ordering"
+- "drag and drop", "categorize", "kategoriser", "luokittele", "kategorisera" -> block type "drag_drop"
+- "hotspots", "find spots", "find punkter", "löydä kohdat", "hitta punkter" -> block type "find_hotspots"
+- "clock diagram", "24-hour clock", "dagsplan", "päiväohjelma", "dagsschema" -> block type "clock_diagram"
 
 CRITICAL RULES:
 - Include all exercise block types requested or implied by the prompt.
-- If the user explicitly asks for "open response" or "fill in the blank", you MUST generate a block of type "open_response" or "fill_blank" respectively.
+- If the user explicitly asks for "open response" or "fill in the blank" (in English, Danish, Finnish, or Swedish), you MUST generate a block of type "open_response" or "fill_blank" respectively.
 - Every block MUST have a "title" string, "instructions" string, and a unique "id" string (e.g. "blk_1_fc", "blk_2_or").
 - In "open_response", "prompt" MUST be a clear open-ended question or reflection prompt string inside "config".
 - In "multiple_choice", "correctAnswer" MUST exactly match one of the string options.
@@ -115,11 +134,13 @@ CRITICAL RULES:
 
     const userPromptText = `Subject: ${subject || 'General Secondary Education'}
 Grade Level: ${gradeLevel || 'Secondary School (Grade 6-8)'}
+Selected UI Language: "${targetLangName}"
 Teacher Prompt: "${prompt}"
 
-Generate a complete, engaging interactive activity containing appropriate exercises matching the prompt requirements.`;
+Generate a complete, engaging interactive activity containing appropriate exercises matching the prompt requirements in the resolved target language.`;
 
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+    // const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(endpoint, {
       method: 'POST',
