@@ -408,7 +408,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1.5rem',
     backgroundColor: '#ffffff',
-    
+    padding: '20px 20px',
     borderRadius: '12px',
     // border: '1px solid #e5e7eb',
     boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
