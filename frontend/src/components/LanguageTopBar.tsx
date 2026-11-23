@@ -7,8 +7,8 @@ export const LanguageTopBar: React.FC = () => {
   return (
     <div style={styles.topBar} data-testid="language-top-bar">
       <div style={styles.leftMeta}>
-        <span style={styles.projectPill}>🇪🇺 Erasmus+</span>
-        <span style={styles.brandSubtitle}>Engaging Minds Platform</span>
+        <span style={styles.projectPill}>{t('topbar.erasmus', '🇪🇺 Erasmus+')}</span>
+        <span style={styles.brandSubtitle}>{t('topbar.platformTitle', 'Engaging Minds Platform')}</span>
       </div>
 
       <div style={styles.selectorContainer}>

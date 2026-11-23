@@ -618,16 +618,16 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                     style={styles.paramSelect}
                   >
                     <option value="all">{t('activityCreation.allSubjects', 'All Subjects')}</option>
-                    <option value="Science">Science</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="English">English</option>
-                    <option value="History">History</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Geography">Geography</option>
-                    <option value="French">French</option>
-                    <option value="Spanish">Spanish</option>
-                    <option value="Arts">Arts</option>
-                    <option value="Design Technology">Design Technology</option>
+                    <option value="Science">{t('subjects.science', 'Science')}</option>
+                    <option value="Mathematics">{t('subjects.mathematics', 'Mathematics')}</option>
+                    <option value="English">{t('subjects.english', 'English')}</option>
+                    <option value="History">{t('subjects.history', 'History')}</option>
+                    <option value="Computer Science">{t('subjects.computerScience', 'Computer Science')}</option>
+                    <option value="Geography">{t('subjects.geography', 'Geography')}</option>
+                    <option value="French">{t('subjects.french', 'French')}</option>
+                    <option value="Spanish">{t('subjects.spanish', 'Spanish')}</option>
+                    <option value="Arts">{t('subjects.arts', 'Arts')}</option>
+                    <option value="Design Technology">{t('subjects.designTechnology', 'Design Technology')}</option>
                   </select>
                 </div>
 
@@ -639,11 +639,11 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                     style={styles.paramSelect}
                   >
                     <option value="all">{t('activityCreation.allYearGroups', 'All Year Groups')}</option>
-                    <option value="Year 7">Year 7</option>
-                    <option value="Year 8">Year 8</option>
-                    <option value="Year 9">Year 9</option>
-                    <option value="Year 10">Year 10</option>
-                    <option value="Year 11">Year 11</option>
+                    <option value="Year 7">{t('years.year7', 'Year 7')}</option>
+                    <option value="Year 8">{t('years.year8', 'Year 8')}</option>
+                    <option value="Year 9">{t('years.year9', 'Year 9')}</option>
+                    <option value="Year 10">{t('years.year10', 'Year 10')}</option>
+                    <option value="Year 11">{t('years.year11', 'Year 11')}</option>
                   </select>
                 </div>
 
@@ -655,15 +655,15 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                     style={styles.paramSelect}
                   >
                     <option value="all">{t('activityCreation.allActivityTypes', 'All Activity Types')}</option>
-                    <option value="multiple_choice">Multiple Choice</option>
-                    <option value="fill_blank">Fill in the Blanks</option>
-                    <option value="flashcards">Flashcards</option>
-                    <option value="true_false">True / False</option>
-                    <option value="ordering">Sequence Ordering</option>
-                    <option value="drag_drop">Drag & Drop</option>
-                    <option value="find_hotspots">Find Multiple Hotspots</option>
-                    <option value="clock_diagram">24-Hour Clock Diagram</option>
-                    <option value="open_response">Open Response / Reflection</option>
+                    <option value="multiple_choice">{t('activityTypes.multipleChoice', 'Multiple Choice')}</option>
+                    <option value="fill_blank">{t('activityTypes.fillInBlanks', 'Fill in the Blanks')}</option>
+                    <option value="flashcards">{t('activityTypes.flashcards', 'Flashcards')}</option>
+                    <option value="true_false">{t('activityTypes.trueFalse', 'True / False')}</option>
+                    <option value="ordering">{t('activityTypes.sequenceOrdering', 'Sequence Ordering')}</option>
+                    <option value="drag_drop">{t('activityTypes.dragAndDrop', 'Drag & Drop')}</option>
+                    <option value="find_hotspots">{t('activityTypes.findHotspots', 'Find Multiple Hotspots')}</option>
+                    <option value="clock_diagram">{t('activityTypes.clockDiagram', '24-Hour Clock Diagram')}</option>
+                    <option value="open_response">{t('activityTypes.openResponse', 'Open Response / Reflection')}</option>
                   </select>
                 </div>
 

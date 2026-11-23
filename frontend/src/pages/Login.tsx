@@ -231,12 +231,12 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
     setStudentError(null);
 
     if (!studentCode.trim()) {
-      setStudentError('Please enter your Student ID or Class Code!');
+      setStudentError(t('login.enterStudentIdError', 'Please enter your Student ID or Class Code!'));
       return;
     }
 
     if (pin.length < 4) {
-      setStudentError('Please enter your 4-digit PIN!');
+      setStudentError(t('login.enterPinError', 'Please enter your 4-digit PIN!'));
       return;
     }
 
@@ -251,7 +251,10 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
       onSuccess(res.user.role);
     } catch (err: any) {
       setStudentError(
-        'That code or PIN doesn’t seem right. Please try again or check with your teacher!'
+        t(
+          'login.invalidCodeOrPinError',
+          'That code or PIN doesn’t seem right. Please try again or check with your teacher!'
+        )
       );
     } finally {
       setIsStudentSubmitting(false);

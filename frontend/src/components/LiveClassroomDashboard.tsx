@@ -851,7 +851,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                           color: '#ffffff',
                         }}
                       >
-                        {scope}
+                        {scope === 'Class Level' ? t('liveDashboard.classLevel', 'Class Level') : t('liveDashboard.individualStudent', 'Individual Student')}
                       </button>
                     );
                   })}
@@ -1059,15 +1059,15 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
               <div style={styles.legendRow}>
                 <span style={styles.legendItem}>
                   <span className="vibrating-dot-green" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
-                  OPTIMAL
+                  {t('liveDashboard.optimal', 'OPTIMAL')}
                 </span>
                 <span style={styles.legendItem}>
                   <span className="vibrating-dot-yellow" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
-                  AT RISK
+                  {t('liveDashboard.atRisk', 'AT RISK')}
                 </span>
                 <span style={styles.legendItem}>
                   <span className="vibrating-dot-red" style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'middle' }} />
-                  ALERT
+                  {t('liveDashboard.alertFlag', 'ALERT')}
                 </span>
               </div>
             </div>
@@ -1262,9 +1262,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
               {/* STUDENT SUPPORT & ACTIONS */}
               <div style={styles.cardActionPortal}>
-                <h3 style={styles.sectionHeaderTitle}>Student Support & Actions</h3>
+                <h3 style={styles.sectionHeaderTitle}>{t('liveDashboard.supportAndActions', 'Student Support & Actions')}</h3>
                 <div style={styles.targetLabel}>
-                  Student Selected: <span style={{ fontWeight: '800' }}>{selectedStudent.name}</span>
+                  {t('liveDashboard.studentSelected', 'Student Selected:')} <span style={{ fontWeight: '800' }}>{selectedStudent.name}</span>
                 </div>
 
                 <div style={styles.interventionOptionsGroup}>
@@ -1276,7 +1276,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       backgroundColor: selectedIntervention === 'desk_checkin' ? '#eff6ff' : '#ffffff',
                     }}
                   >
-                    📍 Flag for in-person desk check-in
+                    {t('liveDashboard.flagInPersonCheckin', '📍 Flag for in-person desk check-in')}
                   </div>
                   <div
                     onClick={() => setSelectedIntervention('discreet_reminder')}
@@ -1286,20 +1286,20 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       backgroundColor: selectedIntervention === 'discreet_reminder' ? '#eff6ff' : '#ffffff',
                     }}
                   >
-                    💬 Deploy discreet reminder notification
+                    {t('liveDashboard.deployDiscreetReminder', '💬 Deploy discreet reminder notification')}
                   </div>
                 </div>
 
                 <button onClick={handleExecuteIntervention} style={styles.actionPrimaryBtn}>
-                  CONFIRM & EXECUTE INTERVENTION
+                  {t('liveDashboard.confirmExecuteIntervention', 'CONFIRM & EXECUTE INTERVENTION')}
                 </button>
               </div>
 
               {/* AWARDS & RECOGNITION */}
               <div style={styles.cardAwardFlow}>
                 <div style={styles.cardHeaderRow}>
-                  <h3 style={styles.sectionHeaderTitle}>Awards & Recognition</h3>
-                  <span style={styles.targetLabelRight}>Student: {selectedStudent.name}</span>
+                  <h3 style={styles.sectionHeaderTitle}>{t('liveDashboard.awardsAndRecognition', 'Awards & Recognition')}</h3>
+                  <span style={styles.targetLabelRight}>{t('liveDashboard.studentLabel', 'Student:')} {selectedStudent.name}</span>
                 </div>
 
                 {/* Effort vs Behavioral Segment */}
@@ -1312,7 +1312,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       fontWeight: awardCategory === 'Academic Effort' ? '700' : '500',
                     }}
                   >
-                    Academic Effort
+                    {t('liveDashboard.academicEffort', 'Academic Effort')}
                   </button>
                   <button
                     onClick={() => setAwardCategory('Behavioral')}
@@ -1322,16 +1322,16 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                       fontWeight: awardCategory === 'Behavioral' ? '700' : '500',
                     }}
                   >
-                    Behavioral
+                    {t('liveDashboard.behavioral', 'Behavioral')}
                   </button>
                 </div>
 
                 {/* Saved Category Breakdown Pill */}
                 <div style={styles.categoryTotalsPill}>
                   {awardCategory === 'Academic Effort' ? (
-                    <>Academic Record: <strong>⭐ {selectedStudent.academicStars} Stars</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.academicPoints} Pts</strong></>
+                    <>{t('liveDashboard.academicRecord', 'Academic Record:')} <strong>⭐ {selectedStudent.academicStars} {t('liveDashboard.stars', 'Stars')}</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.academicPoints} {t('liveDashboard.pts', 'Pts')}</strong></>
                   ) : (
-                    <>Behavioral Record: <strong>⭐ {selectedStudent.behavioralStars} Stars</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.behavioralPoints} Pts</strong></>
+                    <>{t('liveDashboard.behavioralRecord', 'Behavioral Record:')} <strong>⭐ {selectedStudent.behavioralStars} {t('liveDashboard.stars', 'Stars')}</strong> &nbsp;|&nbsp; <strong>🏆 {selectedStudent.behavioralPoints} {t('liveDashboard.pts', 'Pts')}</strong></>
                   )}
                 </div>
 
@@ -1359,7 +1359,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
 
                 {/* Delivery Mode Section */}
                 <div style={styles.deliveryModeSection}>
-                  <div style={styles.deliveryModeLabel}>DELIVERY MODE</div>
+                  <div style={styles.deliveryModeLabel}>{t('liveDashboard.deliveryMode', 'DELIVERY MODE')}</div>
                   <div style={styles.deliveryModeRow}>
                     <button
                       onClick={() => setDeliveryMode('Instant Pop-Up')}
@@ -1369,7 +1369,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                         borderWidth: deliveryMode === 'Instant Pop-Up' ? '2px' : '1px',
                       }}
                     >
-                      🔥 Instant Pop-Up
+                      {t('liveDashboard.instantPopup', '🔥 Instant Pop-Up')}
                     </button>
                     <button
                       onClick={() => setDeliveryMode('Silent Archive')}
@@ -1379,13 +1379,13 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                         borderWidth: deliveryMode === 'Silent Archive' ? '2px' : '1px',
                       }}
                     >
-                      Silent Archive
+                      {t('liveDashboard.silentArchive', 'Silent Archive')}
                     </button>
                   </div>
                 </div>
 
                 <button onClick={handleIssueAward} style={styles.actionPrimaryBtn}>
-                  CONFIRM & ISSUE AWARD
+                  {t('liveDashboard.confirmIssueAward', 'CONFIRM & ISSUE AWARD')}
                 </button>
               </div>
             </>

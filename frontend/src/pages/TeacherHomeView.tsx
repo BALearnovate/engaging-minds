@@ -385,7 +385,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                               </svg>
                             </div>
                             <div style={styles.recentItemText}>
-                              Activity "{session.activityTitle}" session - {formatTimestamp(session.createdAt)}
+                              {t('teacherHome.activitySessionFormat', 'Activity "{{title}}" session - {{time}}', { title: session.activityTitle, time: formatTimestamp(session.createdAt) })}
                             </div>
                           </div>
                           <button

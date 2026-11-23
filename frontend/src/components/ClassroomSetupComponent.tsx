@@ -474,12 +474,12 @@ export const ClassroomSetupComponent: React.FC = () => {
                     onChange={(e) => setNewGrade(e.target.value)}
                     style={styles.select}
                   >
-                    <option value="Year 1">Year 1</option>
-                    <option value="Year 2">Year 2</option>
-                    <option value="Year 3">Year 3</option>
-                    <option value="Year 4">Year 4</option>
-                    <option value="Year 5">Year 5</option>
-                    <option value="Year 6">Year 6</option>
+                    <option value="Year 1">{t('years.year1', 'Year 1')}</option>
+                    <option value="Year 2">{t('years.year2', 'Year 2')}</option>
+                    <option value="Year 3">{t('years.year3', 'Year 3')}</option>
+                    <option value="Year 4">{t('years.year4', 'Year 4')}</option>
+                    <option value="Year 5">{t('years.year5', 'Year 5')}</option>
+                    <option value="Year 6">{t('years.year6', 'Year 6')}</option>
                   </select>
                 </div>
 

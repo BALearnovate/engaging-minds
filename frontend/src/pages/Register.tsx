@@ -176,7 +176,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   // Step 1: Verify Join Code against Database
   const handleVerifyJoinCode = async () => {
     if (!joinCode.trim()) {
-      setStudentError('Please enter a valid Class or School Join Code');
+      setStudentError(t('register.enterJoinCodeError', 'Please enter a valid Class or School Join Code'));
       return;
     }
 
@@ -192,10 +192,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         setStudentOptionalEmail(response.student.email || '');
         setStep(2);
       } else {
-        setStudentError('That code doesn’t seem right. Please try again or check with your teacher!');
+        setStudentError(t('register.invalidJoinCodeError', 'That code doesn’t seem right. Please try again or check with your teacher!'));
       }
     } catch (err: any) {
-      setStudentError('That code doesn’t seem right. Please try again or check with your teacher!');
+      setStudentError(t('register.invalidJoinCodeError', 'That code doesn’t seem right. Please try again or check with your teacher!'));
     } finally {
       setIsVerifyingCode(false);
     }
@@ -259,7 +259,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
   // Final Step 3: Complete Student Onboarding
   const handleCompleteStudentOnboarding = async () => {
     if (pin.length !== 4) {
-      setStudentError('Please enter a 4-digit PIN');
+      setStudentError(t('register.pinLengthError', 'Please enter a 4-digit PIN'));
       return;
     }
 
@@ -309,13 +309,11 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 <img src={greenBubbleBg} alt="Teacher Portal Green Bubble" style={styles.bubbleImg} />
                 <div style={styles.bubbleContent}>
                   <div style={{ ...styles.portalPill, borderColor: '#86efac', color: '#86efac' }}>
-                    Teacher Portal
+                    {t('login.teacherPortal', 'Teacher Portal')}
                   </div>
-                  <h3 style={styles.bubbleSubtitle}>Engaging Minds</h3>
+                  <h3 style={styles.bubbleSubtitle}>{t('common.appName', 'Engaging Minds')}</h3>
                   <p style={styles.bubbleText}>
-                    Improving Student Retention through Best Practices. A two-year Erasmus+ collaboration
-                    developing evidence-based strategies to help students stay motivated, engaged, and connected to
-                    their learning journey.
+                    {t('register.improvingRetentionText', 'Improving Student Retention through Best Practices. A two-year Erasmus+ collaboration developing evidence-based strategies to help students stay motivated, engaged, and connected to their learning journey.')}
                   </p>
                 </div>
               </div>
