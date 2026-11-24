@@ -21,6 +21,9 @@ export const MultipleChoiceStudent: React.FC<
 
   const handleSelectOption = (option: string) => {
     setSelected(option);
+    const expected = config.correctAnswer || (config as any).answer;
+    const isCorrect = option === expected;
+    onAnswerSubmit(option, isCorrect, isCorrect ? 100 : 0);
     logXApiEvent({
       studentSessionId,
       studentName,

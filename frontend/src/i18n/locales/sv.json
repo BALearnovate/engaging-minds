@@ -143,7 +143,27 @@
     "silentArchive": "Tyst arkiv",
     "confirmIssueAward": "BEKRÄFTA OCH TILDELA PRIS",
     "clickToViewHelp": "Klicka för att se elever som behöver hjälp",
-    "dismissHelpTip": "Elev bad om hjälp. Klicka för att lösa."
+    "dismissHelpTip": "Elev bad om hjälp. Klicka för att lösa.",
+    "viewAnswerSheet": "Visa svarshäfte",
+    "answerSheetTitle": "Elevens svarshäfte",
+    "sessionCode": "Sessionskod",
+    "submittedAnswersHeading": "Inskickade övningssvar",
+    "responsesRecorded": "Svar registrerade",
+    "questionNum": "Fråga / Uppgift",
+    "submittedPill": "Inskickad",
+    "activityCompletedSummary": "Aktivitet slutförd!",
+    "defaultCompletedDesc": "Eleven har slutfört alla interaktiva övningar i denna aktivitet med 100 % framsteg.",
+    "notCompletedTitle": "Aktiviteten är inte slutförd ännu",
+    "notCompletedNotice": "Denna elev har inte slutfört aktiviteten ännu. När eleven är klar kan du se deras svar här.",
+    "currentProgress": "Aktuella framsteg",
+    "exerciseNum": "Övning",
+    "completedPill": "Slutförd",
+    "reviewedFlashcardsDefault": "Granskat alla kort",
+    "completedTrueFalseDefault": "Inlämnat Sant/Falskt-svar",
+    "completedMultipleChoiceDefault": "Valt alternativ",
+    "completedHotspotsDefault": "Upptäckt alla hotspots",
+    "completedDefault": "Övningen slutförd",
+    "studentResponseLabel": "Elevens svar"
   },
   "teacherHome": {
     "welcome": "Välkommen {{name}} !",
@@ -590,7 +610,9 @@
     "completionSummaryBadge": "BRA JOBBAT!",
     "summaryProgress": "Slutligt framsteg",
     "summaryTimeSpent": "Använd tid",
-    "returnToDashboard": "Återgå till elevpanelen →"
+    "returnToDashboard": "Återgå till elevpanelen →",
+    "stars": "Stjärnor",
+    "pts": "Poäng"
   },
   "footer": {
     "cofunded": "Samfinansierat av",

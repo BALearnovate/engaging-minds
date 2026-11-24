@@ -143,7 +143,27 @@
     "silentArchive": "Lydløst arkiv",
     "confirmIssueAward": "BEKRÆFT & TILDEL PRIS",
     "clickToViewHelp": "Klik for at se elever, der har brug for hjælp",
-    "dismissHelpTip": "Eleven bad om hjælp. Klik for at løse."
+    "dismissHelpTip": "Eleven bad om hjælp. Klik for at løse.",
+    "viewAnswerSheet": "Vis svarkort",
+    "answerSheetTitle": "Elevens svarkort",
+    "sessionCode": "Sessionskode",
+    "submittedAnswersHeading": "Indsendte øvelsesbesvarelser",
+    "responsesRecorded": "Svar registrerede",
+    "questionNum": "Spørgsmål / Opgave",
+    "submittedPill": "Indsendt",
+    "activityCompletedSummary": "Aktivitet fuldført!",
+    "defaultCompletedDesc": "Eleven har fuldført alle interaktive øvelser i denne aktivitet med 100 % fremgang.",
+    "notCompletedTitle": "Aktivitet ikke fuldført endnu",
+    "notCompletedNotice": "Denne elev har ikke fuldført aktiviteten endnu. Når eleven er færdig, kan du se deres svar her.",
+    "currentProgress": "Nuværende fremgang",
+    "exerciseNum": "Øvelse",
+    "completedPill": "Gennemført",
+    "reviewedFlashcardsDefault": "Gennemset alle kort",
+    "completedTrueFalseDefault": "Indsendt Sand/Falsk svar",
+    "completedMultipleChoiceDefault": "Valgt svarmulighed",
+    "completedHotspotsDefault": "Opdaget alle hotspots",
+    "completedDefault": "Øvelse fuldført med succes",
+    "studentResponseLabel": "Elevens svar"
   },
   "teacherHome": {
     "welcome": "Velkommen {{name}} !",
@@ -594,7 +614,9 @@
     "completionSummaryBadge": "GODT ARBEJDET!",
     "summaryProgress": "Endelig fremgang",
     "summaryTimeSpent": "Brugt tid",
-    "returnToDashboard": "Vend tilbage til elevpanel →"
+    "returnToDashboard": "Vend tilbage til elevpanel →",
+    "stars": "Stjerner",
+    "pts": "Point"
   },
   "footer": {
     "cofunded": "Medfinansieret af",

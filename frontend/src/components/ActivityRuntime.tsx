@@ -19,6 +19,7 @@ interface ActivityRuntimeProps {
   studentName?: string;
   isTeacherView?: boolean;
   hideTitle?: boolean;
+  onAnswersUpdate?: (answers: Record<string, string>) => void;
   onProgressUpdate?: (info: {
     currentStep: number;
     totalSteps: number;
@@ -36,6 +37,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   studentName,
   isTeacherView = false,
   hideTitle = false,
+  onAnswersUpdate,
   onProgressUpdate,
   onCompleted,
 }) => {
@@ -52,6 +54,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   });
 
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [liveHintBanner, setLiveHintBanner] = useState<string | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState<boolean>(false);
   const [assignmentBanner, setAssignmentBanner] = useState<string | null>(null);
@@ -138,6 +141,92 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
   const handleAnswerSubmit = (response: any, isCorrect: boolean, score: number) => {
     if (!currentBlock) return;
 
+    let ansStr = '';
+    const blockType = String(currentBlock.type);
+    if (blockType === 'true_false') {
+      const boolVal = typeof response === 'boolean' ? response : String(response).toLowerCase() === 'true';
+      ansStr = boolVal ? 'True' : 'False';
+
+      
+    } else if (blockType === 'flashcards') {
+      const totalCards = (currentBlock.config as any)?.cards?.length || response || 1;
+      ansStr = `Reviewed all ${totalCards} flashcard(s)`;
+     
+    } else if (blockType === 'find_hotspots') {
+      const foundCount = Array.isArray(response) ? response.length : 1;
+      const totalSpots = (currentBlock.config as any)?.hotspots?.length || foundCount;
+      ansStr = `Discovered ${foundCount} of ${totalSpots} hotspot(s)`;
+    } else if (blockType === 'ordering') {
+      if (Array.isArray(response)) {
+        const itemMap = new Map(((currentBlock.config as any)?.items || []).map((it: any) => [it.id, it.content || it.label || it.id]));
+        const itemNames = response.map((id: string, idx: number) => `${idx + 1}. ${itemMap.get(id) || id}`);
+        ansStr = itemNames.join(' → ');
+      } else {
+        ansStr = String(response);
+      }
+    } else if (blockType === 'drag_drop') {
+      if (response && typeof response === 'object') {
+        const targets = (currentBlock.config as any)?.dropTargets || [];
+        const items = (currentBlock.config as any)?.draggableItems || [];
+        const targetMap = new Map(targets.map((t: any) => [t.id, t.label || t.title || t.id]));
+        const itemMap = new Map(items.map((i: any) => [i.id, i.content || i.label || i.id]));
+
+        const lines: string[] = [];
+        Object.entries(response).forEach(([tId, itemIds]) => {
+          const tName = targetMap.get(tId) || tId;
+          const iNames = Array.isArray(itemIds) ? itemIds.map((id) => itemMap.get(id) || id).join(', ') : String(itemIds);
+          lines.push(`[${tName}]: ${iNames}`);
+        });
+        ansStr = lines.join(' | ');
+      } else {
+        ansStr = String(response);
+      }
+    } else if (blockType === 'clock_diagram') {
+      if (response && typeof response === 'object') {
+        ansStr = Object.entries(response)
+          .filter(([_, v]) => Boolean(v && String(v).trim()))
+          .map(([k, v]) => `${k}:00 → "${v}"`)
+          .join('; ');
+      } else {
+        ansStr = String(response);
+      }
+    } else if (blockType === 'fill_in_the_blank' || blockType === 'fill_blank') {
+      if (response && typeof response === 'object') {
+        ansStr = Object.entries(response)
+          .map(([k, v]) => `Blank #${k}: "${v}"`)
+          .join('; ');
+      } else {
+        ansStr = String(response);
+      }
+    } else if (blockType === 'open_response') {
+      if (response && typeof response === 'object') {
+        ansStr = Object.values(response)
+          .filter((v): v is string => Boolean(v && String(v).trim()))
+          .join('\n');
+      } else {
+        ansStr = String(response);
+      }
+    } else if (typeof response === 'string') {
+      ansStr = response;
+    } else if (response && typeof response === 'object') {
+      ansStr = response.text || response.answer || response.selectedOption || response.option || response.value || JSON.stringify(response);
+    } else if (response !== undefined && response !== null) {
+      ansStr = String(response);
+    } else {
+      ansStr = isCorrect ? 'Completed' : 'Submitted';
+    }
+
+    const updatedAnswers = {
+      ...userAnswers,
+      [currentBlock.id]: ansStr,
+      [String(currentBlockIndex)]: ansStr,
+      [`block_${currentBlockIndex + 1}`]: ansStr,
+    };
+    setUserAnswers(updatedAnswers);
+    if (onAnswersUpdate) {
+      onAnswersUpdate(updatedAnswers);
+    }
+
     // Emit Standardized xAPI Statement
     logXApiEvent({
       studentSessionId: studentSessionId || `session_${definition?.id || 'preview'}_guest`,
@@ -159,7 +248,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
       blockId: currentBlock.id,
       type: 'ANSWER_SUBMITTED',
       timestamp: new Date().toISOString(),
-      payload: { response, isCorrect, score },
+      payload: { response, isCorrect, score, answer: ansStr, answers: updatedAnswers },
     };
 
     if (currentBlock) {
@@ -170,7 +259,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           ...prev,
           [currentBlock.id]: {
             ...nextState,
-            status: 'completed',
+            status: isCorrect ? 'completed' : 'in_progress',
             score: score ?? nextState.score ?? 100,
           },
         };
@@ -185,6 +274,7 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
         blockId: currentBlock.id,
         status: isCorrect ? 'COMPLETED' : 'IN_PROGRESS',
         score,
+        answers: updatedAnswers,
       });
     }
 
@@ -194,14 +284,14 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
           studentSessionId,
           type: 'ANSWER_SUBMITTED',
           blockId: currentBlock.id,
-          payload: { response, isCorrect, score },
+          payload: { response, isCorrect, score, answer: ansStr, answers: updatedAnswers },
         })
         .catch((err) => {
           console.warn('Failed to record student answer event:', err);
         });
     }
 
-    if (currentBlockIndex === definition.blocks.length - 1 && onCompleted) {
+    if (isCorrect && currentBlockIndex === definition.blocks.length - 1 && onCompleted) {
       onCompleted();
     }
   };

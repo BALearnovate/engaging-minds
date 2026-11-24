@@ -482,7 +482,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         <div style={styles.runtimeCanvasWrapper}>
           <ActivityRuntime
             definition={activePlayingActivity}
-            studentName={user ? `${user.firstName} ${user.lastName}` : 'Student'}
+            studentSessionId={user?.id || 'student_guest'}
+            studentName={user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Student'}
             onCompleted={() => {
               alert(t('studentPortal.activityCompletedAlert', '🎉 Activity completed successfully! Great work!'));
               setActivePlayingActivity(null);

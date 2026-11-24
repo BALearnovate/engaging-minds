@@ -143,7 +143,27 @@
     "silentArchive": "Silent Archive",
     "confirmIssueAward": "CONFIRM & ISSUE AWARD",
     "clickToViewHelp": "Click to view individual students needing help",
-    "dismissHelpTip": "Student requested help. Click to resolve."
+    "dismissHelpTip": "Student requested help. Click to resolve.",
+    "viewAnswerSheet": "View Answer Sheet",
+    "answerSheetTitle": "Student Answer Sheet",
+    "sessionCode": "Session Code",
+    "submittedAnswersHeading": "Submitted Exercise Responses",
+    "responsesRecorded": "Responses Recorded",
+    "questionNum": "Question / Task",
+    "submittedPill": "Submitted",
+    "activityCompletedSummary": "Activity Completed!",
+    "defaultCompletedDesc": "The student has successfully completed all interactive exercises in this activity with 100% progress.",
+    "notCompletedTitle": "Activity Not Completed Yet",
+    "notCompletedNotice": "This student has not completed the activity yet. Once the student finishes the activity, you can see their answers here.",
+    "currentProgress": "Current Progress",
+    "exerciseNum": "Exercise",
+    "completedPill": "Completed",
+    "reviewedFlashcardsDefault": "Reviewed all flashcard(s)",
+    "completedTrueFalseDefault": "Submitted True/False response",
+    "completedMultipleChoiceDefault": "Selected option",
+    "completedHotspotsDefault": "Discovered all hotspot(s)",
+    "completedDefault": "Exercise completed successfully",
+    "studentResponseLabel": "Student Answer"
   },
   "teacherHome": {
     "welcome": "Welcome {{name}} !",
@@ -593,7 +613,9 @@
     "completionSummaryBadge": "GREAT WORK!",
     "summaryProgress": "Final Progress",
     "summaryTimeSpent": "Time Spent",
-    "returnToDashboard": "Return to Student Dashboard →"
+    "returnToDashboard": "Return to Student Dashboard →",
+    "stars": "Stars",
+    "pts": "Pts"
   },
   "footer": {
     "cofunded": "Co-funded by",

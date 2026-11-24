@@ -143,7 +143,27 @@
     "silentArchive": "Hiljainen arkisto",
     "confirmIssueAward": "VAHVISTA JA MYÖNNÄ PALKINTO",
     "clickToViewHelp": "Napsauta nähdäksesi apua tarvitsevat oppilaat",
-    "dismissHelpTip": "Oppilas pyysi apua. Napsauta kuitataksesi."
+    "dismissHelpTip": "Oppilas pyysi apua. Napsauta kuitataksesi.",
+    "viewAnswerSheet": "Näytä vastauslomake",
+    "answerSheetTitle": "Oppilaan vastauslomake",
+    "sessionCode": "Istuntokoodi",
+    "submittedAnswersHeading": "Lähetetyt tehtävävastaukset",
+    "responsesRecorded": "Vastausta tallennettu",
+    "questionNum": "Kysymys / Tehtävä",
+    "submittedPill": "Lähetetty",
+    "activityCompletedSummary": "Aktiviteetti suoritettu!",
+    "defaultCompletedDesc": "Oppilas on suorittanut kaikki tämän aktiviteetin interaktiiviset tehtävät 100 % edistymisellä.",
+    "notCompletedTitle": "Aktiviteettia ei ole vielä suoritettu",
+    "notCompletedNotice": "Tämä oppilas ei ole vielä suorittanut aktiviteettia. Kun oppilas on valmis, näet hänen vastauksensa täällä.",
+    "currentProgress": "Nykyinen edistyminen",
+    "exerciseNum": "Tehtävä",
+    "completedPill": "Suoritettu",
+    "reviewedFlashcardsDefault": "Tarkistettu kaikki muistikortit",
+    "completedTrueFalseDefault": "Lähetetty Oikein/Väärin -vastaus",
+    "completedMultipleChoiceDefault": "Valittu vaihtoehto",
+    "completedHotspotsDefault": "Löydetty kaikki kohdealueet",
+    "completedDefault": "Tehtävä suoritettu onnistuneesti",
+    "studentResponseLabel": "Oppilaan vastaus"
   },
   "teacherHome": {
     "welcome": "Tervetuloa {{name}} !",
@@ -590,7 +610,9 @@
     "completionSummaryBadge": "HIENOA TYÖTÄ!",
     "summaryProgress": "Lopullinen edistyminen",
     "summaryTimeSpent": "Käytetty aika",
-    "returnToDashboard": "Palaa oppilasnäkymään →"
+    "returnToDashboard": "Palaa oppilasnäkymään →",
+    "stars": "Tähdet",
+    "pts": "Pist."
   },
   "footer": {
     "cofunded": "Euroopan unionin",

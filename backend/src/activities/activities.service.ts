@@ -637,6 +637,19 @@ export class ActivitiesService {
     });
 
     if (!studentSession) {
+      const trimmedName = (payload?.actor?.name || payload?.studentName || '').trim();
+      studentSession = await this.prisma.studentSession.findFirst({
+        where: {
+          OR: [
+            { studentId: studentSessionId },
+            ...(trimmedName ? [{ studentName: { equals: trimmedName, mode: 'insensitive' as const } }] : []),
+          ],
+        },
+        orderBy: { lastSeenAt: 'desc' },
+      });
+    }
+
+    if (!studentSession) {
       // Auto-provision a standalone StudentSession if it doesn't exist yet
       let actSession = await this.prisma.activitySession.findFirst();
       if (!actSession) {
@@ -1167,8 +1180,7 @@ export class ActivitiesService {
       where: { activitySessionId: session.id },
       include: {
         events: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
+          orderBy: { createdAt: 'asc' },
         },
       },
       orderBy: [
@@ -1190,7 +1202,44 @@ export class ActivitiesService {
       let effectiveTimeSpentMs = st.timeSpentMs || 0;
       let effectiveActStatus = st.status === 'EXITED' ? 'Left' : (st.progress > 0 ? 'Active' : 'Inactive');
 
-      const latestEvent = st.events?.[0];
+      const aggregatedAnswers: Record<string, string> = {};
+      if (Array.isArray(st.events)) {
+        st.events.forEach((ev) => {
+          if (ev.payload && typeof ev.payload === 'object') {
+            const payload = ev.payload as any;
+            if (payload.answers && typeof payload.answers === 'object') {
+              Object.assign(aggregatedAnswers, payload.answers);
+            }
+            if (ev.blockId) {
+              if (payload.answer !== undefined && payload.answer !== null) {
+                aggregatedAnswers[ev.blockId] = String(payload.answer);
+              } else if (payload.response !== undefined && payload.response !== null) {
+                let respStr = '';
+                if (typeof payload.response === 'string') {
+                  respStr = payload.response;
+                } else if (typeof payload.response === 'boolean') {
+                  respStr = payload.response ? 'True' : 'False';
+                } else if (Array.isArray(payload.response)) {
+                  respStr = payload.response
+                    .map((item: any) => (typeof item === 'object' ? JSON.stringify(item) : String(item)))
+                    .join(', ');
+                } else if (typeof payload.response === 'object') {
+                  respStr = Object.entries(payload.response)
+                    .map(([k, v]) => (isNaN(Number(k)) ? `${k}: "${v}"` : `"${v}"`))
+                    .join('; ');
+                } else {
+                  respStr = String(payload.response);
+                }
+                aggregatedAnswers[ev.blockId] = respStr;
+              } else if (payload.selectedOption !== undefined && payload.selectedOption !== null) {
+                aggregatedAnswers[ev.blockId] = String(payload.selectedOption);
+              }
+            }
+          }
+        });
+      }
+
+      const latestEvent = st.events?.[st.events.length - 1];
       if (latestEvent && typeof latestEvent.payload === 'object' && latestEvent.payload !== null) {
         const payload = latestEvent.payload as any;
         if (!effectiveTimeSpentMs && typeof payload.timeSpentMs === 'number') {
@@ -1205,11 +1254,13 @@ export class ActivitiesService {
         ...st,
         timeSpentMs: effectiveTimeSpentMs,
         activityStatus: effectiveActStatus,
+        answers: aggregatedAnswers,
       };
     });
 
     return {
       session,
+      definition: session.activityVersion?.definition || null,
       activityTitle,
       status: session.status,
       students: mappedStudentSessions,

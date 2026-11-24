@@ -24,6 +24,17 @@ export const FillBlankStudent: React.FC<
   const handleInputChange = (blankId: string, val: string) => {
     const updated = { ...userAnswers, [blankId]: val };
     setUserAnswers(updated);
+
+    let correctCount = 0;
+    const total = config.blanks.length;
+    config.blanks.forEach((b) => {
+      const userVal = (updated[b.id] || '').trim().toLowerCase();
+      const expected = (b.answer || '').trim().toLowerCase();
+      if (userVal === expected && expected.length > 0) correctCount++;
+    });
+    const score = total > 0 ? Math.round((correctCount / total) * 100) : 100;
+    onAnswerSubmit(updated, correctCount === total, score);
+
     logXApiEvent({
       verb: XAPI_VERBS.INTERACTED,
       activityId: block.id || 'fill_blank_activity',

@@ -25,6 +25,14 @@ export const OrderingStudent: React.FC<
 
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
 
+  const notifyOrderChange = (nextItems: OrderingItem[]) => {
+    const currentOrderIds = nextItems.map((i) => i.id);
+    const isCorrect =
+      currentOrderIds.length === config.correctOrder.length &&
+      currentOrderIds.every((id, idx) => id === config.correctOrder[idx]);
+    onAnswerSubmit(currentOrderIds, isCorrect, isCorrect ? 100 : 0);
+  };
+
   const moveUp = (idx: number) => {
     if (idx === 0 || submitted) return;
     const next = [...items];
@@ -32,6 +40,7 @@ export const OrderingStudent: React.FC<
     next[idx - 1] = next[idx];
     next[idx] = temp;
     setItems(next);
+    notifyOrderChange(next);
   };
 
   const moveDown = (idx: number) => {
@@ -41,6 +50,7 @@ export const OrderingStudent: React.FC<
     next[idx + 1] = next[idx];
     next[idx] = temp;
     setItems(next);
+    notifyOrderChange(next);
   };
 
   const handleSubmit = () => {

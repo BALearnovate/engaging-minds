@@ -31,7 +31,82 @@ interface StudentStatus {
   timeSpentMs?: number;
   completedAt?: string;
   lastActiveAt?: number;
+  answers?: Record<string, string>;
 }
+
+export const getResponseForBlock = (
+  block: any,
+  answers: Record<string, any> | undefined,
+  index: number
+): string => {
+  if (!answers || typeof answers !== 'object') return '';
+
+  // 1. Direct block.id match
+  if (block.id && answers[block.id] !== undefined && answers[block.id] !== null) {
+    const val = answers[block.id];
+    return typeof val === 'string' ? val : JSON.stringify(val);
+  }
+
+  // 2. Exact block_N match
+  const blockKey = `block_${index + 1}`;
+  if (answers[blockKey] !== undefined && answers[blockKey] !== null) {
+    const val = answers[blockKey];
+    return typeof val === 'string' ? val : JSON.stringify(val);
+  }
+
+  // 3. Exact index key match
+  if (answers[index] !== undefined && answers[index] !== null) {
+    const val = answers[index];
+    return typeof val === 'string' ? val : JSON.stringify(val);
+  }
+
+  if (answers[String(index)] !== undefined && answers[String(index)] !== null) {
+    const val = answers[String(index)];
+    return typeof val === 'string' ? val : JSON.stringify(val);
+  }
+
+  // 4. Direct block.title match
+  if (block.title && answers[block.title] !== undefined && answers[block.title] !== null) {
+    const val = answers[block.title];
+    return typeof val === 'string' ? val : JSON.stringify(val);
+  }
+
+  // 5. Question / prompt match
+  if (block.config && (block.config.question || block.config.prompt || block.config.statement)) {
+    const qKey = block.config.question || block.config.prompt || block.config.statement;
+    if (answers[qKey] !== undefined && answers[qKey] !== null) {
+      const val = answers[qKey];
+      return typeof val === 'string' ? val : JSON.stringify(val);
+    }
+  }
+
+  // 6. Strict Normalized key matching (Exact match only - no loose includes fallback)
+  const normalize = (str: string) => String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const blockKeysToTry = [
+    block.id,
+    block.title,
+    `exercise_${index + 1}`,
+    `step_${index + 1}`,
+    `block_${index + 1}`,
+  ].filter(Boolean);
+
+  const answerKeys = Object.keys(answers);
+  for (const bKey of blockKeysToTry) {
+    const normBKey = normalize(bKey);
+    if (!normBKey) continue;
+    for (const aKey of answerKeys) {
+      const normAKey = normalize(aKey);
+      if (normAKey === normBKey) {
+        const val = answers[aKey];
+        if (val !== undefined && val !== null) {
+          return typeof val === 'string' ? val : JSON.stringify(val);
+        }
+      }
+    }
+  }
+
+  return '';
+};
 
 export const getStudentIndicatorState = (
   student: StudentStatus,
@@ -121,6 +196,7 @@ export const getStudentIndicatorState = (
 export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ shareCode, onSessionStopped }) => {
   const { t } = useTranslation();
   const [activityTitle, setActivityTitle] = useState<string>('Active Interactive Activity');
+  const [activityDefinition, setActivityDefinition] = useState<any>(null);
   const [sessionStatus, setSessionStatus] = useState<string>('ACTIVE');
   const [classroomInfo, setClassroomInfo] = useState<{ id: string; subject: string; grade: string; year: string } | null>(null);
   const [isStopping, setIsStopping] = useState<boolean>(false);
@@ -135,6 +211,9 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
     category: string;
     reward: string;
   } | null>(null);
+
+  // Answer Sheet Modal state
+  const [answerSheetStudent, setAnswerSheetStudent] = useState<StudentStatus | null>(null);
 
   // Interactive UI state with sample data
   const [activeScope, setActiveScope] = useState<string>('Class Level');
@@ -245,6 +324,10 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       if (data.activityTitle) {
         setActivityTitle(data.activityTitle);
       }
+      const targetDef = data.session?.definition || data.definition || data.session?.activity || data.activity;
+      if (targetDef) {
+        setActivityDefinition(targetDef);
+      }
       if (data.status) {
         setSessionStatus(data.status);
       }
@@ -323,15 +406,39 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             timeSpentMs: typeof st.timeSpentMs === 'number' ? st.timeSpentMs : undefined,
             completedAt: st.completedAt || undefined,
             lastActiveAt: (st.activityStatus === 'Active' || progress > 0) ? Date.now() : undefined,
+            answers: st.answers || st.responses || {},
           };
         });
-        setStudents(mappedStudents);
+
+        // Deduplicate students by normalized name & merge answers
+        const deduplicatedStudents: StudentStatus[] = [];
+        mappedStudents.forEach((st) => {
+          const normKey = st.name.toLowerCase().trim();
+          const existingIdx = deduplicatedStudents.findIndex((d) => d.name.toLowerCase().trim() === normKey);
+          if (existingIdx >= 0) {
+            const existing = deduplicatedStudents[existingIdx];
+            const maxProgress = Math.max(existing.progress, st.progress);
+            deduplicatedStudents[existingIdx] = {
+              ...existing,
+              progress: maxProgress,
+              engagementScore: Math.max(existing.engagementScore, st.engagementScore),
+              performanceScore: Math.max(existing.performanceScore, st.performanceScore),
+              helpRequested: existing.helpRequested || st.helpRequested,
+              completedAt: existing.completedAt || st.completedAt,
+              answers: { ...(existing.answers || {}), ...(st.answers || {}) },
+            };
+          } else {
+            deduplicatedStudents.push(st);
+          }
+        });
+
+        setStudents(deduplicatedStudents);
 
         // Auto-select first student if none selected or previous selection no longer exists
-        if (mappedStudents.length > 0) {
+        if (deduplicatedStudents.length > 0) {
           setSelectedStudentId((prev) => {
-            const exists = mappedStudents.some((s) => s.id === prev);
-            return exists ? prev : mappedStudents[0].id;
+            const exists = deduplicatedStudents.some((s) => s.id === prev);
+            return exists ? prev : deduplicatedStudents[0].id;
           });
         }
       } else {
@@ -584,6 +691,23 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           incomingCompletedAt = new Date().toISOString();
         }
 
+        // Also update answerSheetStudent in real time if currently open for this student
+        setAnswerSheetStudent((prevModalStudent) => {
+          if (!prevModalStudent) return null;
+          const isTargetModalStudent =
+            prevModalStudent.id === updatedState.studentId ||
+            (prevModalStudent.name && updatedState.studentName && prevModalStudent.name.toLowerCase().trim() === updatedState.studentName.toLowerCase().trim());
+          if (isTargetModalStudent) {
+            return {
+              ...prevModalStudent,
+              progress: newProgress,
+              completedAt: incomingCompletedAt || prevModalStudent.completedAt,
+              answers: { ...(prevModalStudent.answers || {}), ...(updatedState.answers || {}) },
+            };
+          }
+          return prevModalStudent;
+        });
+
         if (existingIndex >= 0) {
           const copy = [...prevStudents];
           copy[existingIndex] = {
@@ -601,6 +725,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             timeSpentMs: typeof updatedState.timeSpentMs === 'number' ? updatedState.timeSpentMs : prevStudent?.timeSpentMs,
             completedAt: incomingCompletedAt,
             lastActiveAt: incomingActStatus === 'Active' ? Date.now() : prevStudent?.lastActiveAt,
+            answers: { ...(copy[existingIndex]?.answers || {}), ...(updatedState.answers || {}) },
           };
           return copy;
         } else {
@@ -625,6 +750,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             startedAt: incomingStartedAt,
             timeSpentMs: typeof updatedState.timeSpentMs === 'number' ? updatedState.timeSpentMs : undefined,
             completedAt: incomingCompletedAt,
+            answers: updatedState.answers || {},
           };
           return [...prevStudents, newStudent];
         }
@@ -1101,6 +1227,26 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                     >
                       <div style={{ ...styles.studentCardTop, justifyContent: 'center', width: '100%' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAnswerSheetStudent(student);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '1.25rem',
+                              padding: '0 2px',
+                              lineHeight: '1',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                            }}
+                            title={t('liveDashboard.viewAnswerSheet', 'View Answer Sheet')}
+                          >
+                            📄
+                          </button>
                           <span
                             style={{
                               ...styles.studentCardName,
@@ -1402,6 +1548,226 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
           )}
         </div>
       </div>
+
+      {/* ANSWER SHEET MODAL */}
+      {answerSheetStudent && (
+        <div style={modalStyles.overlay} onClick={() => setAnswerSheetStudent(null)}>
+          <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div style={modalStyles.header}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.6rem' }}>📄</span>
+                <div>
+                  <h3 style={modalStyles.title}>
+                    {t('liveDashboard.answerSheetTitle', 'Student Answer Sheet')} - {answerSheetStudent.name}
+                  </h3>
+                  {/* <span style={modalStyles.subtitle}>
+                    {shareCode ? `${t('liveDashboard.sessionCode', 'Session Code')}: ${shareCode}` : ''}
+                  </span> */}
+                </div>
+              </div>
+              <button
+                onClick={() => setAnswerSheetStudent(null)}
+                style={modalStyles.closeBtn}
+                title={t('common.close', 'Close')}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Status Summary Bar */}
+            <div style={modalStyles.statusBar}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    backgroundColor:
+                      answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '#dcfce7' : '#fef3c7',
+                    color:
+                      answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '#15803d' : '#b45309',
+                    border: answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '1px solid #86efac' : '1px solid #fde68a',
+                  }}
+                >
+                  {answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt
+                    ? `✅ ${t('liveDashboard.completed', 'Completed')}`
+                    : `⏳ ${t('liveDashboard.inProgress', 'In Progress')} (${answerSheetStudent.progress}%)`}
+                </span>
+                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#166534' }}>
+                  ⭐ {answerSheetStudent.totalStars} {t('studentPortal.stars', 'Stars')} &nbsp;|&nbsp; 🏆{' '}
+                  {answerSheetStudent.totalPoints} {t('studentPortal.pts', 'Pts')}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={modalStyles.body}>
+              {answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? (
+                /* COMPLETED STATE */
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={modalStyles.answersHeaderRow}>
+                    <h4 style={modalStyles.sectionTitle}>
+                      📋 {t('liveDashboard.submittedAnswersHeading', 'Submitted Exercise Responses')}
+                    </h4>
+                    {/* <span style={modalStyles.answersCountBadge}>
+                      {answerSheetStudent.answers && Object.keys(answerSheetStudent.answers).length > 0
+                        ? Object.keys(answerSheetStudent.answers).length
+                        : (activityDefinition?.blocks?.length || 1)}{' '}
+                      {t('liveDashboard.responsesRecorded', 'Responses Recorded')}
+                    </span> */}
+                  </div>
+
+                  {activityDefinition?.blocks && Array.isArray(activityDefinition.blocks) && activityDefinition.blocks.length > 0 ? (
+                    <div style={modalStyles.answersList}>
+                      {activityDefinition.blocks.map((block: any, idx: number) => {
+                        const responseStr = getResponseForBlock(block, answerSheetStudent.answers, idx);
+                        const blockTitle = block.title || block.prompt || `Exercise #${idx + 1}`;
+                        const blockTypeStr = (block.type || '').toUpperCase().replace(/_/g, ' ');
+                        const promptText = block.config?.question || block.config?.prompt || block.config?.statement || block.config?.passage || '';
+
+                        return (
+                          <div key={block.id || idx} style={modalStyles.answerCard}>
+                            <div style={modalStyles.answerCardHeader}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={modalStyles.questionLabel}>
+                                  {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1}: {blockTitle}
+                                </span>
+                                {blockTypeStr && (
+                                  <span style={modalStyles.typeBadge}>
+                                    {blockTypeStr}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={modalStyles.submittedPill}>
+                                ✓ {t('liveDashboard.completedPill', 'Completed')}
+                              </span>
+                            </div>
+
+                            {promptText && (
+                              <div
+                                style={{
+                                  fontSize: '0.88rem',
+                                  color: '#334155',
+                                  marginBottom: '8px',
+                                  fontStyle: 'italic',
+                                  background: '#f8fafc',
+                                  padding: '6px 10px',
+                                  borderRadius: '6px',
+                                  borderLeft: '3px solid #10b981',
+                                }}
+                              >
+                                "{promptText}"
+                              </div>
+                            )}
+
+                            <div style={modalStyles.answerValBox}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span
+                                  style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    color: '#15803d',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                  }}
+                                >
+                                  {t('liveDashboard.studentResponseLabel', 'Student Answer')}:
+                                </span>
+                                <span style={modalStyles.answerValText}>
+                                  {responseStr || (
+                                    block.type === 'flashcards'
+                                      ? t('liveDashboard.reviewedFlashcardsDefault', 'Reviewed all flashcard(s)')
+                                      : block.type === 'true_false'
+                                      ? t('liveDashboard.completedTrueFalseDefault', 'Submitted True/False response')
+                                      : block.type === 'multiple_choice'
+                                      ? t('liveDashboard.completedMultipleChoiceDefault', 'Selected option')
+                                      : block.type === 'find_hotspots'
+                                      ? t('liveDashboard.completedHotspotsDefault', 'Discovered all hotspot(s)')
+                                      : t('liveDashboard.completedDefault', 'Exercise completed successfully')
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : answerSheetStudent.answers && Object.keys(answerSheetStudent.answers).length > 0 ? (
+                    <div style={modalStyles.answersList}>
+                      {Object.entries(answerSheetStudent.answers).map(([key, val], idx) => (
+                        <div key={key} style={modalStyles.answerCard}>
+                          <div style={modalStyles.answerCardHeader}>
+                            <span style={modalStyles.questionLabel}>
+                              {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1} ({key})
+                            </span>
+                            <span style={modalStyles.submittedPill}>
+                              ✓ {t('liveDashboard.submittedPill', 'Submitted')}
+                            </span>
+                          </div>
+                          <div style={modalStyles.answerValBox}>
+                            <span style={modalStyles.answerValText}>
+                              {typeof val === 'string' ? val : JSON.stringify(val)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={modalStyles.defaultCompletedBox}>
+                      <div style={{ fontSize: '2.5rem' }}>🎉</div>
+                      <h4 style={modalStyles.defaultCompletedTitle}>
+                        {t('liveDashboard.activityCompletedSummary', 'Activity Completed!')}
+                      </h4>
+                      <p style={modalStyles.defaultCompletedText}>
+                        {t(
+                          'liveDashboard.defaultCompletedDesc',
+                          'The student has successfully completed all interactive exercises in this activity with 100% progress.'
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* INCOMPLETE STATE */
+                <div style={modalStyles.incompleteNoticeBox}>
+                  <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
+                  <h4 style={modalStyles.incompleteTitle}>
+                    {t('liveDashboard.notCompletedTitle', 'Activity Not Completed Yet')}
+                  </h4>
+                  <p style={modalStyles.incompleteText}>
+                    {t(
+                      'liveDashboard.notCompletedNotice',
+                      'This student has not completed the activity yet. Once the student finishes the activity, you can see their answers here.'
+                    )}
+                  </p>
+                  <div style={modalStyles.progressBarWrapper}>
+                    <div style={modalStyles.progressBarTrack}>
+                      <div
+                        style={{
+                          ...modalStyles.progressBarFill,
+                          width: `${Math.min(100, Math.max(0, answerSheetStudent.progress))}%`,
+                        }}
+                      />
+                    </div>
+                    <span style={modalStyles.progressPctText}>
+                      {answerSheetStudent.progress}% {t('liveDashboard.currentProgress', 'Current Progress')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div style={modalStyles.footer}>
+              <button onClick={() => setAnswerSheetStudent(null)} style={modalStyles.closeFooterBtn}>
+                {t('common.close', 'Close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -2064,6 +2430,234 @@ const styles: Record<string, React.CSSProperties> = {
     height: 'auto',
     maxHeight: '220px',
     display: 'block',
+  },
+};
+
+const modalStyles: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1200,
+    padding: '1rem',
+  },
+  container: {
+    backgroundColor: '#ffffff',
+    borderRadius: '16px',
+    width: '100%',
+    maxWidth: '650px',
+    maxHeight: '85vh',
+    display: 'flex',
+    flexDirection: 'column',
+    boxShadow: '0 20px 30px -5px rgba(22, 101, 52, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    border: '2px solid #86efac',
+    overflow: 'hidden',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '1.25rem 1.5rem',
+    background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
+    color: '#ffffff',
+  },
+  title: {
+    margin: 0,
+    fontSize: '1.15rem',
+    fontWeight: '800',
+  },
+  subtitle: {
+    fontSize: '0.8rem',
+    opacity: 0.85,
+  },
+  closeBtn: {
+    background: 'rgba(255, 255, 255, 0.2)',
+    border: 'none',
+    color: '#ffffff',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    padding: '4px 10px',
+    borderRadius: '6px',
+    fontWeight: '800',
+  },
+  statusBar: {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#f0fdf4',
+    borderBottom: '1px solid #bbf7d0',
+  },
+  body: {
+    padding: '1.5rem',
+    overflowY: 'auto',
+    flex: 1,
+  },
+  answersHeaderRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.5rem',
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: '1rem',
+    fontWeight: '800',
+    color: '#166534',
+  },
+  answersCountBadge: {
+    fontSize: '0.8rem',
+    fontWeight: '800',
+    color: '#15803d',
+    backgroundColor: '#dcfce7',
+    padding: '4px 12px',
+    borderRadius: '12px',
+    border: '1px solid #86efac',
+  },
+  answersList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  answerCard: {
+    backgroundColor: '#f0fdf4',
+    border: '1.5px solid #86efac',
+    borderRadius: '12px',
+    padding: '1rem',
+    boxShadow: '0 2px 6px rgba(22, 101, 52, 0.06)',
+  },
+  answerCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.5rem',
+  },
+  questionLabel: {
+    fontSize: '0.88rem',
+    fontWeight: '800',
+    color: '#166534',
+  },
+  typeBadge: {
+    fontSize: '0.72rem',
+    fontWeight: '800',
+    color: '#0f766e',
+    backgroundColor: '#ccfbf1',
+    padding: '2px 8px',
+    borderRadius: '6px',
+    border: '1px solid #99f6e4',
+    textTransform: 'uppercase' as const,
+  },
+  submittedPill: {
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    color: '#15803d',
+    backgroundColor: '#dcfce7',
+    padding: '3px 10px',
+    borderRadius: '8px',
+    border: '1px solid #86efac',
+  },
+  answerValBox: {
+    backgroundColor: '#ffffff',
+    padding: '0.75rem 1rem',
+    borderRadius: '8px',
+    border: '1px solid #bbf7d0',
+  },
+  answerValText: {
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    color: '#14532d',
+    wordBreak: 'break-word',
+  },
+  defaultCompletedBox: {
+    textAlign: 'center',
+    padding: '2rem 1rem',
+    backgroundColor: '#f0fdf4',
+    borderRadius: '12px',
+    border: '1.5px solid #86efac',
+  },
+  defaultCompletedTitle: {
+    margin: '0.5rem 0 0.25rem',
+    fontSize: '1.2rem',
+    fontWeight: '800',
+    color: '#166534',
+  },
+  defaultCompletedText: {
+    margin: 0,
+    fontSize: '0.9rem',
+    color: '#15803d',
+  },
+  incompleteNoticeBox: {
+    textAlign: 'center',
+    padding: '2.5rem 1.5rem',
+    backgroundColor: '#fffbeb',
+    borderRadius: '12px',
+    border: '1.5px solid #fde68a',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  incompleteTitle: {
+    margin: '0 0 0.5rem',
+    fontSize: '1.2rem',
+    fontWeight: '800',
+    color: '#92400e',
+  },
+  incompleteText: {
+    margin: '0 0 1.5rem',
+    fontSize: '0.95rem',
+    color: '#78350f',
+    maxWidth: '450px',
+    lineHeight: '1.5',
+  },
+  progressBarWrapper: {
+    width: '100%',
+    maxWidth: '350px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  progressBarTrack: {
+    width: '100%',
+    height: '10px',
+    backgroundColor: '#fef3c7',
+    borderRadius: '5px',
+    overflow: 'hidden',
+    border: '1px solid #fcd34d',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#d97706',
+    borderRadius: '5px',
+    transition: 'width 0.3s ease',
+  },
+  progressPctText: {
+    fontSize: '0.85rem',
+    fontWeight: '800',
+    color: '#b45309',
+  },
+  footer: {
+    padding: '1rem 1.5rem',
+    backgroundColor: '#f0fdf4',
+    borderTop: '1px solid #bbf7d0',
+    display: 'flex',
+    justifyContent: 'flex-end',
+  },
+  closeFooterBtn: {
+    padding: '0.7rem 1.5rem',
+    borderRadius: '10px',
+    border: 'none',
+    backgroundColor: '#78be20',
+    color: '#ffffff',
+    fontWeight: '800',
+    fontSize: '0.92rem',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(120, 190, 32, 0.35)',
+    transition: 'all 0.2s ease',
   },
 };
 

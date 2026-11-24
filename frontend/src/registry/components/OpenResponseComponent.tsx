@@ -62,7 +62,11 @@ export const OpenResponseStudent: React.FC<
   }, [block.id, studentState.response, studentState.status]);
 
   const handleAnswerChange = (index: number, value: string) => {
-    setAnswers((prev) => ({ ...prev, [index]: value }));
+    const updated = { ...answers, [index]: value };
+    setAnswers(updated);
+    if (Object.values(updated).some((val) => val && val.trim().length > 0)) {
+      onAnswerSubmit(updated, false, 100);
+    }
   };
 
   const hasAnyAnswer = Object.values(answers).some((val) => val && val.trim().length > 0);

@@ -25,6 +25,8 @@ export const TrueFalseStudent: React.FC<
 
   const handleSelectOption = (val: boolean) => {
     setSelected(val);
+    const isCorrect = val === expectedBool;
+    onAnswerSubmit(val, isCorrect, isCorrect ? 100 : 0);
     logXApiEvent({
       verb: XAPI_VERBS.INTERACTED,
       activityId: block.id || 'tf_activity',

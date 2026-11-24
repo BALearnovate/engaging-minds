@@ -270,6 +270,8 @@ export const activitiesApi = {
     status?: string;
     students: any[];
     classroom?: { id: string; subject: string; grade: string; year: string } | null;
+    definition?: any;
+    activity?: any;
   }> {
     return apiFetch<{
       session: any;
@@ -277,6 +279,8 @@ export const activitiesApi = {
       status?: string;
       students: any[];
       classroom?: { id: string; subject: string; grade: string; year: string } | null;
+      definition?: any;
+      activity?: any;
     }>(`/activities/session/${shareCode}/dashboard`, { token });
   },
 

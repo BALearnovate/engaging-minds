@@ -140,6 +140,10 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
 
     const activityStateMap = this.liveTrackingMap.get(normalizedActId)!;
     const existing = activityStateMap.get(payload.studentId);
+    const mergedAnswers = {
+      ...(existing?.answers || {}),
+      ...(payload.answers || {}),
+    };
 
     const progressVal = typeof payload.progress === 'number' ? payload.progress : existing?.progress || 0;
     const engagementVal = typeof payload.engagementScore === 'number' ? payload.engagementScore : existing?.engagementScore || 0;
@@ -160,7 +164,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       engagementScore: engagementVal,
       performanceScore: performanceVal,
       progressText: payload.progressText || `${progressVal}% completed`,
-      answers: payload.answers || existing?.answers || {},
+      answers: mergedAnswers,
       score: payload.score ?? existing?.score,
       helpMessage: payload.status === 'COMPLETED' ? undefined : existing?.helpMessage,
       lastUpdated: new Date().toISOString(),
@@ -187,6 +191,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
         activityStatus: incomingActStatus,
         startedAt: incomingStartedAt,
         timeSpentMs: typeof (payload as any).timeSpentMs === 'number' ? (payload as any).timeSpentMs : existing?.timeSpentMs,
+        answers: mergedAnswers,
       },
       progressVal,
       engagementVal,
@@ -672,6 +677,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
       activityStatus?: string;
       startedAt?: string;
       timeSpentMs?: number;
+      answers?: Record<string, string>;
     },
     progress: number,
     engagementScore: number,
@@ -763,6 +769,7 @@ export class ActivitiesGateway implements OnGatewayConnection, OnGatewayDisconne
             startedAt: payload.startedAt,
             timeSpentMs: payload.timeSpentMs,
             score: payload.score ?? performanceScore ?? studentSession.score,
+            answers: payload.answers,
             timestamp: new Date().toISOString(),
           },
         },

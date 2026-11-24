@@ -34,16 +34,26 @@ export const DragDropStudent: React.FC<
   const handleAssignToTarget = (targetId: string) => {
     if (!selectedItemId || submitted) return;
 
-    setTargetAssignments((prev) => {
-      const next = { ...prev };
-      // Remove from previous target if assigned
-      Object.keys(next).forEach((tId) => {
-        next[tId] = (next[tId] || []).filter((i) => i !== selectedItemId);
-      });
-      // Add to selected target
-      next[targetId] = [...(next[targetId] || []), selectedItemId];
-      return next;
+    const next = { ...targetAssignments };
+    Object.keys(next).forEach((tId) => {
+      next[tId] = (next[tId] || []).filter((i) => i !== selectedItemId);
     });
+    next[targetId] = [...(next[targetId] || []), selectedItemId];
+    setTargetAssignments(next);
+
+    let totalTargets = config.dropTargets.length;
+    let correctTargets = 0;
+    config.dropTargets.forEach((target) => {
+      const userAssigned = new Set(next[target.id] || []);
+      const expected = new Set(target.correctItemIds);
+      const isMatch =
+        userAssigned.size === expected.size &&
+        Array.from(userAssigned).every((id) => expected.has(id));
+      if (isMatch) correctTargets++;
+    });
+    const isFullyCorrect = totalTargets > 0 && correctTargets === totalTargets;
+    const score = totalTargets > 0 ? Math.round((correctTargets / totalTargets) * 100) : 100;
+    onAnswerSubmit(next, isFullyCorrect, score);
 
     setSelectedItemId(null);
   };

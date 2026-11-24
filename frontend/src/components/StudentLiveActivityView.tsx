@@ -69,6 +69,8 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   } | null>(null);
 
   const [showExitConfirmModal, setShowExitConfirmModal] = useState<boolean>(false);
+  const [liveAnswers, setLiveAnswers] = useState<Record<string, string>>({});
+  const liveAnswersRef = React.useRef<Record<string, string>>({});
   const [sessionSummaryModal, setSessionSummaryModal] = useState<{
     isOpen: boolean;
     isCompletion: boolean;
@@ -238,6 +240,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         activityStatus: newStatus,
         startedAt: new Date(sessionStartTimeMs).toISOString(),
         timeSpentMs: elapsedSeconds * 1000,
+        answers: liveAnswersRef.current,
       });
     };
 
@@ -455,6 +458,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         activityStatus: 'Left',
         startedAt: new Date(sessionStartTimeMs).toISOString(),
         timeSpentMs,
+        answers: liveAnswers,
       });
     }
 
@@ -500,6 +504,7 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
         activityStatus: 'Left',
         startedAt: new Date(sessionStartTimeMs).toISOString(),
         timeSpentMs,
+        answers: liveAnswers,
       });
     }
 
@@ -601,8 +606,17 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                 <ActivityRuntime
                   definition={loadedContent}
                   shareCode={shareCode}
-                  studentName="Student"
+                  studentSessionId={currentUser?.id || 'student_guest'}
+                  studentName={
+                    currentUser
+                      ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+                      : 'Student'
+                  }
                   hideTitle={true}
+                  onAnswersUpdate={(answers) => {
+                    setLiveAnswers(answers);
+                    liveAnswersRef.current = answers;
+                  }}
                   onProgressUpdate={({ currentStep, totalSteps: runtimeTotalSteps, completedCount }) => {
                     setStepIndex(currentStep);
                     setTotalSteps(runtimeTotalSteps);
