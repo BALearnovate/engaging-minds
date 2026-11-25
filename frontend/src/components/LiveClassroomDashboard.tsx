@@ -1526,224 +1526,253 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       </div>
 
       {/* ANSWER SHEET MODAL */}
-      {answerSheetStudent && (
-        <div style={modalStyles.overlay} onClick={() => setAnswerSheetStudent(null)}>
-          <div style={modalStyles.container} onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div style={modalStyles.header}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.6rem' }}>📄</span>
-                <div>
-                  <h3 style={modalStyles.title}>
-                    {t('liveDashboard.answerSheetTitle', 'Student Answer Sheet')} - {answerSheetStudent.name}
-                  </h3>
-                  {/* <span style={modalStyles.subtitle}>
-                    {shareCode ? `${t('liveDashboard.sessionCode', 'Session Code')}: ${shareCode}` : ''}
-                  </span> */}
+      {answerSheetStudent && (() => {
+        const isCompleted = answerSheetStudent.progress >= 100 || Boolean(answerSheetStudent.completedAt);
+        return (
+          <div style={modalStyles.overlay} onClick={() => setAnswerSheetStudent(null)}>
+            <div
+              style={{
+                ...modalStyles.container,
+                border: isCompleted ? '2px solid #86efac' : '2px solid #fde68a',
+                boxShadow: isCompleted
+                  ? '0 20px 30px -5px rgba(22, 101, 52, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                  : '0 20px 30px -5px rgba(217, 119, 6, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  ...modalStyles.header,
+                  background: isCompleted
+                    ? 'linear-gradient(135deg, #15803d 0%, #166534 100%)'
+                    : 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.6rem' }}>{isCompleted ? '📄' : '⏳'}</span>
+                  <div>
+                    <h3 style={modalStyles.title}>
+                      {t('liveDashboard.answerSheetTitle', 'Answer Sheet')} - {answerSheetStudent.name}
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAnswerSheetStudent(null)}
+                  style={modalStyles.closeBtn}
+                  title={t('common.close', 'Close')}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Status Summary Bar */}
+              <div
+                style={{
+                  ...modalStyles.statusBar,
+                  backgroundColor: isCompleted ? '#f0fdf4' : '#fffbeb',
+                  borderBottom: isCompleted ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '0.85rem',
+                      fontWeight: '800',
+                      backgroundColor: isCompleted ? '#dcfce7' : '#fef3c7',
+                      color: isCompleted ? '#15803d' : '#b45309',
+                      border: isCompleted ? '1px solid #86efac' : '1px solid #fde68a',
+                    }}
+                  >
+                    {isCompleted
+                      ? `✅ ${t('liveDashboard.completed', 'Completed')}`
+                      : `⏳ ${t('liveDashboard.inProgress', 'In Progress')} (${answerSheetStudent.progress}%)`}
+                  </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: isCompleted ? '#166534' : '#92400e' }}>
+                    ⭐ {answerSheetStudent.totalStars} {t('studentPortal.stars', 'Stars')} &nbsp;|&nbsp; 🏆{' '}
+                    {answerSheetStudent.totalPoints} {t('studentPortal.pts', 'Pts')}
+                  </span>
                 </div>
               </div>
-              <button
-                onClick={() => setAnswerSheetStudent(null)}
-                style={modalStyles.closeBtn}
-                title={t('common.close', 'Close')}
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Status Summary Bar */}
-            <div style={modalStyles.statusBar}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    padding: '4px 12px',
-                    borderRadius: '12px',
-                    fontSize: '0.85rem',
-                    fontWeight: '800',
-                    backgroundColor:
-                      answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '#dcfce7' : '#fef3c7',
-                    color:
-                      answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '#15803d' : '#b45309',
-                    border: answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? '1px solid #86efac' : '1px solid #fde68a',
-                  }}
-                >
-                  {answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt
-                    ? `✅ ${t('liveDashboard.completed', 'Completed')}`
-                    : `⏳ ${t('liveDashboard.inProgress', 'In Progress')} (${answerSheetStudent.progress}%)`}
-                </span>
-                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#166534' }}>
-                  ⭐ {answerSheetStudent.totalStars} {t('studentPortal.stars', 'Stars')} &nbsp;|&nbsp; 🏆{' '}
-                  {answerSheetStudent.totalPoints} {t('studentPortal.pts', 'Pts')}
-                </span>
-              </div>
-            </div>
+              {/* Modal Body */}
+              <div style={modalStyles.body}>
+                {isCompleted ? (
+                  /* COMPLETED STATE */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={modalStyles.answersHeaderRow}>
+                      <h4 style={modalStyles.sectionTitle}>
+                        📋 {t('liveDashboard.submittedAnswersHeading', 'Submitted Exercise Responses')}
+                      </h4>
+                    </div>
 
-            {/* Modal Body */}
-            <div style={modalStyles.body}>
-              {answerSheetStudent.progress >= 100 || answerSheetStudent.completedAt ? (
-                /* COMPLETED STATE */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={modalStyles.answersHeaderRow}>
-                    <h4 style={modalStyles.sectionTitle}>
-                      📋 {t('liveDashboard.submittedAnswersHeading', 'Submitted Exercise Responses')}
-                    </h4>
-                    {/* <span style={modalStyles.answersCountBadge}>
-                      {answerSheetStudent.answers && Object.keys(answerSheetStudent.answers).length > 0
-                        ? Object.keys(answerSheetStudent.answers).length
-                        : (activityDefinition?.blocks?.length || 1)}{' '}
-                      {t('liveDashboard.responsesRecorded', 'Responses Recorded')}
-                    </span> */}
-                  </div>
+                    {activityDefinition?.blocks && Array.isArray(activityDefinition.blocks) && activityDefinition.blocks.length > 0 ? (
+                      <div style={modalStyles.answersList}>
+                        {activityDefinition.blocks.map((block: any, idx: number) => {
+                          const responseStr = getResponseForBlock(block, answerSheetStudent.answers, idx);
+                          const blockTitle = block.title || block.prompt || `Exercise #${idx + 1}`;
+                          const blockTypeStr = (block.type || '').toUpperCase().replace(/_/g, ' ');
+                          const promptText = block.config?.question || block.config?.prompt || block.config?.statement || block.config?.passage || '';
 
-                  {activityDefinition?.blocks && Array.isArray(activityDefinition.blocks) && activityDefinition.blocks.length > 0 ? (
-                    <div style={modalStyles.answersList}>
-                      {activityDefinition.blocks.map((block: any, idx: number) => {
-                        const responseStr = getResponseForBlock(block, answerSheetStudent.answers, idx);
-                        const blockTitle = block.title || block.prompt || `Exercise #${idx + 1}`;
-                        const blockTypeStr = (block.type || '').toUpperCase().replace(/_/g, ' ');
-                        const promptText = block.config?.question || block.config?.prompt || block.config?.statement || block.config?.passage || '';
-
-                        return (
-                          <div key={block.id || idx} style={modalStyles.answerCard}>
-                            <div style={modalStyles.answerCardHeader}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span style={modalStyles.questionLabel}>
-                                  {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1}: {blockTitle}
-                                </span>
-                                {blockTypeStr && (
-                                  <span style={modalStyles.typeBadge}>
-                                    {blockTypeStr}
+                          return (
+                            <div key={block.id || idx} style={modalStyles.answerCard}>
+                              <div style={modalStyles.answerCardHeader}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={modalStyles.questionLabel}>
+                                    {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1}: {blockTitle}
                                   </span>
-                                )}
+                                  {blockTypeStr && (
+                                    <span style={modalStyles.typeBadge}>
+                                      {blockTypeStr}
+                                    </span>
+                                  )}
+                                </div>
+                                <span style={modalStyles.submittedPill}>
+                                  ✓ {t('liveDashboard.completedPill', 'Completed')}
+                                </span>
                               </div>
-                              <span style={modalStyles.submittedPill}>
-                                ✓ {t('liveDashboard.completedPill', 'Completed')}
-                              </span>
-                            </div>
 
-                            {promptText && (
-                              <div
-                                style={{
-                                  fontSize: '0.88rem',
-                                  color: '#334155',
-                                  marginBottom: '8px',
-                                  fontStyle: 'italic',
-                                  background: '#f8fafc',
-                                  padding: '6px 10px',
-                                  borderRadius: '6px',
-                                  borderLeft: '3px solid #10b981',
-                                }}
-                              >
-                                "{promptText}"
-                              </div>
-                            )}
-
-                            <div style={modalStyles.answerValBox}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span
+                              {promptText && (
+                                <div
                                   style={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    color: '#15803d',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
+                                    fontSize: '0.88rem',
+                                    color: '#334155',
+                                    marginBottom: '8px',
+                                    fontStyle: 'italic',
+                                    background: '#f8fafc',
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    borderLeft: '3px solid #10b981',
                                   }}
                                 >
-                                  {t('liveDashboard.studentResponseLabel', 'Student Answer')}:
-                                </span>
-                                <span style={modalStyles.answerValText}>
-                                  {responseStr || (
-                                    block.type === 'flashcards'
-                                      ? t('liveDashboard.reviewedFlashcardsDefault', 'Reviewed all flashcard(s)')
-                                      : block.type === 'true_false'
-                                      ? t('liveDashboard.completedTrueFalseDefault', 'Submitted True/False response')
-                                      : block.type === 'multiple_choice'
-                                      ? t('liveDashboard.completedMultipleChoiceDefault', 'Selected option')
-                                      : block.type === 'find_hotspots'
-                                      ? t('liveDashboard.completedHotspotsDefault', 'Discovered all hotspot(s)')
-                                      : t('liveDashboard.completedDefault', 'Exercise completed successfully')
-                                  )}
-                                </span>
+                                  "{promptText}"
+                                </div>
+                              )}
+
+                              <div style={modalStyles.answerValBox}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      fontWeight: '700',
+                                      color: '#15803d',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.5px',
+                                    }}
+                                  >
+                                    {t('liveDashboard.studentResponseLabel', 'Student Answer')}:
+                                  </span>
+                                  <span style={modalStyles.answerValText}>
+                                    {responseStr || (
+                                      block.type === 'flashcards'
+                                        ? t('liveDashboard.reviewedFlashcardsDefault', 'Reviewed all flashcard(s)')
+                                        : block.type === 'true_false'
+                                        ? t('liveDashboard.completedTrueFalseDefault', 'Submitted True/False response')
+                                        : block.type === 'multiple_choice'
+                                        ? t('liveDashboard.completedMultipleChoiceDefault', 'Selected option')
+                                        : block.type === 'find_hotspots'
+                                        ? t('liveDashboard.completedHotspotsDefault', 'Discovered all hotspot(s)')
+                                        : t('liveDashboard.completedDefault', 'Exercise completed successfully')
+                                    )}
+                                  </span>
+                                </div>
                               </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    ) : answerSheetStudent.answers && Object.keys(answerSheetStudent.answers).length > 0 ? (
+                      <div style={modalStyles.answersList}>
+                        {Object.entries(answerSheetStudent.answers).map(([key, val], idx) => (
+                          <div key={key} style={modalStyles.answerCard}>
+                            <div style={modalStyles.answerCardHeader}>
+                              <span style={modalStyles.questionLabel}>
+                                {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1} ({key})
+                              </span>
+                              <span style={modalStyles.submittedPill}>
+                                ✓ {t('liveDashboard.submittedPill', 'Submitted')}
+                              </span>
+                            </div>
+                            <div style={modalStyles.answerValBox}>
+                              <span style={modalStyles.answerValText}>
+                                {typeof val === 'string' ? val : JSON.stringify(val)}
+                              </span>
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : answerSheetStudent.answers && Object.keys(answerSheetStudent.answers).length > 0 ? (
-                    <div style={modalStyles.answersList}>
-                      {Object.entries(answerSheetStudent.answers).map(([key, val], idx) => (
-                        <div key={key} style={modalStyles.answerCard}>
-                          <div style={modalStyles.answerCardHeader}>
-                            <span style={modalStyles.questionLabel}>
-                              {t('liveDashboard.exerciseNum', 'Exercise')} #{idx + 1} ({key})
-                            </span>
-                            <span style={modalStyles.submittedPill}>
-                              ✓ {t('liveDashboard.submittedPill', 'Submitted')}
-                            </span>
-                          </div>
-                          <div style={modalStyles.answerValBox}>
-                            <span style={modalStyles.answerValText}>
-                              {typeof val === 'string' ? val : JSON.stringify(val)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={modalStyles.defaultCompletedBox}>
-                      <div style={{ fontSize: '2.5rem' }}>🎉</div>
-                      <h4 style={modalStyles.defaultCompletedTitle}>
-                        {t('liveDashboard.activityCompletedSummary', 'Activity Completed!')}
-                      </h4>
-                      <p style={modalStyles.defaultCompletedText}>
-                        {t(
-                          'liveDashboard.defaultCompletedDesc',
-                          'The student has successfully completed all interactive exercises in this activity with 100% progress.'
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* INCOMPLETE STATE */
-                <div style={modalStyles.incompleteNoticeBox}>
-                  <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
-                  <h4 style={modalStyles.incompleteTitle}>
-                    {t('liveDashboard.notCompletedTitle', 'Activity Not Completed Yet')}
-                  </h4>
-                  <p style={modalStyles.incompleteText}>
-                    {t(
-                      'liveDashboard.notCompletedNotice',
-                      'This student has not completed the activity yet. Once the student finishes the activity, you can see their answers here.'
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={modalStyles.defaultCompletedBox}>
+                        <div style={{ fontSize: '2.5rem' }}>🎉</div>
+                        <h4 style={modalStyles.defaultCompletedTitle}>
+                          {t('liveDashboard.activityCompletedSummary', 'Activity Completed!')}
+                        </h4>
+                        <p style={modalStyles.defaultCompletedText}>
+                          {t(
+                            'liveDashboard.defaultCompletedDesc',
+                            'The student has successfully completed all interactive exercises in this activity with 100% progress.'
+                          )}
+                        </p>
+                      </div>
                     )}
-                  </p>
-                  <div style={modalStyles.progressBarWrapper}>
-                    <div style={modalStyles.progressBarTrack}>
-                      <div
-                        style={{
-                          ...modalStyles.progressBarFill,
-                          width: `${Math.min(100, Math.max(0, answerSheetStudent.progress))}%`,
-                        }}
-                      />
-                    </div>
-                    <span style={modalStyles.progressPctText}>
-                      {answerSheetStudent.progress}% {t('liveDashboard.currentProgress', 'Current Progress')}
-                    </span>
                   </div>
-                </div>
-              )}
-            </div>
+                ) : (
+                  /* INCOMPLETE STATE */
+                  <div style={modalStyles.incompleteNoticeBox}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
+                    <h4 style={modalStyles.incompleteTitle}>
+                      {t('liveDashboard.notCompletedTitle', 'Activity Not Completed Yet')}
+                    </h4>
+                    <p style={modalStyles.incompleteText}>
+                      {t(
+                        'liveDashboard.notCompletedNotice',
+                        'This student has not completed the activity yet. Once the student finishes the activity, you can see their answers here.'
+                      )}
+                    </p>
+                    <div style={modalStyles.progressBarWrapper}>
+                      <div style={modalStyles.progressBarTrack}>
+                        <div
+                          style={{
+                            ...modalStyles.progressBarFill,
+                            width: `${Math.min(100, Math.max(0, answerSheetStudent.progress))}%`,
+                          }}
+                        />
+                      </div>
+                      <span style={modalStyles.progressPctText}>
+                        {answerSheetStudent.progress}% {t('liveDashboard.currentProgress', 'Current Progress')}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            {/* Footer */}
-            <div style={modalStyles.footer}>
-              <button onClick={() => setAnswerSheetStudent(null)} style={modalStyles.closeFooterBtn}>
-                {t('common.close', 'Close')}
-              </button>
+              {/* Footer */}
+              <div
+                style={{
+                  ...modalStyles.footer,
+                  backgroundColor: isCompleted ? '#f0fdf4' : '#fffbeb',
+                  borderTop: isCompleted ? '1px solid #bbf7d0' : '1px solid #fde68a',
+                }}
+              >
+                <button
+                  onClick={() => setAnswerSheetStudent(null)}
+                  style={{
+                    ...modalStyles.closeFooterBtn,
+                    backgroundColor: isCompleted ? '#78be20' : '#d97706',
+                    boxShadow: isCompleted
+                      ? '0 4px 12px rgba(120, 190, 32, 0.35)'
+                      : '0 4px 12px rgba(217, 119, 6, 0.35)',
+                  }}
+                >
+                  {t('common.close', 'Close')}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
