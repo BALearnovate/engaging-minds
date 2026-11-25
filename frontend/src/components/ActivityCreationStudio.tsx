@@ -514,7 +514,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
             >
               {t('activityCreation.selectTemplates', '🔲 Select Existing Templates')}
             </button>
-            <button
+            {/* <button
               onClick={() => alert(t('activityCreation.scratchNotice', 'Start From Scratch feature will be available in the next version!'))}
               style={{
                 ...styles.pathwayBtn,
@@ -522,7 +522,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
               }}
             >
               {t('activityCreation.startScratch', '✏️ Start From Scratch')}
-            </button>
+            </button> */}
           </div>
 
           {/* AI PATHWAY CONTENT */}
