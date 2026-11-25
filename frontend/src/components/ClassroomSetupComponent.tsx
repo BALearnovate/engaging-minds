@@ -355,7 +355,12 @@ export const ClassroomSetupComponent: React.FC = () => {
           }
         }
 
-       .classroom-split-grid {
+       .classroom-main-studio-card {
+  box-sizing: border-box;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+.classroom-split-grid {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
   gap: 1.25rem;
@@ -376,18 +381,20 @@ export const ClassroomSetupComponent: React.FC = () => {
   gap: 0.75rem;
 }
 
-@media (max-width: 1080px) {
-  .classroom-split-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 900px) {
+@media (max-width: 1366px) {
   .classroom-roster-body-grid {
     grid-template-columns: 1fr !important;
   }
   .classroom-preview-column {
-    max-height: none !important;
+    width: 100% !important;
+    max-height: 500px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .classroom-split-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -409,7 +416,7 @@ export const ClassroomSetupComponent: React.FC = () => {
       `}</style>
 
       {/* Main Studio Card Enclosing Whole Page (Header + Content) */}
-      <div style={styles.mainStudioCard} className="no-print">
+      <div style={styles.mainStudioCard} className="no-print classroom-main-studio-card">
         {/* Header */}
         <div style={styles.headerBox}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
