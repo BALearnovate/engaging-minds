@@ -985,7 +985,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                   </div>
 
                   {/* Quick Account Switcher Chips */}
-                  <div style={styles.quickAccountsSection}>
+                  {/* <div style={styles.quickAccountsSection}>
                     <div style={styles.quickAccountsTitle}>{t('login.quickDemoLogin', '⚡ Quick Demo Login:')}</div>
                     <div style={styles.quickChipsGrid}>
                       <button
@@ -1017,7 +1017,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                         Jane (Student)
                       </button>
                     </div>
-                  </div>
+                  </div> */}
                 </>
               )}
             </div>
