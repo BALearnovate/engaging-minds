@@ -99,6 +99,28 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
     setCurrentIndex(0);
   }, [definition]);
 
+  // Smooth scroll window and activity container to top (0, 0) whenever step/exercise changes
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+
+    const scrollContainers = document.querySelectorAll(
+      '.student-live-left-col, .student-live-main-card, .student-live-page-bg, body, html'
+    );
+    scrollContainers.forEach((el) => {
+      if (el) {
+        try {
+          el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        } catch (e) {
+          el.scrollTop = 0;
+        }
+      }
+    });
+  }, [currentBlockIndex]);
+
   const currentBlock: ActivityBlock | undefined = definition?.blocks?.[currentBlockIndex];
   const compDef = currentBlock ? ComponentRegistry.get(currentBlock.type) : undefined;
   
@@ -216,11 +238,15 @@ export const ActivityRuntime: React.FC<ActivityRuntimeProps> = ({
       ansStr = isCorrect ? 'Completed' : 'Submitted';
     }
 
+    const blockKeyId = currentBlock.id || `block_${currentBlockIndex + 1}`;
     const updatedAnswers = {
       ...userAnswers,
-      [currentBlock.id]: ansStr,
+      [blockKeyId]: ansStr,
       [String(currentBlockIndex)]: ansStr,
       [`block_${currentBlockIndex + 1}`]: ansStr,
+      [`exercise_${currentBlockIndex + 1}`]: ansStr,
+      [`step_${currentBlockIndex + 1}`]: ansStr,
+      ...(currentBlock.title ? { [currentBlock.title]: ansStr } : {}),
     };
     setUserAnswers(updatedAnswers);
     if (onAnswersUpdate) {
@@ -503,17 +529,20 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1.5rem',
     backgroundColor: '#ffffff',
-    padding: '20px 20px',
+    padding: '20px',
     borderRadius: '12px',
-    // border: '1px solid #e5e7eb',
     boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+    boxSizing: 'border-box',
+    width: '100%',
+    maxWidth: '100%',
+    overflowX: 'hidden',
   },
   topBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    // borderBottom: '1px solid #f3f4f6',
-   
+    flexWrap: 'wrap',
+    gap: '0.75rem',
   },
   titleInfo: {
     display: 'flex',
@@ -527,7 +556,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
   },
   blockTracker: {
-    fontSize: '1.85rem',
+    fontSize: '1.5rem',
     fontWeight: 'bold',
     color: '#6b7280',
   },
@@ -586,6 +615,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   blockWrapper: {
     minHeight: '300px',
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    overflowX: 'auto',
   },
   errorBox: {
     padding: '2rem',
@@ -599,6 +632,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
     borderTop: 'none',
     paddingTop: '1rem',
   },
@@ -631,7 +666,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   dotNav: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '0.4rem',
+    justifyContent: 'center',
   },
   dot: {
     width: '32px',

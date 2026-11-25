@@ -323,7 +323,7 @@ const styles: Record<string, React.CSSProperties> = {
   allAssignedText: { fontSize: '0.85rem', color: '#059669', fontWeight: '600' },
   draggableChip: { backgroundColor: '#ffffff', border: '1px solid #3b82f6', color: '#1d4ed8', padding: '0.5rem 0.9rem', borderRadius: '20px', fontWeight: '700', fontSize: '0.88rem', cursor: 'pointer' },
   selectedChip: { backgroundColor: '#2563eb', color: '#ffffff', border: '2px solid #1d4ed8' },
-  targetsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
+  targetsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' },
   targetBin: { backgroundColor: '#f3f4f6', border: '2px dashed #d1d5db', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', cursor: 'pointer', minHeight: '120px' },
   targetActiveHighlight: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
   targetLabel: { fontSize: '0.95rem', fontWeight: '800', color: '#1f2937' },

@@ -524,8 +524,158 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
   };
 
   return (
-    
-    <div style={styles.pageBackground}>
+    <div className="student-live-page-bg" style={styles.pageBackground}>
+      {/* Responsive Style Injections */}
+      <style>{`
+        .student-live-page-bg {
+          background-color: #f2f8eb;
+          min-height: calc(100vh - 80px);
+          width: 100%;
+          max-width: 100vw;
+          padding: 1.5rem;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          box-sizing: border-box;
+          overflow-x: hidden;
+        }
+
+        .student-live-main-card {
+          background-color: #ffffff;
+          border: 2px solid #84cc16;
+          border-radius: 24px;
+          padding: 2rem 2.25rem;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08), 0 0 20px rgba(132, 204, 22, 0.15);
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+          overflow-x: hidden;
+        }
+
+        .student-live-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: 1rem;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .student-live-header-controls {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .student-live-body-grid {
+          display: grid;
+          grid-template-columns: 1fr 340px;
+          min-height: 480px;
+          gap: 1.5rem;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .student-live-left-col {
+          display: flex;
+          flex-direction: column;
+          padding-right: 1.5rem;
+          overflow-y: auto;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        .student-live-right-col {
+          display: flex;
+          flex-direction: column;
+          padding: 10px 5px;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        .student-live-actions-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+        }
+
+        /* Small Laptop, Tablet & iPad Breakpoints (<= 1366px) */
+        @media (max-width: 1366px) {
+          .student-live-page-bg {
+            padding: 1rem;
+          }
+          .student-live-main-card {
+            padding: 1.5rem;
+            border-radius: 20px;
+          }
+          .student-live-body-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: auto;
+            gap: 1.25rem;
+          }
+          .student-live-right-col {
+            display: contents !important;
+          }
+          .student-live-progress-card {
+            order: 1 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .student-live-left-col {
+            order: 2 !important;
+            padding-right: 0 !important;
+            width: 100% !important;
+          }
+          .student-live-actions-stack {
+            order: 3 !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            margin-top: 1rem !important;
+          }
+          .student-live-actions-stack button {
+            width: 100% !important;
+          }
+        }
+
+        /* Small Laptop / Small Tablet (<= 850px) */
+        @media (max-width: 850px) {
+          .student-live-header-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .student-live-header-controls {
+            justify-content: space-between;
+            width: 100%;
+          }
+        }
+
+        /* Mobile Breakpoint (<= 640px) */
+        @media (max-width: 640px) {
+          .student-live-page-bg {
+            padding: 0.5rem;
+          }
+          .student-live-main-card {
+            padding: 1rem;
+            border-radius: 16px;
+            gap: 1rem;
+          }
+          .student-live-actions-stack {
+            flex-direction: column !important;
+          }
+          .student-live-actions-stack button {
+            width: 100% !important;
+          }
+        }
+      `}</style>
+
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div style={styles.toastBanner}>
@@ -534,21 +684,19 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
       )}
 
       {/* Main Outer White Card Container */}
-      <div style={styles.mainCard}>
+      <div className="student-live-main-card" style={styles.mainCard}>
         {/* Top Header Row inside Card */}
-        <div style={styles.headerRow}>
+        <div className="student-live-header-row" style={styles.headerRow}>
           <div>
             <h1 style={styles.activityTitleText}>
               {activityTitle || loadedContent?.title || 'Classroom Live Activity'}
             </h1>
             <p style={styles.subTitleText}>
               Classroom Live Session • Teacher: <strong style={{ color: '#334155' }}>{teacherName}</strong>
-              {/* {rewardMode && <span> • Rewards: <strong>{rewardMode}</strong></span>} */}
-              {/* {targetScope && <span> • Scope: <strong>{targetScope}</strong></span>} */}
             </p>
           </div>
 
-          <div style={styles.headerControlsRight}>
+          <div className="student-live-header-controls" style={styles.headerControlsRight}>
             {/* Session Timer Pill */}
             {targetSeconds !== null ? (
               <div
@@ -588,12 +736,10 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           </div>
         </div>
 
-        
-
         {/* Two Column Layout */}
-        <div style={styles.bodyGrid}>
+        <div className="student-live-body-grid" style={styles.bodyGrid}>
           {/* LEFT COLUMN: Dynamically Loaded Teacher Activity */}
-          <div style={styles.leftColumn}>
+          <div className="student-live-left-col" style={styles.leftColumn}>
             {isLoading ? (
               <div style={styles.loadingBox}>
                 <div style={styles.spinner} />
@@ -643,9 +789,9 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
           </div>
 
           {/* RIGHT COLUMN: Progress Panel & Action Control Buttons */}
-          <div style={styles.rightColumn}>
+          <div className="student-live-right-col" style={styles.rightColumn}>
             {/* Activity Progress Card */}
-            <div style={styles.progressCard}>
+            <div className="student-live-progress-card" style={styles.progressCard}>
               <div style={styles.progressHeaderTitle}>{t('studentPortal.progressTitle', 'YOUR ACTIVITY PROGRESS')}</div>
 
               {/* Circular Gauge */}
@@ -657,36 +803,15 @@ export const StudentLiveActivityView: React.FC<StudentLiveActivityViewProps> = (
                   <div style={styles.stepTitleText}>
                     {completedSteps >= totalSteps && totalSteps > 0 ? t('studentPortal.allStepsCompleted', 'All {{count}} Steps Completed', { count: totalSteps }) : t('studentPortal.stepOfSteps', 'Step {{step}} of {{total}} in Progress', { step: stepIndex, total: totalSteps })}
                   </div>
-                  {/* <div style={styles.correctSubText}>{t('studentPortal.questionsCorrect', 'Questions Correct: {{correct}}/{{total}}', { correct: questionsCorrect, total: totalSteps })}</div> */}
                 </div>
               </div>
-
-              {/* Progress Fill Bar */}
-              {/* <div style={styles.progressBarWrapper}>
-                <div style={styles.progressBarLabel}>{t('studentPortal.pctCompleted', '{{pct}}% COMPLETED', { pct: progressPct })}</div>
-                <div style={styles.barTrack}>
-                  <div
-                    style={{
-                      ...styles.barFill,
-                      width: `${progressPct}%`,
-                    }}
-                  />
-                </div>
-              </div> */}
             </div>
 
             {/* Spacer to push buttons to bottom right */}
             <div style={{ flex: 1 }} />
 
             {/* Stacked Action Buttons */}
-            <div style={styles.actionsStack}>
-              {/* <button
-                onClick={handleSubmitAnswer}
-                style={styles.submitBtn}
-              >
-                {t('studentPortal.submitAnswer', 'SUBMIT ANSWER***')}
-              </button> */}
-
+            <div className="student-live-actions-stack" style={styles.actionsStack}>
               <button
                 onClick={handleAskTeacher}
                 disabled={helpRequested}

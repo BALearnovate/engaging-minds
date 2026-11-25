@@ -41,57 +41,32 @@ export const getResponseForBlock = (
 ): string => {
   if (!answers || typeof answers !== 'object') return '';
 
-  // 1. Direct block.id match
-  if (block.id && answers[block.id] !== undefined && answers[block.id] !== null) {
-    const val = answers[block.id];
-    return typeof val === 'string' ? val : JSON.stringify(val);
-  }
+  const effectiveId = block.id || `block_${index + 1}`;
 
-  // 2. Exact block_N match
-  const blockKey = `block_${index + 1}`;
-  if (answers[blockKey] !== undefined && answers[blockKey] !== null) {
-    const val = answers[blockKey];
-    return typeof val === 'string' ? val : JSON.stringify(val);
-  }
+  const keysToTest = [
+    effectiveId,
+    block.id,
+    `block_${index + 1}`,
+    `exercise_${index + 1}`,
+    `step_${index + 1}`,
+    String(index),
+    block.title,
+    block.config?.question,
+    block.config?.prompt,
+    block.config?.statement,
+  ].filter(Boolean);
 
-  // 3. Exact index key match
-  if (answers[index] !== undefined && answers[index] !== null) {
-    const val = answers[index];
-    return typeof val === 'string' ? val : JSON.stringify(val);
-  }
-
-  if (answers[String(index)] !== undefined && answers[String(index)] !== null) {
-    const val = answers[String(index)];
-    return typeof val === 'string' ? val : JSON.stringify(val);
-  }
-
-  // 4. Direct block.title match
-  if (block.title && answers[block.title] !== undefined && answers[block.title] !== null) {
-    const val = answers[block.title];
-    return typeof val === 'string' ? val : JSON.stringify(val);
-  }
-
-  // 5. Question / prompt match
-  if (block.config && (block.config.question || block.config.prompt || block.config.statement)) {
-    const qKey = block.config.question || block.config.prompt || block.config.statement;
-    if (answers[qKey] !== undefined && answers[qKey] !== null) {
-      const val = answers[qKey];
-      return typeof val === 'string' ? val : JSON.stringify(val);
+  for (const k of keysToTest) {
+    if (answers[k] !== undefined && answers[k] !== null) {
+      const valStr = typeof answers[k] === 'string' ? answers[k] : JSON.stringify(answers[k]);
+      if (valStr.trim() !== '') return valStr;
     }
   }
 
-  // 6. Strict Normalized key matching (Exact match only - no loose includes fallback)
   const normalize = (str: string) => String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
-  const blockKeysToTry = [
-    block.id,
-    block.title,
-    `exercise_${index + 1}`,
-    `step_${index + 1}`,
-    `block_${index + 1}`,
-  ].filter(Boolean);
-
   const answerKeys = Object.keys(answers);
-  for (const bKey of blockKeysToTry) {
+
+  for (const bKey of keysToTest) {
     const normBKey = normalize(bKey);
     if (!normBKey) continue;
     for (const aKey of answerKeys) {
@@ -99,7 +74,8 @@ export const getResponseForBlock = (
       if (normAKey === normBKey) {
         const val = answers[aKey];
         if (val !== undefined && val !== null) {
-          return typeof val === 'string' ? val : JSON.stringify(val);
+          const valStr = typeof val === 'string' ? val : JSON.stringify(val);
+          if (valStr.trim() !== '') return valStr;
         }
       }
     }

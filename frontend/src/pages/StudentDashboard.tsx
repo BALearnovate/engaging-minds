@@ -502,7 +502,49 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
   const displayAvatar = avatarSetting === 'MONOGRAM' ? userInitials : (avatarSetting || '🎓');
 
   return (
-    <div style={styles.pageWrapper}>
+    <div style={styles.pageWrapper} className="student-dashboard-page-wrapper">
+      <style>{`
+        .student-dashboard-page-wrapper {
+          box-sizing: border-box;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+        @media (max-width: 1366px) {
+          .student-dashboard-grid {
+            flex-direction: column !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .student-dashboard-left-col {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+            gap: 1.25rem !important;
+          }
+          .student-dashboard-xp-card, .student-dashboard-selected-card {
+            width: 100% !important;
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+          }
+          .student-dashboard-right-card {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            height: auto !important;
+            max-height: 600px !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .student-dashboard-left-col {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
       {/* Top Main Page Title Bar */}
       {/* <div style={styles.pageTitleHeader}>
         <h1 style={styles.mainTitleText}>
@@ -511,11 +553,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
       </div> */}
 
       {/* Main 3-Section Layout Container */}
-      <div style={styles.dashboardGrid}>
+      <div style={styles.dashboardGrid} className="student-dashboard-grid">
         {/* LEFT COLUMN: Section 2.1 Top Left Card & Section 2.3 Bottom Left Card */}
-        <div style={styles.leftColumn}>
+        <div style={styles.leftColumn} className="student-dashboard-left-col">
           {/* SECTION 2.1: TOP LEFT CARD (Welcome & Total XP) */}
-          <div style={styles.xpCard}>
+          <div style={styles.xpCard} className="student-dashboard-xp-card">
             {/* Student Welcome Header */}
             <div style={styles.studentWelcomeRow}>
               <div style={styles.studentAvatarCircle}>
@@ -545,7 +587,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
 
           {/* SECTION 2.3: BOTTOM LEFT CARD (Selected Activity Progress Details) */}
           {selectedActivity && (
-            <div style={styles.selectedProgressCard}>
+            <div style={styles.selectedProgressCard} className="student-dashboard-selected-card">
               <div style={styles.selectedCardHeaderRow}>
                 <span style={styles.selectedProgressTitle}>
                   {t('studentPortal.selectedActivityProgress', 'SELECTED ACTIVITY PROGRESS')}
@@ -585,7 +627,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentTab, 
         </div>
 
         {/* RIGHT COLUMN: SECTION 2.2 BIG CARD (Activity Logs and History) */}
-        <div style={styles.rightColumnCard}>
+        <div style={styles.rightColumnCard} className="student-dashboard-right-card">
           {/* Top Single Tab */}
           <div style={styles.tabsHeaderRow}>
             <button style={styles.activeTabBtn}>

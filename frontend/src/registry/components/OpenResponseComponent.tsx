@@ -49,7 +49,7 @@ export const OpenResponseStudent: React.FC<
 
   const [submitted, setSubmitted] = useState<boolean>(studentState.status === 'completed');
 
-  // Sync state whenever block.id or studentState updates so new blocks get clean text areas
+  // Sync state whenever block.id updates so new blocks get clean text areas
   useEffect(() => {
     if (typeof studentState.response === 'object' && studentState.response !== null) {
       setAnswers(studentState.response as Record<number, string>);
@@ -59,7 +59,7 @@ export const OpenResponseStudent: React.FC<
       setAnswers({});
     }
     setSubmitted(studentState.status === 'completed');
-  }, [block.id, studentState.response, studentState.status]);
+  }, [block.id]);
 
   const handleAnswerChange = (index: number, value: string) => {
     const updated = { ...answers, [index]: value };
