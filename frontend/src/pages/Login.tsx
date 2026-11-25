@@ -313,35 +313,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [portal, pin, studentCode]);
 
-  const fillQuickAccount = (role: 'TEACHER_ILSE' | 'STUDENT_ILSE' | 'TEACHER_JANE' | 'STUDENT_JANE' | 'ADMIN') => {
-    switch (role) {
-      case 'TEACHER_ILSE':
-        setPortal('TEACHER');
-        setEmail('ilse.teacher@em.com');
-        setPassword('password123@');
-        break;
-      case 'STUDENT_ILSE':
-        setPortal('STUDENT');
-        setStudentCode('STU-ILSE');
-        setPin('1234');
-        break;
-      case 'TEACHER_JANE':
-        setPortal('TEACHER');
-        setEmail('jane.teacher@em.com');
-        setPassword('password123@');
-        break;
-      case 'STUDENT_JANE':
-        setPortal('STUDENT');
-        setStudentCode('STU-JANE');
-        setPin('1234');
-        break;
-      case 'ADMIN':
-        setPortal('TEACHER');
-        setEmail('admin@example.com');
-        setPassword('Admin123!');
-        break;
-    }
-  };
+ 
 
   // RENDER STUDENT PORTAL LOGIN VIEW
   if (portal === 'STUDENT') {
