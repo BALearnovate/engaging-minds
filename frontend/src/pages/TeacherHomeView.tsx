@@ -31,6 +31,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
   };
 
   useEffect(() => {
+    window.scroll(0,0);
     fetchOverviewData();
   }, []);
 

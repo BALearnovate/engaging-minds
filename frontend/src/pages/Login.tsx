@@ -43,6 +43,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
       const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
       return () => clearTimeout(timer);
     }
+
+     window.scrollTo(0, 0);
   }, [resendCooldown]);
 
   const handleSendResetCode = async (e: React.FormEvent) => {
@@ -278,6 +280,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
   // Global Keyboard Listener for Student Login PIN Entry
   useEffect(() => {
+
+     window.scrollTo(0, 0);
     if (portal !== 'STUDENT') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {

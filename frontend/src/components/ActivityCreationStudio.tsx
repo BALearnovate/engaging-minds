@@ -33,6 +33,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   const [activePathway, setActivePathway] = useState<'ai' | 'templates' | 'scratch'>(initialPathway || 'ai');
 
   useEffect(() => {
+    window.scroll(0,0);
     if (initialPathway) {
       setActivePathway(initialPathway);
     }
@@ -120,6 +121,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
   // Keep configuredStudents synchronized with selected classroom students when full classroom scope is active
   useEffect(() => {
+    window.scroll(0,0);
     if (targetScope === 'Full Classroom Scope' && selectedClassId) {
       const selectedClass = classrooms.find((c) => c.id === selectedClassId);
       if (selectedClass && Array.isArray(selectedClass.students)) {
@@ -307,6 +309,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   const [selectedActivityId, setSelectedActivityId] = useState<string>(initialActivityId || '');
 
   useEffect(() => {
+    window.scroll(0,0);
     if (initialActivityId) {
       setSelectedActivityId(initialActivityId);
     }
@@ -326,6 +329,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
 
   // Fetch Classrooms and Database Activities on mount
   useEffect(() => {
+    window.scroll(0,0);
     fetchTemplates();
     if (activeToken) {
       fetchClassrooms();

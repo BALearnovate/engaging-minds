@@ -63,6 +63,7 @@ export const ClassroomSetupComponent: React.FC = () => {
 
   // Clear revealed states on classroom change
   useEffect(() => {
+    window.scroll(0,0);
     setRevealedCodes({});
     setRevealAll(false);
   }, [selectedClassId]);
@@ -73,6 +74,7 @@ export const ClassroomSetupComponent: React.FC = () => {
 
   // Load Classrooms from DB on Mount
   useEffect(() => {
+    window.scroll(0,0);
     loadClassroomsFromDb();
   }, [activeToken]);
 

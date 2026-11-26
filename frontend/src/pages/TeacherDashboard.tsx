@@ -44,6 +44,7 @@ export const TeacherDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchActiveSessions();
+    window.scroll(0,0);
   }, []);
 
   const handleManualCodeSubmit = (e: React.FormEvent) => {

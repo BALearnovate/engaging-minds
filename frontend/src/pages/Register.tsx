@@ -77,6 +77,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
   // OTP Countdown Timer Effect
   useEffect(() => {
+    window.scroll(0,0);
     let interval: ReturnType<typeof setInterval>;
     if (isVerifyingOtp && resendTimer > 0) {
       interval = setInterval(() => {
@@ -221,6 +222,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
   // Global Keyboard Listener for Step 3 Quick PIN Entry
   useEffect(() => {
+    window.scroll(0,0);
     if (portal !== 'STUDENT' || step !== 3) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
