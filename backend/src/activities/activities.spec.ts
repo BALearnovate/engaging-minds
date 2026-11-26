@@ -226,6 +226,52 @@ describe('AiActivityGeneratorService Unit Tests', () => {
     expect(definition.blocks[0].type).toBe('open_response');
   });
 
+  it('should extract inputTokens and outputTokens from Gemini API usageMetadata in callGeminiApi', async () => {
+    process.env.GEMINI_API_KEY = 'mock-api-key';
+
+    const mockGeminiResponse = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  schemaVersion: '1.0',
+                  title: 'Photosynthesis Activity',
+                  description: 'Learn about plant energy',
+                  blocks: [
+                    {
+                      id: 'b1',
+                      type: 'open_response',
+                      title: 'Reflection',
+                      instructions: 'Answer prompt',
+                      config: { prompt: 'What is photosynthesis?' },
+                    },
+                  ],
+                }),
+              },
+            ],
+          },
+        },
+      ],
+      usageMetadata: {
+        promptTokenCount: 1250,
+        candidatesTokenCount: 840,
+        totalTokenCount: 2090,
+      },
+    };
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue(mockGeminiResponse),
+    } as any);
+
+    const definition = await generator.generate('Photosynthesis', 'Science', 'Grade 6', 'en');
+
+    expect(definition.inputTokens).toBe(1250);
+    expect(definition.outputTokens).toBe(840);
+  });
+
   it('should throw BadRequestException when GEMINI_API_KEY is present and callGeminiApi fails without falling back', async () => {
     process.env.GEMINI_API_KEY = 'mock-api-key';
 

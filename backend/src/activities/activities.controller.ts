@@ -50,14 +50,17 @@ export class ActivitiesController {
       outputTokens?: number;
     },
   ) {
+    const inputTokens = body.inputTokens ?? body.definition?.inputTokens;
+    const outputTokens = body.outputTokens ?? body.definition?.outputTokens;
+
     return this.activitiesService.saveDraft(
       teacherId,
       body.activityId,
       body.title,
       body.description,
       body.definition,
-      body.inputTokens,
-      body.outputTokens,
+      inputTokens,
+      outputTokens,
     );
   }
 

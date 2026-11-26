@@ -137,6 +137,8 @@ export interface ActivityDefinition {
   gradeLevel?: string;
   estimatedDurationMinutes?: number;
   blocks: ActivityBlock[];
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface ValidationResult {

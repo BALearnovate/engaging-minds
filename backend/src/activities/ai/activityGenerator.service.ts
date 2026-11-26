@@ -39,7 +39,7 @@ export class AiActivityGeneratorService implements ActivityGenerator {
         // Run 3-Tier Validation Pipeline
         const valResult = ActivityValidator.validate(geminiDefinition);
         if (valResult.valid) {
-          this.logger.log('Gemini activity generated and successfully passed 3-Tier Validation!');
+          this.logger.log(`Gemini activity generated and successfully passed 3-Tier Validation! | Input Tokens: ${geminiDefinition.inputTokens || 0} | Output Tokens: ${geminiDefinition.outputTokens || 0}`);
           return geminiDefinition;
         } else {
           this.logger.warn(
@@ -171,6 +171,15 @@ Generate a complete, engaging interactive activity containing appropriate exerci
     }
 
     const parsedJson: ActivityDefinition = JSON.parse(candidateText);
+
+    // Extract input (prompt) and output (candidates) token counts from Gemini API usageMetadata
+    const inputTokens = Math.max(0, Math.floor(Number(resData?.usageMetadata?.promptTokenCount) || 0));
+    const outputTokens = Math.max(0, Math.floor(Number(resData?.usageMetadata?.candidatesTokenCount) || 0));
+
+    parsedJson.inputTokens = inputTokens;
+    parsedJson.outputTokens = outputTokens;
+
+    this.logger.log(`[Gemini Token Tracking] Prompt (Input) Tokens: ${inputTokens} | Candidates (Output) Tokens: ${outputTokens}`);
 
     // Sanitize & Normalize block types and config schema
     if (parsedJson && Array.isArray(parsedJson.blocks)) {
