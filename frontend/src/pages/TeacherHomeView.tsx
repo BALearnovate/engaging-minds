@@ -72,14 +72,14 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
  
 
   return (
-    <div style={styles.container}>
+    <div className="teacher-home-container" style={styles.container}>
       {/* Header Bar with Greeting & Subtitle on Left & Create Activity Button on Right */}
-      <div style={styles.greetingHeaderBar}>
+      <div className="teacher-home-greeting-bar" style={styles.greetingHeaderBar}>
         <div style={styles.greetingTextGroup}>
-          <h1 style={styles.greetingTitle}>
+          <h1 className="teacher-home-greeting-title" style={styles.greetingTitle}>
             {t('teacherHome.welcome', `Welcome ${teacherName || 'Teacher'} !`, { name: teacherName || 'Teacher' })}
           </h1>
-          <p style={styles.greetingSubtitle}>
+          <p className="teacher-home-greeting-sub" style={styles.greetingSubtitle}>
             {t(
               'teacherHome.subtitle',
               `Ready to inspire learning today? You currently manage ${data?.stats.totalClasses ?? 0} active classes and ${data?.stats.totalActivities ?? 0} total activities.`,
@@ -90,6 +90,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
 
         <button
           onClick={() => onNavigateTab?.('activity_creation')}
+          className="teacher-home-create-btn"
           style={styles.headerCreateActivityBtn}
         >
           <span style={styles.headerPlusIcon}>+</span>
@@ -115,10 +116,10 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
             <h2 style={styles.sectionLabel}>
               {t('teacherHome.generalOverview', 'General Overview')}
             </h2>
-            <div style={styles.overviewGrid}>
+            <div className="teacher-home-overview-grid" style={styles.overviewGrid}>
               {/* Card 1: Total Classes */}
               <div style={styles.darkBlueCard}>
-                <div style={styles.cardBigNumber}>
+                <div className="teacher-home-big-num" style={styles.cardBigNumber}>
                   {formatNumber(data?.stats.totalClasses)}
                 </div>
                 <div style={styles.cardTitle}>
@@ -128,7 +129,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
 
               {/* Card 2: Total Activities */}
               <div style={styles.darkBlueCard}>
-                <div style={styles.cardBigNumber}>
+                <div className="teacher-home-big-num" style={styles.cardBigNumber}>
                   {formatNumber(data?.stats.totalActivities)}
                 </div>
                 <div style={styles.cardTitle}>
@@ -138,7 +139,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
 
               {/* Card 3: Total Engaged Students */}
               <div style={styles.darkBlueCard}>
-                <div style={styles.cardBigNumber}>
+                <div className="teacher-home-big-num" style={styles.cardBigNumber}>
                   {formatNumber(data?.stats.totalEngagedStudents)}
                 </div>
                 <div style={styles.cardTitle}>
@@ -154,11 +155,11 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
           </h2>
 
           {/* Detailed Overview Soft Light-Blue Panel Wrapper */}
-          <div style={styles.detailedOverviewPanel}>
-            <div style={styles.twoColumnGrid}>
+          <div className="teacher-home-detailed-panel" style={styles.detailedOverviewPanel}>
+            <div className="teacher-home-two-col-grid" style={styles.twoColumnGrid}>
               {/* Left Column: YOUR CLASSES Box */}
               <div style={styles.leftCol}>
-                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                <div className="teacher-home-inner-box" style={styles.innerSectionBox}>
                   <div style={styles.subHeaderBox}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M2 3h20" />
@@ -234,7 +235,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                 </div>
 
                 {/* MOST ENGAGED ACTIVITIES IN SCHOOL Box */}
-                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                <div className="teacher-home-inner-box" style={styles.innerSectionBox}>
                   <div style={styles.subHeaderBox}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="20" x2="18" y2="10" />
@@ -297,7 +298,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
               {/* Right Column: Top 5 Used Activities & Recent Activities */}
               <div style={styles.rightCol}>
                 {/* TOP 5 USED ACTIVITIES BY YOU Box */}
-                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                <div className="teacher-home-inner-box" style={styles.innerSectionBox}>
                   <div style={styles.subHeaderBox}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="8" y1="6" x2="21" y2="6" />
@@ -350,7 +351,7 @@ export const TeacherHomeView: React.FC<TeacherHomeViewProps> = ({ onNavigateTab 
                 </div>
 
                 {/* RECENT ACTIVITIES Box */}
-                <div style={{ ...styles.innerSectionBox, height: '380px' }}>
+                <div className="teacher-home-inner-box" style={styles.innerSectionBox}>
                   <div style={styles.subHeaderBox}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#125873" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -573,7 +574,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1.25rem',
   },
 
-  /* Inner Card Section Containers with Fixed Equal Height */
+  /* Inner Card Section Containers with Flexible Height */
   innerSectionBox: {
     backgroundColor: '#cae7f3',
     border: '1px solid #92cadb',
@@ -583,6 +584,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     gap: '1rem',
     boxSizing: 'border-box',
+    minHeight: '180px',
+    maxHeight: '380px',
   },
   subHeaderBox: {
     display: 'flex',
@@ -681,7 +684,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '700',
     color: '#125873',
     flex: 1,
+    minWidth: 0,
     paddingRight: '0.5rem',
+    wordBreak: 'break-word',
   },
   usagePillBadge: {
     backgroundColor: '#e1f2f7',
@@ -744,12 +749,15 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '0.5rem',
+    flexWrap: 'wrap',
   },
   chartItemTitle: {
     fontSize: '0.93rem',
     fontWeight: '700',
     color: '#125873',
-    flex: 1,
+    flex: '1 1 180px',
+    minWidth: 0,
+    wordBreak: 'break-word',
   },
   chartItemBadge: {
     backgroundColor: '#0083ba',

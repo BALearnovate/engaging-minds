@@ -233,3 +233,82 @@ code {
     font-size: 1.1rem !important;
   }
 }
+
+/* Teacher Home View Responsive Styles */
+.teacher-home-container {
+  width: 100%;
+  max-width: 1280px;
+  box-sizing: border-box;
+}
+
+.teacher-home-detailed-panel {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.teacher-home-inner-box {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 180px !important;
+  height: auto !important;
+  max-height: 380px !important;
+}
+
+@media (max-width: 1120px) {
+  .teacher-home-two-col-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .teacher-home-overview-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .teacher-home-greeting-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  .teacher-home-create-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-home-container {
+    padding: 1rem 0.75rem 2rem 0.75rem !important;
+    gap: 1.25rem !important;
+  }
+
+  .teacher-home-greeting-title {
+    font-size: 1.45rem !important;
+  }
+
+  .teacher-home-greeting-sub {
+    font-size: 0.85rem !important;
+    padding-top: 0.5rem !important;
+  }
+
+  .teacher-home-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .teacher-home-detailed-panel {
+    padding: 1rem 0.75rem !important;
+    border-radius: 12px !important;
+  }
+
+  .teacher-home-inner-box {
+    padding: 1rem 0.75rem !important;
+  }
+
+  .teacher-home-big-num {
+    font-size: 2.2rem !important;
+  }
+}
