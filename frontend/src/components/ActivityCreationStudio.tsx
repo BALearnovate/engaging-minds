@@ -466,7 +466,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
   };
 
   return (
-    <div style={styles.pageContainer}>
+    <div className="activity-studio-container" style={styles.pageContainer}>
       {/* Dynamic Keyframe Animation Styles */}
       <style>{`
         @keyframes spinRing {
@@ -483,9 +483,9 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
         }
       `}</style>
 
-      <div style={styles.gridWrapper}>
+      <div className="activity-studio-grid" style={styles.gridWrapper}>
         {/* LEFT COLUMN: ACTIVITY GENERATION STUDIO MAIN PANEL */}
-        <div style={styles.mainStudioCard}>
+        <div className="activity-studio-main-card" style={styles.mainStudioCard}>
           {/* Header */}
           <div style={styles.headerBox}>
             <h1 style={styles.studioTitle}>{t('activityCreation.bannerTitle', 'ACTIVITY GENERATION STUDIO')}</h1>
@@ -495,7 +495,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
           </div>
 
           {/* Pathway Action Buttons */}
-          <div style={styles.pathwayRow}>
+          <div className="activity-studio-pathway-row" style={styles.pathwayRow}>
             <button
               onClick={() => setActivePathway('ai')}
               style={{
@@ -572,7 +572,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                   </div>
                 ) : activity ? (
                   <div style={styles.blueprintContent}>
-                    <div style={styles.activityMetaHeader}>
+                    <div className="activity-studio-meta-header" style={styles.activityMetaHeader}>
                       <div>
                         <h3 style={styles.activityMetaTitle}>{activity.title}</h3>
                         <p style={styles.activityMetaDesc}>{activity.description}</p>
@@ -712,7 +712,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
                   </div>
                 ) : selectedTemplateActivity?.content ? (
                   <div style={styles.blueprintContent}>
-                    <div style={styles.activityMetaHeader}>
+                    <div className="activity-studio-meta-header" style={styles.activityMetaHeader}>
                       <div>
                         <h3 style={styles.activityMetaTitle}>{selectedTemplateActivity.title}</h3>
                         {(selectedTemplateActivity.description || selectedTemplateActivity.content.description) && (
@@ -751,7 +751,7 @@ export const ActivityCreationStudio: React.FC<ActivityCreationStudioProps> = ({ 
         </div>
 
         {/* RIGHT COLUMN: DEPLOYMENT PARAMETERS */}
-        <div style={styles.sidebarCard}>
+        <div className="activity-studio-sidebar-card" style={styles.sidebarCard}>
           <h2 style={styles.sidebarTitle}>{t('activityCreation.sessionSettings', 'Activity Session Settings')}</h2>
 
           {/* SELECT CLASS (Teacher-Created Classes Only) */}
