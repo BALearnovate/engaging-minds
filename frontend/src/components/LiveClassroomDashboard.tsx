@@ -887,7 +887,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       )}
 
       {/* 1. Existing Active Activity & Red Stop Button Banner */}
-      <div style={styles.activeCard}>
+      <div className="live-dashboard-active-card" style={styles.activeCard}>
         <div style={styles.activeInfo}>
           <div style={styles.badgeRow}>
             <span
@@ -930,7 +930,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
       </div>
 
       {/* 2. Main Dashboard Grid */}
-      <div style={styles.dashboardGrid}>
+      <div className="live-dashboard-grid" style={styles.dashboardGrid}>
         {/* LEFT COLUMN (Scope Selector + Status Monitor) */}
         <div style={styles.leftMainColumn}>
           {/* METRICS SCOPE SELECTOR */}
@@ -1008,7 +1008,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
                     <h4 style={styles.classSectionHeading}>
                       {t('liveDashboard.highLevelOverview', 'High level overview')}
                     </h4>
-                    <div style={styles.overviewGrid2x2}>
+                    <div className="live-dashboard-overview-2x2" style={styles.overviewGrid2x2}>
                       {/* Card 1: Engaged */}
                       <div style={{ ...styles.metricCard, borderLeft: '5px solid #2563eb', backgroundColor: '#f0f9ff' }}>
                         <div style={styles.metricCardLabel}>
@@ -1182,7 +1182,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             ) : students.length === 0 ? (
               <div style={styles.emptyStudentsBox}>{t('liveDashboard.noStudents', 'No students in class yet.')}</div>
             ) : (
-              <div style={styles.studentCardsContainer}>
+              <div className="live-dashboard-student-cards" style={styles.studentCardsContainer}>
                 {students.map((student) => {
                   const isSelected = student.id === selectedStudentId;
                   const indicator = getStudentIndicatorState(student, nowTimestamp, t);
@@ -1285,7 +1285,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
         </div>
 
         {/* RIGHT COLUMN */}
-        <div style={styles.rightActionsColumn}>
+        <div className="live-dashboard-right-column" style={styles.rightActionsColumn}>
           {activeScope !== 'Class Level' && selectedStudent ? (
             <>
               {/* STUDENT TRI-DIMENSION ANALYTICS (ENGAGEMENT, PROGRESS, PERFORMANCE) */}
@@ -1513,7 +1513,7 @@ export const LiveClassroomDashboard: React.FC<LiveClassroomDashboardProps> = ({ 
             </>
           ) : (
             /* DEFAULT 1 SINGLE LONG SECTION WHEN NO STUDENT IS SELECTED OR CLASS LEVEL */
-            <div style={styles.singleLongRightPlaceholder}>
+            <div className="live-dashboard-right-placeholder" style={styles.singleLongRightPlaceholder}>
               <div style={styles.placeholderHandIcon}>👈</div>
               <p style={styles.placeholderTextLong}>
                 {activeScope === 'Class Level'
