@@ -302,9 +302,9 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
     return (
       <div style={styles.pageContainer}>
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
-          <div style={{ display: 'flex', flex: 1, width: '100%', minHeight: 'calc(100vh - 60px)' }}>
+          <div className="auth-page-container" style={{ display: 'flex', flex: 1, width: '100%', minHeight: 'calc(100vh - 60px)' }}>
             {/* Left Section - Hero Image with Green Organic Bubble */}
-            <div style={styles.leftSection}>
+            <div className="auth-left-hero" style={styles.leftSection}>
               <div style={styles.bubbleContainer}>
                 <img src={greenBubbleBg} alt="Teacher Portal Green Bubble" style={styles.bubbleImg} />
                 <div style={styles.bubbleContent}>
@@ -324,10 +324,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
             </div>
 
             {/* Right Section */}
-            <div style={styles.rightSection}>
+            <div className="auth-form-container" style={styles.rightSection}>
               <div style={styles.headerWrapper}>
                 <div style={styles.topHeader}>
-                  <img src={logoImage} alt="Engaging Minds Logo" style={styles.logoImg} />
+                  <img src={logoImage} alt="Engaging Minds Logo" className="auth-logo-img" style={styles.logoImg} />
                 </div>
                 <div style={styles.waveContainer}>
                   <svg viewBox="0 0 500 120" preserveAspectRatio="none" style={styles.waveSvg}>
@@ -339,7 +339,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 </div>
               </div>
 
-              <div style={styles.formSection}>
+              <div className="auth-form-section" style={styles.formSection}>
                 <div style={styles.portalToggleWrapper}>
                   <button
                     type="button"
@@ -359,7 +359,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
                 {isVerifyingOtp ? (
                   <div>
-                    <h2 style={styles.formTitle}>{t('register.verifyEmailTitle', 'Verify your email address')}</h2>
+                    <h2 className="auth-form-title" style={styles.formTitle}>{t('register.verifyEmailTitle', 'Verify your email address')}</h2>
                     <p style={{ color: '#475569', fontSize: '0.92rem', marginBottom: '1.25rem', textAlign: 'center', lineHeight: '1.4' }}>
                       {t('register.verifyEmailSubtitle', 'We sent a 6-digit verification code to')}{' '}
                       <strong style={{ color: '#1e293b' }}>{email}</strong>
@@ -441,7 +441,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                   </div>
                 ) : (
                   <>
-                    <h2 style={styles.formTitle}>{t('register.teacherRegistrationTitle', 'Teacher Registration')}</h2>
+                    <h2 className="auth-form-title" style={styles.formTitle}>{t('register.teacherRegistrationTitle', 'Teacher Registration')}</h2>
 
                     {error && <div style={styles.errorBox}>{error}</div>}
 
@@ -564,9 +564,9 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
         {/* Top Navigation Header with Green Top Bar & Blue Stepper Bar */}
         <header style={{ position: 'relative', width: '100%' }}>
           {/* Top Green Bar */}
-          <div style={styles.greenHeaderBar}>
+          <div className="student-header-bar-responsive" style={styles.greenHeaderBar}>
             <h1 style={styles.onboardingTitleHeader}>{t('register.onboarding', 'Onboarding')}</h1>
-            <div style={styles.headerRightGroup}>
+            <div className="student-header-right-responsive" style={styles.headerRightGroup}>
               <button
                 type="button"
                 onClick={() => setPortal('TEACHER')}
@@ -579,10 +579,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
           </div>
 
           {/* Bottom Blue Stepper Bar */}
-          <div style={styles.blueStepperBar}>
-            <div style={styles.stepperWizardNew}>
+          <div className="student-stepper-bar-responsive" style={styles.blueStepperBar}>
+            <div className="student-stepper-wizard" style={styles.stepperWizardNew}>
               {/* Step 1 Node */}
-              <div style={styles.stepNode}>
+              <div className="student-step-node" style={styles.stepNode}>
                 <div style={{
                   ...styles.stepCircleNew,
                   backgroundColor: step >= 1 ? '#16a34a' : '#ffffff',
@@ -593,14 +593,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 </div>
                 <div style={styles.stepLabelCol}>
                   <span style={styles.stepNumberLabel}>{t('register.step1', 'Step 1')}</span>
-                  <span style={styles.stepTitleLabel}>{t('register.linkingSchool', 'Linking School')}</span>
+                  <span className="student-step-title-label" style={styles.stepTitleLabel}>{t('register.linkingSchool', 'Linking School')}</span>
                 </div>
               </div>
 
-              <div style={{ ...styles.stepLineNew, backgroundColor: step >= 2 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
+              <div className="student-step-line" style={{ ...styles.stepLineNew, backgroundColor: step >= 2 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
 
               {/* Step 2 Node */}
-              <div style={styles.stepNode}>
+              <div className="student-step-node" style={styles.stepNode}>
                 <div style={{
                   ...styles.stepCircleNew,
                   backgroundColor: step >= 2 ? (step > 2 ? '#16a34a' : '#84cc16') : '#ffffff',
@@ -611,14 +611,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 </div>
                 <div style={styles.stepLabelCol}>
                   <span style={styles.stepNumberLabel}>{t('register.step2', 'Step 2')}</span>
-                  <span style={styles.stepTitleLabel}>{t('register.chooseAvatar', 'Choose Avatar')}</span>
+                  <span className="student-step-title-label" style={styles.stepTitleLabel}>{t('register.chooseAvatar', 'Choose Avatar')}</span>
                 </div>
               </div>
 
-              <div style={{ ...styles.stepLineNew, backgroundColor: step >= 3 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
+              <div className="student-step-line" style={{ ...styles.stepLineNew, backgroundColor: step >= 3 ? '#84cc16' : 'rgba(255,255,255,0.4)' }} />
 
               {/* Step 3 Node */}
-              <div style={styles.stepNode}>
+              <div className="student-step-node" style={styles.stepNode}>
                 <div style={{
                   ...styles.stepCircleNew,
                   backgroundColor: step === 3 ? '#16a34a' : '#ffffff',
@@ -629,14 +629,14 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
                 </div>
                 <div style={styles.stepLabelCol}>
                   <span style={styles.stepNumberLabel}>{t('register.step3', 'Step 3')}</span>
-                  <span style={styles.stepTitleLabel}>{t('register.setQuickPin', 'Set Quick Pin')}</span>
+                  <span className="student-step-title-label" style={styles.stepTitleLabel}>{t('register.setQuickPin', 'Set Quick Pin')}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Top Left Cloud Logo Bubble */}
-          <div style={styles.studentHeaderLeft}>
+          <div className="student-header-cloud-logo" style={styles.studentHeaderLeft}>
             <img
               src={cloudBubbleLogo}
               alt="Engaging Minds Cloud Logo"
@@ -647,10 +647,10 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
 
         {/* Central Onboarding Card Container */}
         <div style={styles.cardWrapper}>
-          <div style={styles.studentCard}>
+          <div className="student-card-responsive" style={styles.studentCard}>
             {/* Card Main Title */}
             <div style={styles.cardHeaderArea}>
-              <h2 style={styles.cardHeaderTitle}>
+              <h2 className="student-card-header-title" style={styles.cardHeaderTitle}>
                 {step === 1 && t('register.step1CardTitle', 'Connect to Your School & Class Space')}
                 {step === 2 && t('register.step2CardTitle', 'Personalize Your Student Profile')}
                 {step === 3 && t('register.step3CardTitle', 'Setup Your Quick Access PIN')}
@@ -665,7 +665,7 @@ export const Register: React.FC<RegisterProps> = ({ onSuccess, onNavigateToLogin
             {studentError && <div style={styles.errorBanner}>{studentError}</div>}
 
             {/* 3 Columns Grid */}
-            <div style={styles.threeColumnGrid}>
+            <div className="student-three-col-grid" style={styles.threeColumnGrid}>
               {/* COLUMN 1: LINK YOUR SCHOOL */}
               <div style={{
                 ...styles.columnCard,

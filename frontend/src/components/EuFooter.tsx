@@ -5,7 +5,7 @@ export const EuFooter: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <footer style={styles.footerContainer}>
+    <footer style={styles.footerContainer} className="eu-footer-container">
       {/* Left: EU Flag + Co-funded Text */}
       <div style={styles.logoSection}>
         <svg width="68" height="46" viewBox="0 0 68 46" style={styles.flagSvg}>

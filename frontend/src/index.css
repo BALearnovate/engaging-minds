@@ -110,3 +110,126 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Responsive Styles for Auth & Onboarding Pages */
+@media (max-width: 900px) {
+  .auth-page-container {
+    flex-direction: column !important;
+  }
+
+  .auth-left-hero {
+    display: none !important;
+  }
+
+  .auth-right-hero {
+    display: none !important;
+  }
+
+  .auth-form-container {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 1 !important;
+    box-shadow: none !important;
+  }
+
+  .student-header-cloud-logo {
+    display: none !important;
+  }
+
+  .student-header-bar-responsive {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+  }
+
+  .student-three-col-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .student-header-bar-responsive {
+    flex-direction: column !important;
+    height: auto !important;
+    padding: 0.75rem 1rem !important;
+    gap: 0.5rem !important;
+    text-align: center !important;
+  }
+
+  .student-header-right-responsive {
+    position: static !important;
+    right: auto !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .student-stepper-bar-responsive {
+    height: auto !important;
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  .student-stepper-wizard {
+    gap: 0.25rem !important;
+  }
+
+  .student-step-line {
+    width: 18px !important;
+  }
+
+  .student-step-node {
+    min-width: 60px !important;
+  }
+
+  .student-step-title-label {
+    font-size: 0.72rem !important;
+  }
+
+  .eu-footer-container {
+    padding: 0.75rem 1rem !important;
+    gap: 1rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-form-section {
+    padding: 1rem 1rem 1.5rem 1rem !important;
+  }
+
+  .auth-form-title {
+    font-size: 1.45rem !important;
+  }
+
+  .auth-logo-img {
+    max-width: 140px !important;
+    max-height: 70px !important;
+  }
+
+  .student-card-responsive {
+    padding: 1.25rem 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  .student-card-header-title {
+    font-size: 1.2rem !important;
+  }
+
+  .student-pin-slot {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.2rem !important;
+  }
+
+  .student-pin-box {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.2rem !important;
+  }
+
+  .student-numpad-btn {
+    padding: 0.6rem 0 !important;
+    font-size: 1.1rem !important;
+  }
+}

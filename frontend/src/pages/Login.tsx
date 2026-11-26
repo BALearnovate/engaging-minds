@@ -320,8 +320,8 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
     return (
       <div style={styles.studentPageContainer}>
         {/* Top Header Bar */}
-        <div style={styles.studentHeaderBar}>
-          <div style={styles.studentHeaderLeft}>
+        <div className="student-header-bar-responsive" style={styles.studentHeaderBar}>
+          <div className="student-header-cloud-logo" style={styles.studentHeaderLeft}>
             <img
               src={cloudBubbleLogo}
               alt="Engaging Minds Cloud Logo"
@@ -331,7 +331,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
           <div style={styles.studentHeaderCenter}>
             <h1 style={styles.studentHeaderTitle}>{t('login.signIn', 'Sign In')}</h1>
           </div>
-          <div style={styles.studentHeaderRight}>
+          <div className="student-header-right-responsive" style={styles.studentHeaderRight}>
             <div style={styles.studentBadgePill}>{t('login.studentPortal', 'Student Portal')}</div>
             <button
               type="button"
@@ -345,7 +345,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
         {/* Center Content Backdrop */}
         <div style={styles.studentBodyWrapper}>
-          <div style={styles.studentModalCard}>
+          <div className="student-card-responsive" style={styles.studentModalCard}>
             {/* Header Tag */}
             <div style={styles.badgeContainer}>
               <span style={styles.returningStudentTag}>{t('login.returningStudent', 'RETURNING STUDENT')}</span>
@@ -403,6 +403,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                     return (
                       <div
                         key={index}
+                        className="student-pin-slot"
                         style={{
                           ...styles.pinSlot,
                           borderColor: isFilled ? '#16a34a' : '#cbd5e1',
@@ -425,6 +426,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                       key={btnVal}
                       type="button"
                       onClick={() => handleNumpadPress(btnVal)}
+                      className="student-numpad-btn"
                       style={{
                         ...styles.numpadBtn,
                         ...(btnVal === 'CLEAR' ? styles.numpadClearBtn : {}),
@@ -692,15 +694,16 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
   return (
     <div style={styles.pageContainer}>
       <div style={styles.pageWrapper}>
-        <div style={styles.mainContent}>
+        <div className="auth-page-container" style={styles.mainContent}>
           {/* Left Section - Form & Branding */}
-          <div style={styles.leftSection}>
+          <div className="auth-form-container" style={styles.leftSection}>
             {/* Logo Header with Wave Transition */}
             <div style={styles.headerWrapper}>
               <div style={styles.topHeader}>
                 <img
                   src={logoImage}
                   alt="Engaging Minds Logo"
+                  className="auth-logo-img"
                   style={styles.logoImg}
                 />
               </div>
@@ -721,7 +724,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
             </div>
 
             {/* Form Body */}
-            <div style={styles.formSection}>
+            <div className="auth-form-section" style={styles.formSection}>
               {!isForgotPasswordMode && (
                 <div style={styles.portalToggleWrapper}>
                   <button
@@ -749,7 +752,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
 
               {isForgotPasswordMode ? (
                 <div>
-                  <h2 style={styles.formTitle}>
+                  <h2 className="auth-form-title" style={styles.formTitle}>
                     {forgotStep === 1
                       ? t('login.forgotPasswordTitle', 'Reset Your Password')
                       : t('login.resetPasswordTitle', 'Set New Password')}
@@ -891,7 +894,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
                 </div>
               ) : (
                 <>
-                  <h2 style={styles.formTitle}>{t('login.teacherLoginTitle', 'Teacher Login')}</h2>
+                  <h2 className="auth-form-title" style={styles.formTitle}>{t('login.teacherLoginTitle', 'Teacher Login')}</h2>
 
                   {teacherError && <div style={styles.errorBox}>{teacherError}</div>}
 
@@ -1017,7 +1020,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess, onNavigateToRegister, i
           </div>
 
           {/* Right Section - Hero Image */}
-          <div style={styles.rightSection}>
+          <div className="auth-right-hero" style={styles.rightSection}>
             <div style={styles.portalPillBadge}>{t('login.teacherPortal', 'Teacher Portal')}</div>
           </div>
         </div>
