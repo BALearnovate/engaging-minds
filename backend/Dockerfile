@@ -42,4 +42,6 @@ ENV NODE_ENV=production
 WORKDIR /app/backend
 
 # Run Prisma schema push & database seeding on startup, then start NestJS server
-CMD ["sh", "-c", "npx prisma db push && npx prisma db seed && node dist/src/main.js"]
+# Remove auto seeding database on deployment
+CMD ["sh", "-c", "npx prisma db push && node dist/src/main.js"]
+# CMD ["sh", "-c", "npx prisma db push && npx prisma db seed && node dist/src/main.js"]
